@@ -1,0 +1,78 @@
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin: 0 auto 20px auto;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .tab-button {
+      flex: 1;
+      padding: 15px;
+      background-color: #eee;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s;
+    }
+    .tab-button:not(:last-child) {
+      border-right: 1px solid #ccc;
+    }
+    .tab-button.active {
+      background-color: #ccc;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    #tabelaKalendarz th,
+    #tabelaKalendarz td {
+      width: 20%;
+      text-align: center;
+      padding: 8px;
+    }
+    #tabelaKalendarz tbody tr:nth-child(odd) {
+      background-color: #f9f9f9;
+    }
+    #tabelaKalendarz tbody tr:nth-child(even) {
+      background-color: #fff;
+    }
+    #tabelaKalendarz tbody tr.swieto {
+      background-color: #ffdede;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    button.add-row {
+      display: block;
+      margin: 10px auto;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .wiersz-tak {
+      background-color: #d0f0d0;
+    }
+    .wiersz-nie {
+      background-color: #f5f5f5;
+    }
+  
