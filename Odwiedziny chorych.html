@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grafik odwiedzin chorych</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin: 0 auto 20px auto;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .tab-button {
+      flex: 1;
+      padding: 15px;
+      background-color: #eee;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s;
+    }
+    .tab-button:not(:last-child) {
+      border-right: 1px solid #ccc;
+    }
+    .tab-button.active {
+      background-color: #ccc;
+      font-weight: bold;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    #tabelaKalendarz th,
+    #tabelaKalendarz td {
+      width: 20%;
+      text-align: center;
+      padding: 8px;
+    }
+    #tabelaKalendarz tbody tr:nth-child(odd) {
+      background-color: #f9f9f9;
+    }
+    #tabelaKalendarz tbody tr:nth-child(even) {
+      background-color: #fff;
+    }
+    #tabelaKalendarz tbody tr.swieto {
+      background-color: #ffdede;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    button.add-row {
+      display: block;
+      margin: 10px auto;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .wiersz-tak {
+      background-color: #d0f0d0;
+    }
+    .wiersz-nie {
+      background-color: #f5f5f5;
+    }
+  </style>
+</head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+</script>
+<body>
+  <h1>Grafik odwiedzin chorych</h1>
+  <div class="tabs">
+    <button class="tab-button active" data-tab="kalendarz">📅 Kalendarz</button>
+    <button class="tab-button" data-tab="chorzy">🧑‍⚕️ Dane chorych</button>
+    <button class="tab-button" data-tab="szafarze">🙋‍♂️ Dane szafarzy</button>
+  </div>
+  <div id="kalendarz" class="tab-content active">
+    <table id="tabelaKalendarz" border="1" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th scope="col">Data</th>
+          <th scope="col">Nazwa</th>
+          <th scope="col">Osoba Główna</th>
+          <th scope="col">Pomocnik</th>
+          <th scope="col">Uwagi</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>  
+</div>
+<div>
+  <button onclick="drukujListeChorych()">Drukuj</button>
+  <button onclick="zapiszListeChorychDoPDF()">Zapisz do PDF</button>
+</div>
+
+<div id="chorzy" class="tab-content">
+  <h2 style="text-align: center;">Dane chorych</h2>
+  <div id="tabelaChorzy">
+    <table>
+    <thead>
+      <tr>
+        <th>Lp.</th>
+        <th>Imię i nazwisko</th>
+        <th>Adres</th>
+        <th>Numer telefonu</th>
+        <th>Uwagi</th>
+        <th>Aktualne</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td>
+          <select onchange="aktualizujKolorWiersza(this)">
+            <option value=""></option>
+            <option value="TAK">TAK</option>
+            <option value="NIE">NIE</option>
+          </select>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<button class="add-row" onclick="dodajWierszChorych()">➕ Dodaj wiersz</button>
+</div>
+  </div>
+
+<div id="szafarze" class="tab-content">
+  <h2 style="text-align: center;">Dane szafarzy</h2>
+  <table id="tabelaSzafarze">
+    <thead>
+      <tr>
+        <th>Lp.</th>
+        <th>Imię i nazwisko</th>
+        <th>Adres zamieszkania</th>
+        <th>Email</th>
+        <th>Telefon</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+      </tr>
+    </tbody>
+  </table>
+      <div>
+      <button class="add-row" onclick="dodajWierszSzafarzy()">➕ Dodaj wiersz</button>
+</div>
+
+  <script>
+    const buttons = document.querySelectorAll(".tab-button");
+    const contents = document.querySelectorAll(".tab-content");
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const tab = button.dataset.tab;
+        buttons.forEach((btn) => btn.classList.remove("active"));
+        contents.forEach((content) => content.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(tab).classList.add("active");
+      });
+    });
+
+    function aktualizujKolorWiersza(selectElement) {
+      const tr = selectElement.closest("tr");
+      tr.classList.remove("wiersz-tak", "wiersz-nie");
+      if (selectElement.value === "TAK") {
+        tr.classList.add("wiersz-tak");
+      } else if (selectElement.value === "NIE") {
+        tr.classList.add("wiersz-nie");
+      }
+    }
+
+    function dodajWierszChorych() {
+      const tabela = document.querySelector("#tabelaChorzy tbody");
+      const wiersze = tabela.querySelectorAll("tr");
+      const nowyWiersz = document.createElement("tr");
+      nowyWiersz.innerHTML = `
+        <td>${wiersze.length + 1}</td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td>
+          <select onchange="aktualizujKolorWiersza(this)">
+            <option value=""></option>
+            <option value="TAK">TAK</option>
+            <option value="NIE">NIE</option>
+          </select>
+        </td>
+      `;
+      tabela.appendChild(nowyWiersz);
+    }
+
+    function drukujListeChorych() {
+  const printContent = document.getElementById('chorzy').innerHTML;
+  const originalContent = document.body.innerHTML;
+
+  document.body.innerHTML = printContent;
+  window.print();
+  document.body.innerHTML = originalContent;
+}
+
+function zapiszListeChorychDoPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const elementHTML = document.getElementById('chorzy');
+  doc.html(elementHTML, {
+    callback: function (doc) {
+      doc.save("lista_chorych.pdf");
+    },
+    x: 10,
+    y: 10
+  });
+}
+
+    function dodajWierszSzafarzy() {
+      const tabela = document.querySelector("#tabelaSzafarze tbody");
+      const wiersze = tabela.querySelectorAll("tr");
+      const nowyWiersz = document.createElement("tr");
+      nowyWiersz.innerHTML = `
+        <td>${wiersze.length + 1}</td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+      `;
+      tabela.appendChild(nowyWiersz);
+    }
+
+    function generujKalendarz() {
+      const tabela = document.querySelector("#tabelaKalendarz tbody");
+      tabela.innerHTML = "";
+
+      const swietaNakazane = {
+        "2025-01-01": "Świętej Bożej Rodzicielki Maryi",
+        "2025-01-06": "Objawienie Pańskie (Trzech Króli)",
+        "2025-04-20": "Niedziela Zmartwychwstania Pańskiego",
+        "2025-05-08": "Niedziela Zesłania Ducha Świętego",
+        "2025-06-19": "Boże Ciało",
+        "2025-08-15": "Wniebowzięcie NMP",
+        "2025-11-01": "Uroczystość Wszystkich Świętych",
+        "2025-12-25": "Boże Narodzenie"
+      };
+
+      const niedzieleLiturgiczne = {
+        "2025-01-05": "II Niedziela po Narodzeniu Pańskim",
+        "2025-01-12": "Niedziela Chrztu Pańskiego",
+        "2025-01-19": "II Niedziela zwykła",
+        "2025-01-26": "III Niedziela zwykła",
+        "2025-02-02": "IV Niedziela zwykła",
+        "2025-02-09": "V Niedziela zwykła",
+        "2025-02-16": "VI Niedziela zwykła",
+        "2025-02-23": "VII Niedziela zwykła",
+        "2025-03-02": "VIII Niedziela zwykła",
+        "2025-03-09": "I Niedziela Wielkiego Postu",
+        "2025-03-16": "II Niedziela Wielkiego Postu",
+        "2025-03-23": "III Niedziela Wielkiego Postu",
+        "2025-03-30": "IV Niedziela Wielkiego Postu",
+        "2025-04-06": "V Niedziela Wielkiego Postu",
+        "2025-04-13": "Niedziela Palmowa",
+        "2025-04-20": "Niedziela Zmartwychwstania Pańskiego",
+        "2025-04-27": "II Niedziela Wielkanocna (Miłosierdzia Bożego)",
+        "2025-05-04": "III Niedziela Wielkanocna",
+        "2025-05-11": "IV Niedziela Wielkanocna",
+        "2025-05-18": "V Niedziela Wielkanocna",
+        "2025-05-25": "VI Niedziela Wielkanocna",
+        "2025-06-01": "Uroczystość Wniebowstąpienia Pańskiego",
+        "2025-06-08": "Uroczystość Zesłania Ducha Świętego",
+        "2025-06-15": "Uroczystość Najświętszej Trójcy",
+        "2025-06-22": "XII Niedziela zwykła",
+        "2025-06-29": "Uroczystość Świętych Apostołów Piotra i Pawła",
+        "2025-07-06": "XIV Niedziela zwykła",
+        "2025-07-13": "XV Niedziela zwykła",
+        "2025-07-20": "XVI Niedziela zwykła",
+        "2025-07-27": "XVII Niedziela zwykła",
+        "2025-08-03": "XVIII Niedziela zwykła",
+        "2025-08-10": "XIX Niedziela zwykła",
+        "2025-08-17": "XX Niedziela zwykła",
+        "2025-08-24": "XXI Niedziela zwykła",
+        "2025-08-31": "XXII Niedziela zwykła",
+        "2025-09-07": "XXIII Niedziela zwykła",
+        "2025-09-14": "XXIV Niedziela zwykła",
+        "2025-09-21": "XXV Niedziela zwykła",
+        "2025-09-28": "XXVI Niedziela zwykła",
+        "2025-10-05": "XXVII Niedziela zwykła",
+        "2025-10-12": "XXVIII Niedziela zwykła",
+        "2025-10-19": "XXIX Niedziela zwykła",
+        "2025-10-26": "XXX Niedziela zwykła",
+        "2025-11-02": "XXXI Niedziela zwykła (Wspomnienie wszystkich wiernych zmarłych)",
+        "2025-11-09": "XXXII Niedziela zwykła",
+        "2025-11-16": "XXXIII Niedziela zwykła",
+        "2025-11-23": "Uroczystość Jezusa Chrystusa, Króla Wszechświata",
+        "2025-11-30": "I Niedziela Adwentu",
+        "2025-12-07": "II Niedziela Adwentu",
+        "2025-12-14": "III Niedziela Adwentu",
+        "2025-12-21": "IV Niedziela Adwentu",
+        "2025-12-28": "Święto Świętej Rodziny Jezusa, Maryi i Józefa"
+      };
+
+      const osoby = ["", "A", "B", "C", "D", "E", "F", "G"];
+
+      const unikalneDaty = new Set([
+    ...Object.keys(niedzieleLiturgiczne),
+    ...Object.keys(swietaNakazane)
+  ]);
+
+  const datyPosortowane = Array.from(unikalneDaty).sort();
+
+  datyPosortowane.forEach(dateStr => {
+    const niedziela = niedzieleLiturgiczne[dateStr];
+    const swieto = swietaNakazane[dateStr];
+    
+    let nazwa = "";
+    if (niedziela && swieto) {
+      nazwa = `${niedziela} / ${swieto}`;
+    } else {
+      nazwa = niedziela || swieto;
+    }
+
+    const tr = document.createElement("tr");
+    if (swieto) tr.classList.add("swieto");
+
+    function generujSelect() {
+      const select = document.createElement("select");
+      osoby.forEach(osoba => {
+        const option = document.createElement("option");
+        option.value = osoba;
+        option.textContent = osoba === "" ? "(brak)" : osoba;
+        select.appendChild(option);
+      });
+      return select.outerHTML;
+    }
+
+    tr.innerHTML = `
+      <td>${dateStr}</td>
+      <td>${nazwa}</td>
+      <td>${generujSelect()}</td>
+      <td>${generujSelect()}</td>
+      <td contenteditable="true"></td>
+    `;
+    tabela.appendChild(tr);
+  });
+}
+
+generujKalendarz();
+</script>
+</body>
+</html>
