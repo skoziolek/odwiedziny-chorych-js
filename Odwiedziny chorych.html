@@ -16,6 +16,8 @@
     <button class="tab-button" data-tab="szafarze">🙋‍♂️ Dane szafarzy</button>
   </div>
   <div id="kalendarz" class="tab-content active">
+    <button onclick="drukujListeChorych()">Drukuj</button>
+    <button onclick="zapiszListeChorychDoPDF()">Zapisz do PDF</button>
     <table id="tabelaKalendarz" border="1" style="width: 100%; border-collapse: collapse;">
       <thead>
         <tr>
@@ -28,14 +30,12 @@
       </thead>
       <tbody></tbody>
     </table>  
-</div>
-<div>
-  <button onclick="drukujListeChorych()">Drukuj</button>
-  <button onclick="zapiszListeChorychDoPDF()">Zapisz do PDF</button>
-</div>
+  </div>
 
 <div id="chorzy" class="tab-content">
-  <h2 style="text-align: center;">Dane chorych</h2>
+  
+  <button onclick="drukujListeChorych()">Drukuj</button>
+  <button onclick="zapiszListeChorychDoPDF()">Zapisz do PDF</button>
   <div id="tabelaChorzy">
     <table>
     <thead>
@@ -71,7 +71,9 @@
   </div>
 
 <div id="szafarze" class="tab-content">
-  <h2 style="text-align: center;">Dane szafarzy</h2>
+  
+  <button onclick="drukujListeChorych()">Drukuj</button>
+  <button onclick="zapiszListeChorychDoPDF()">Zapisz do PDF</button>
   <table id="tabelaSzafarze">
     <thead>
       <tr>
