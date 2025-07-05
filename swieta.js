@@ -1,6 +1,7 @@
 const swietaNakazane = {
     "2025-01-01": "Świętej Bożej Rodzicielki Maryi",
     "2025-01-06": "Objawienie Pańskie (Trzech Króli)",
+    "2025-02-02": "Ofiarowanie Pańskie (Matki Bożej Gromnicznej)",
     "2025-04-20": "Niedziela Zmartwychwstania Pańskiego",
     "2025-05-08": "Niedziela Zesłania Ducha Świętego",
     "2025-06-19": "Boże Ciało",
@@ -16,7 +17,6 @@ const niedzieleLiturgiczne = {
     "2025-01-12": "Niedziela Chrztu Pańskiego",
     "2025-01-19": "II Niedziela zwykła",
     "2025-01-26": "III Niedziela zwykła",
-    "2025-02-02": "IV Niedziela zwykła",
     "2025-02-09": "V Niedziela zwykła",
     "2025-02-16": "VI Niedziela zwykła",
     "2025-02-23": "VII Niedziela zwykła",
@@ -27,7 +27,7 @@ const niedzieleLiturgiczne = {
     "2025-03-30": "IV Niedziela Wielkiego Postu",
     "2025-04-06": "V Niedziela Wielkiego Postu",
     "2025-04-13": "Niedziela Palmowa",
-    "2025-04-20": "Niedziela Zmartwychwstania Pańskiego",
+    // 
     "2025-04-27": "II Niedziela Wielkanocna (Miłosierdzia Bożego)",
     "2025-05-04": "III Niedziela Wielkanocna",
     "2025-05-11": "IV Niedziela Wielkanocna",
@@ -55,7 +55,7 @@ const niedzieleLiturgiczne = {
     "2025-10-12": "XXVIII Niedziela zwykła",
     "2025-10-19": "XXIX Niedziela zwykła",
     "2025-10-26": "XXX Niedziela zwykła",
-    "2025-11-02": "XXXI Niedziela zwykła (Wspomnienie wszystkich wiernych zmarłych)",
+    "2025-11-02": "XXXI Niedziela zwykła (Wspomnienie Wszystkich Wiernych Zmarłych)",
     "2025-11-09": "XXXII Niedziela zwykła",
     "2025-11-16": "XXXIII Niedziela zwykła",
     "2025-11-23": "Uroczystość Jezusa Chrystusa, Króla Wszechświata",
@@ -174,7 +174,7 @@ function generujKalendarzLiturgiczny(rok) {
 
 // Przykład użycia:
 // const niedziele2025 = generujKalendarzLiturgiczny(2025);
-// console.log(niedziele2025);
+
 
 // Funkcje pomocnicze do zarządzania świętami
 
@@ -238,4 +238,22 @@ function importujDaneSwiat(jsonDane) {
     const dane = JSON.parse(jsonDane);
     Object.assign(swietaNakazane, dane.swietaNakazane);
     Object.assign(niedzieleLiturgiczne, dane.niedzieleLiturgiczne);
-} 
+}
+
+// Eksport funkcji jako moduły ES6
+export {
+    czySwietoNakazane,
+    czyNiedzielaLiturgiczna,
+    pobierzNazweSwieta,
+    pobierzWszystkieDaty,
+    eksportujDaneSwiat,
+    importujDaneSwiat,
+    dodajSwietoNakazane,
+    dodajNiedzieleLiturgiczna,
+    usunSwietoNakazane,
+    usunNiedzieleLiturgiczna,
+    generujKalendarzLiturgiczny
+};
+
+// Test eksportu
+ 

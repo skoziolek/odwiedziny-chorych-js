@@ -1,0 +1,30 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+
+# Git
+.git/
+
+# Node modules (if any)
+node_modules/
+
+# Environment files
+.env
+.env.local 
