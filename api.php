@@ -7,6 +7,101 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 
+// Funkcja do generowania danych testowych
+function generujDaneTestowe() {
+    $daneTestowe = [];
+    
+    // Pobierz pełne imiona i nazwiska szafarzy z funkcji generujDaneTestoweSzafarzy
+    $szafarzeTab = generujDaneTestoweSzafarzy();
+    $szafarze = array_map(function($s) { return $s['imieNazwisko']; }, $szafarzeTab);
+    // Dodaj kilka dodatkowych nazwisk, jeśli potrzeba
+    $szafarze = array_merge($szafarze, [
+        'Jan Kowalski',
+        'Piotr Wiśniewski',
+        'Dawid Nowak',
+        'Mateusz Zieliński',
+        'Damian Kowalczyk'
+    ]);
+    
+    // Generuj dane dla całego roku 2025
+    $rok = 2025;
+    $startDate = new DateTime("$rok-01-01");
+    $endDate = new DateTime("$rok-12-31");
+    
+    $currentDate = clone $startDate;
+    $szafarzIndex = 0;
+    
+    while ($currentDate <= $endDate) {
+        $data = $currentDate->format('Y-m-d');
+        $dzienTygodnia = $currentDate->format('N'); // 1=Poniedziałek, 7=Niedziela
+        
+        // Generuj dane tylko dla niedziel (dzienTygodnia = 7)
+        if ($dzienTygodnia == 7) {
+            $daneTestowe[$data] = [
+                'osobaGlowna' => $szafarze[$szafarzIndex % count($szafarze)],
+                'pomocnik' => '',
+                'uwagi' => 'Testowe odwiedziny dla ' . $data
+            ];
+            $szafarzIndex++;
+        }
+        
+        $currentDate->add(new DateInterval('P1D'));
+    }
+    
+    return $daneTestowe;
+}
+
+// Funkcja do generowania danych testowych dla chorych
+function generujDaneTestoweChorych() {
+    return [
+        [
+            'imieNazwisko' => 'Jan Kowalski',
+            'adres' => 'ul. Testowa 1, Warszawa',
+            'telefon' => '123-456-789',
+            'uwagi' => 'Testowy chory 1',
+            'aktualne' => true
+        ],
+        [
+            'imieNazwisko' => 'Anna Nowak',
+            'adres' => 'ul. Przykładowa 5, Kraków',
+            'telefon' => '987-654-321',
+            'uwagi' => 'Testowy chory 2',
+            'aktualne' => true
+        ],
+        [
+            'imieNazwisko' => 'Piotr Wiśniewski',
+            'adres' => 'ul. Demo 10, Gdańsk',
+            'telefon' => '555-123-456',
+            'uwagi' => 'Testowy chory 3',
+            'aktualne' => true
+        ]
+    ];
+}
+
+// Funkcja do generowania danych testowych dla szafarzy
+function generujDaneTestoweSzafarzy() {
+    return [
+        [
+            'imieNazwisko' => 'Tomasz Kowalczyk',
+            'telefon' => '111-222-333',
+            'email' => 'tomasz@test.pl',
+            'uwagi' => 'Testowy szafarz 1'
+        ],
+        [
+            'imieNazwisko' => 'Marek Zieliński',
+            'telefon' => '444-555-666',
+            'email' => 'marek@test.pl',
+            'uwagi' => 'Testowy szafarz 2'
+        ],
+        [
+            'imieNazwisko' => 'Andrzej Dąbrowski',
+            'telefon' => '777-888-999',
+            'email' => 'andrzej@test.pl',
+            'uwagi' => 'Testowy szafarz 3'
+        ]
+    ];
+}
+
 // Funkcje szyfrowania danych (RODO)
 function encryptData($data) {
     // Obsługa pustych danych
@@ -125,6 +220,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
                     http_response_code(500);
                     echo json_encode(['error' => 'Błąd zapisu do pliku']);
+                }
+                exit;
+            case 'generuj_dane_testowe':
+                // Generuj dane testowe dla wszystkich plików
+                $plikiDoGenerowania = [
+                    'kalendarz.json' => generujDaneTestowe(),
+                    'chorzy.json' => generujDaneTestoweChorych(),
+                    'szafarze.json' => generujDaneTestoweSzafarzy(),
+                    'historia.json' => []
+                ];
+                
+                $wygenerowanePliki = [];
+                
+                foreach ($plikiDoGenerowania as $plik => $dane) {
+                    if (in_array($plik, ['chorzy.json', 'szafarze.json', 'historia.json'])) {
+                        // Dla plików zaszyfrowanych
+                        try {
+                            $daneZaszyfrowane = encryptData($dane);
+                            if (file_put_contents($plik, json_encode($daneZaszyfrowane, JSON_PRETTY_PRINT))) {
+                                $wygenerowanePliki[] = $plik;
+                            }
+                        } catch (Exception $e) {
+                            // Ignoruj błędy szyfrowania
+                        }
+                    } else {
+                        // Dla kalendarza bez szyfrowania
+                        if (file_put_contents($plik, json_encode($dane, JSON_PRETTY_PRINT))) {
+                            $wygenerowanePliki[] = $plik;
+                        }
+                    }
+                }
+                
+                if (!empty($wygenerowanePliki)) {
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Dane testowe zostały wygenerowane dla plików: ' . implode(', ', $wygenerowanePliki)
+                    ]);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Błąd generowania danych testowych']);
+                }
+                exit;
+            case 'wyczyść_dane_testowe':
+                // Wyczyść wszystkie pliki z danymi
+                $plikiDoWyczyszczenia = ['kalendarz.json', 'chorzy.json', 'szafarze.json', 'historia.json'];
+                $wyczyszczonePliki = [];
+                
+                foreach ($plikiDoWyczyszczenia as $plik) {
+                    if (file_exists($plik)) {
+                        // Dla plików zaszyfrowanych (chorzy, szafarze, historia) zapisz pustą zaszyfrowaną tablicę
+                        if (in_array($plik, ['chorzy.json', 'szafarze.json', 'historia.json'])) {
+                            try {
+                                $pusteDaneZaszyfrowane = encryptData([]);
+                                if (file_put_contents($plik, json_encode($pusteDaneZaszyfrowane, JSON_PRETTY_PRINT))) {
+                                    $wyczyszczonePliki[] = $plik;
+                                }
+                            } catch (Exception $e) {
+                                // Ignoruj błędy szyfrowania pustych danych
+                            }
+                        } else {
+                            // Dla kalendarza zapisz pustą tablicę bez szyfrowania
+                            if (file_put_contents($plik, json_encode([], JSON_PRETTY_PRINT))) {
+                                $wyczyszczonePliki[] = $plik;
+                            }
+                        }
+                    }
+                }
+                
+                if (!empty($wyczyszczonePliki)) {
+                    echo json_encode([
+                        'success' => true, 
+                        'message' => 'Dane testowe zostały wyczyszczone z plików: ' . implode(', ', $wyczyszczonePliki)
+                    ]);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(['error' => 'Błąd czyszczenia danych testowych']);
                 }
                 exit;
             default:

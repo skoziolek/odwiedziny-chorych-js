@@ -136,6 +136,60 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
       }
     };
 
+    // Funkcja do generowania danych testowych
+    window.generujDaneTestowe = async function() {
+      if (!confirm('Czy na pewno chcesz wygenerować dane testowe? To nadpisze wszystkie obecne dane!')) return;
+      
+      try {
+        const response = await fetch('api.php?plik=kalendarz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'generuj_dane_testowe' })
+        });
+        
+        const wynik = await response.json();
+        if (wynik.success) {
+          alert('Dane testowe zostały wygenerowane!');
+          // Odśwież wszystkie zakładki
+          await generujKalendarz();
+          await wczytajChorych();
+          await wczytajSzafarzy();
+        } else {
+          alert('Błąd podczas generowania danych testowych: ' + (wynik.error || 'Nieznany błąd'));
+        }
+      } catch (error) {
+        console.error('Błąd podczas generowania danych testowych:', error);
+        alert('Błąd sieci podczas generowania danych testowych!');
+      }
+    };
+
+    // Funkcja do czyszczenia danych testowych
+    window.wyczyscDaneTestowe = async function() {
+      if (!confirm('Czy na pewno chcesz wyczyścić wszystkie dane testowe? Ta operacja jest nieodwracalna!')) return;
+      
+      try {
+        const response = await fetch('api.php?plik=kalendarz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'wyczyść_dane_testowe' })
+        });
+        
+        const wynik = await response.json();
+        if (wynik.success) {
+          alert('Dane testowe zostały wyczyszczone!');
+          // Odśwież wszystkie zakładki
+          await generujKalendarz();
+          await wczytajChorych();
+          await wczytajSzafarzy();
+        } else {
+          alert('Błąd podczas czyszczenia danych testowych: ' + (wynik.error || 'Nieznany błąd'));
+        }
+      } catch (error) {
+        console.error('Błąd podczas czyszczenia danych testowych:', error);
+        alert('Błąd sieci podczas czyszczenia danych testowych!');
+      }
+    };
+
 
 
 
@@ -256,6 +310,21 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         migracjaBtn.className = 'uni-btn';
         migracjaBtn.onclick = window.migrujDaneDoSzyfrowania;
         kalendarzButtons.appendChild(migracjaBtn);
+
+        // Przyciski do testów
+        const generujTestBtn = document.createElement('button');
+        generujTestBtn.textContent = 'Generuj dane testowe';
+        generujTestBtn.className = 'uni-btn';
+        generujTestBtn.style.backgroundColor = '#ff9800';
+        generujTestBtn.onclick = window.generujDaneTestowe;
+        kalendarzButtons.appendChild(generujTestBtn);
+
+        const wyczyscTestBtn = document.createElement('button');
+        wyczyscTestBtn.textContent = 'Wyczyść dane testowe';
+        wyczyscTestBtn.className = 'uni-btn';
+        wyczyscTestBtn.style.backgroundColor = '#f44336';
+        wyczyscTestBtn.onclick = window.wyczyscDaneTestowe;
+        kalendarzButtons.appendChild(wyczyscTestBtn);
       }
       // --- INICJALIZACJA OBSŁUGI KALENDARZA (tooltipy, zmiany) ---
       inicjalizujObslugeKalendarza();

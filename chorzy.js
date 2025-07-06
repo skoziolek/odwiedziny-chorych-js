@@ -24,9 +24,9 @@ export async function wczytajChorych() {
 
     // Sortowanie: najpierw TAK, potem puste, potem NIE, każda grupa alfabetycznie
     dane = [
-      ...dane.filter(c => c.status === 'TAK').sort((a, b) => a.imieNazwisko.localeCompare(b.imieNazwisko)),
-      ...dane.filter(c => c.status === '').sort((a, b) => a.imieNazwisko.localeCompare(b.imieNazwisko)),
-      ...dane.filter(c => c.status === 'NIE').sort((a, b) => a.imieNazwisko.localeCompare(b.imieNazwisko))
+      ...dane.filter(c => c.status === 'TAK').sort((a, b) => (a.imieNazwisko || '').localeCompare(b.imieNazwisko || '')),
+      ...dane.filter(c => c.status === '').sort((a, b) => (a.imieNazwisko || '').localeCompare(b.imieNazwisko || '')),
+      ...dane.filter(c => c.status === 'NIE').sort((a, b) => (a.imieNazwisko || '').localeCompare(b.imieNazwisko || ''))
     ];
 
     const tabela = document.querySelector("#tabelaChorychBody");
