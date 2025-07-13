@@ -851,5 +851,13 @@
       }
     }
 
+    .highlight-today {
+      background: linear-gradient(90deg, #fffbe6 0%, #ffe082 100%);
+      font-weight: bold;
+      border-left: 6px solid #ffb300;
+      box-shadow: 0 2px 8px #ffe08255;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
 
   

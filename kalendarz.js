@@ -199,6 +199,27 @@ export async function generujKalendarz() {
     liczbaWierszy++;
   });
 
+  // --- NOWOŚĆ: automatyczne podświetlanie i przewijanie do najbliższej niedzieli ---
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  let found = false;
+  const rows = tabela.querySelectorAll('tr');
+  for (let row of rows) {
+    const dateCell = row.querySelector('td');
+    if (!dateCell) continue;
+    const rowDate = new Date(dateCell.textContent.trim());
+    rowDate.setHours(0,0,0,0);
+    if (!found && rowDate >= today) {
+      row.classList.add('highlight-today');
+      // Przewiń do tego wiersza (wyśrodkuj)
+      setTimeout(() => {
+        row.scrollIntoView({block: 'center', behavior: 'smooth'});
+      }, 200);
+      found = true;
+      break;
+    }
+  }
+
 
 }
 
