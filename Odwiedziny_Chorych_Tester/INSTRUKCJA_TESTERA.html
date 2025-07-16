@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instrukcja Testera - Odwiedziny Chorych v1.3.0</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 40px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #7f8c8d;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .step {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .code {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+        }
+        .screenshot {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 15px 0;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+        .checklist {
+            background-color: #e8f5e8;
+            border: 1px solid #c3e6c3;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .checklist ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .checklist li {
+            margin: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .version-info {
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📋 Instrukcja Testera - Odwiedziny Chorych v1.3.0</h1>
+    
+    <div class="version-info">
+        <strong>Wersja:</strong> 1.3.0-tester<br>
+        <strong>Data wydania:</strong> 6 lipca 2025<br>
+        <strong>Przeznaczenie:</strong> Testowanie funkcji generowania danych testowych
+    </div>
+
+    <h2>🎯 Cel testowania</h2>
+    <p>Przetestowanie poprawionych funkcji generowania danych testowych, które teraz zawierają pełne imiona i nazwiska chorych oraz szafarzy.</p>
+
+    <h2>📋 Wymagania systemowe</h2>
+    <table>
+        <tr>
+            <th>Komponent</th>
+            <th>Wymagania</th>
+            <th>Status</th>
+        </tr>
+        <tr>
+            <td>System operacyjny</td>
+            <td>Windows 10/11</td>
+            <td>☐ Sprawdź</td>
+        </tr>
+        <tr>
+            <td>PHP</td>
+            <td>PHP 8.0 lub nowszy</td>
+            <td>☐ Sprawdź</td>
+        </tr>
+        <tr>
+            <td>Przeglądarka</td>
+            <td>Chrome, Firefox, Edge</td>
+            <td>☐ Sprawdź</td>
+        </tr>
+        <tr>
+            <td>Port</td>
+            <td>8000 (dostępny)</td>
+            <td>☐ Sprawdź</td>
+        </tr>
+    </table>
+
+    <h2>🚀 Instalacja i uruchomienie</h2>
+
+    <h3>Krok 1: Sprawdzenie PHP</h3>
+    <div class="step">
+        <p><strong>Sprawdź czy masz zainstalowane PHP:</strong></p>
+        <div class="code">cmd<br>php --version</div>
+        <p>Jeśli widzisz informację o wersji PHP - masz zainstalowane. Jeśli nie - pobierz z <a href="https://windows.php.net/download/">php.net</a></p>
+    </div>
+
+    <h3>Krok 2: Rozpakowanie aplikacji</h3>
+    <div class="step">
+        <p><strong>Rozpakuj plik ZIP do folderu, np.:</strong></p>
+        <div class="code">C:\Odwiedziny_Chorych_Tester</div>
+        <p>Upewnij się, że wszystkie pliki są w jednym folderze.</p>
+    </div>
+
+    <h3>Krok 3: Uruchomienie serwera</h3>
+    <div class="step">
+        <p><strong>Uruchom plik START_APLIKACJI.bat:</strong></p>
+        <ul>
+            <li>Dwuklik na plik START_APLIKACJI.bat</li>
+            <li>Lub prawy przycisk myszy → "Uruchom jako administrator"</li>
+        </ul>
+        <p>Powinno pojawić się okno z informacją o uruchomionym serwerze PHP.</p>
+    </div>
+
+    <h3>Krok 4: Dostęp do aplikacji</h3>
+    <div class="step">
+        <p><strong>Otwórz przeglądarkę i wejdź na:</strong></p>
+        <div class="code">http://localhost:8000</div>
+        <p>Powinna pojawić się strona logowania aplikacji.</p>
+    </div>
+
+    <h3>Krok 5: Logowanie</h3>
+    <div class="step">
+        <p><strong>Zaloguj się używając:</strong></p>
+        <div class="code">Hasło: PomocDlaChorych!</div>
+    </div>
+
+    <h2>🧪 Procedura testowania</h2>
+
+    <h3>Test 1: Generowanie danych testowych</h3>
+    <div class="checklist">
+        <p><strong>Sprawdź czy dane testowe zawierają pełne imiona i nazwiska:</strong></p>
+        <ol>
+            <li>Przejdź do zakładki "Kalendarz"</li>
+            <li>Kliknij przycisk "Generuj dane testowe"</li>
+            <li>Potwierdź akcję w oknie dialogowym</li>
+            <li>Sprawdź zakładkę "Chorzy" - czy widzisz pełne imiona i nazwiska</li>
+            <li>Sprawdź zakładkę "Szafarze" - czy widzisz pełne imiona i nazwiska</li>
+            <li>Sprawdź kalendarz - czy widzisz pełne imiona i nazwiska szafarzy</li>
+        </ol>
+    </div>
+
+    <h3>Test 2: Wyświetlanie danych</h3>
+    <div class="checklist">
+        <p><strong>Sprawdź czy dane są poprawnie wyświetlane:</strong></p>
+        <ul>
+            <li>W zakładce "Chorzy" powinny być: Jan Kowalski, Anna Nowak, Piotr Wiśniewski</li>
+            <li>W zakładce "Szafarze" powinny być: Tomasz Kowalczyk, Marek Zieliński, Andrzej Dąbrowski</li>
+            <li>W kalendarzu powinny być pełne imiona i nazwiska szafarzy</li>
+            <li>Dane powinny być posortowane alfabetycznie</li>
+        </ul>
+    </div>
+
+    <h3>Test 3: Czyszczenie danych testowych</h3>
+    <div class="checklist">
+        <p><strong>Sprawdź czy czyszczenie działa poprawnie:</strong></p>
+        <ol>
+            <li>Kliknij przycisk "Wyczyść dane testowe"</li>
+            <li>Potwierdź akcję w oknie dialogowym</li>
+            <li>Sprawdź czy wszystkie dane zostały usunięte z wszystkich zakładek</li>
+            <li>Sprawdź czy nie pojawiają się błędy JavaScript</li>
+        </ol>
+    </div>
+
+    <h3>Test 4: Funkcjonalność aplikacji</h3>
+    <div class="checklist">
+        <p><strong>Sprawdź podstawowe funkcje:</strong></p>
+        <ul>
+            <li>Dodawanie nowych chorych</li>
+            <li>Dodawanie nowych szafarzy</li>
+            <li>Edycja danych w tabelach</li>
+            <li>Drukowanie list</li>
+            <li>Nawigacja między zakładkami</li>
+        </ul>
+    </div>
+
+    <h2>📊 Oczekiwane dane testowe</h2>
+
+    <h3>Chorzy</h3>
+    <table>
+        <tr>
+            <th>Imię i nazwisko</th>
+            <th>Adres</th>
+            <th>Telefon</th>
+            <th>Uwagi</th>
+        </tr>
+        <tr>
+            <td>Jan Kowalski</td>
+            <td>ul. Testowa 1, Warszawa</td>
+            <td>123-456-789</td>
+            <td>Testowy chory 1</td>
+        </tr>
+        <tr>
+            <td>Anna Nowak</td>
+            <td>ul. Przykładowa 5, Kraków</td>
+            <td>987-654-321</td>
+            <td>Testowy chory 2</td>
+        </tr>
+        <tr>
+            <td>Piotr Wiśniewski</td>
+            <td>ul. Demo 10, Gdańsk</td>
+            <td>555-123-456</td>
+            <td>Testowy chory 3</td>
+        </tr>
+    </table>
+
+    <h3>Szafarze</h3>
+    <table>
+        <tr>
+            <th>Imię i nazwisko</th>
+            <th>Telefon</th>
+            <th>Email</th>
+            <th>Uwagi</th>
+        </tr>
+        <tr>
+            <td>Tomasz Kowalczyk</td>
+            <td>111-222-333</td>
+            <td>tomasz@test.pl</td>
+            <td>Testowy szafarz 1</td>
+        </tr>
+        <tr>
+            <td>Marek Zieliński</td>
+            <td>444-555-666</td>
+            <td>marek@test.pl</td>
+            <td>Testowy szafarz 2</td>
+        </tr>
+        <tr>
+            <td>Andrzej Dąbrowski</td>
+            <td>777-888-999</td>
+            <td>andrzej@test.pl</td>
+            <td>Testowy szafarz 3</td>
+        </tr>
+    </table>
+
+    <h2>⚠️ Rozwiązywanie problemów</h2>
+
+    <div class="warning">
+        <h3>Problem: "Port 8000 jest zajęty"</h3>
+        <p><strong>Rozwiązanie:</strong></p>
+        <ol>
+            <li>Zamknij inne aplikacje używające port 8000</li>
+            <li>Lub edytuj plik START_APLIKACJI.bat i zmień port na 8080</li>
+            <li>Następnie wejdź na http://localhost:8080</li>
+        </ol>
+    </div>
+
+    <div class="warning">
+        <h3>Problem: "PHP nie jest rozpoznawane jako polecenie"</h3>
+        <p><strong>Rozwiązanie:</strong></p>
+        <ol>
+            <li>Zainstaluj PHP ze strony php.net</li>
+            <li>Dodaj PHP do zmiennej PATH systemowej</li>
+            <li>Lub edytuj START_APLIKACJI.bat i wpisz pełną ścieżkę do php.exe</li>
+        </ol>
+    </div>
+
+    <div class="warning">
+        <h3>Problem: "Błąd szyfrowania danych"</h3>
+        <p><strong>Rozwiązanie:</strong></p>
+        <ol>
+            <li>Sprawdź czy wszystkie pliki zostały skopiowane</li>
+            <li>Uruchom ponownie serwer PHP</li>
+            <li>Wyczyść dane testowe i wygeneruj ponownie</li>
+        </ol>
+    </div>
+
+    <h2>📝 Raport z testów</h2>
+
+    <div class="info">
+        <p><strong>Proszę o wypełnienie poniższego raportu:</strong></p>
+    </div>
+
+    <table>
+        <tr>
+            <th>Test</th>
+            <th>Status</th>
+            <th>Uwagi</th>
+        </tr>
+        <tr>
+            <td>Instalacja PHP</td>
+            <td>☐ OK ☐ BŁĄD</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Uruchomienie serwera</td>
+            <td>☐ OK ☐ BŁĄD</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Logowanie do aplikacji</td>
+            <td>☐ OK ☐ BŁĄD</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Generowanie danych testowych</td>
+            <td>☐ OK ☐ BŁĄD</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Wyświetlanie pełnych imion i nazwisk</td>
+            <td>☐ OK ☐ BŁĄD</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Czyszczenie danych testowych</td>
+            <td>☐ OK ☐ BŁĄD</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td>Funkcjonalność aplikacji</td>
+            <td>☐ OK ☐ BŁĄD</td>
+            <td></td>
+        </tr>
+    </table>
+
+    <h3>Dodatkowe uwagi:</h3>
+    <div class="code">
+        ................................................................................<br>
+        ................................................................................<br>
+        ................................................................................
+    </div>
+
+    <h2>📞 Kontakt</h2>
+    <p>W przypadku problemów lub pytań, proszę o kontakt z zespołem deweloperskim.</p>
+
+    <div class="version-info">
+        <p><strong>Wersja dokumentu:</strong> 1.0<br>
+        <strong>Data utworzenia:</strong> 6 lipca 2025<br>
+        <strong>Autor:</strong> Zespół deweloperski Odwiedziny Chorych</p>
+    </div>
+</body>
+</html> 

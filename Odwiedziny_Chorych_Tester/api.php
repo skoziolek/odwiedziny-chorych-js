@@ -160,13 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         exit;
     }
     
-    // Pobierz rok z parametru, jeśli podano
-    $rok = isset($_GET['rok']) ? preg_replace('/[^0-9]/', '', $_GET['rok']) : '';
-    if ($plik === 'kalendarz' && $rok) {
-        $sciezkaPliku = "kalendarz_{$rok}.json";
-    } else {
-        $sciezkaPliku = $plik . '.json';
-    }
+    $sciezkaPliku = $plik . '.json';
 
     if (!file_exists($sciezkaPliku)) {
         echo json_encode([]);
@@ -212,13 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = [];
     }
     
-    // Pobierz rok z parametru, jeśli podano
-    $rok = isset($_GET['rok']) ? preg_replace('/[^0-9]/', '', $_GET['rok']) : '';
-    if ($plik === 'kalendarz' && $rok) {
-        $sciezkaPliku = "kalendarz_{$rok}.json";
-    } else {
-        $sciezkaPliku = $plik . '.json';
-    }
+    $sciezkaPliku = $plik . '.json';
     
     // Obsługa akcji dla kalendarza
     if ($plik === 'kalendarz') {

@@ -7,7 +7,6 @@ const swietaNakazane = {
     "2025-06-19": "Boże Ciało",
     "2025-08-15": "Wniebowzięcie NMP",
     "2025-11-01": "Uroczystość Wszystkich Świętych",
-    "2025-11-02": "Wszystkich Wiernych Zmarłych",
     "2025-12-25": "Boże Narodzenie",
     "2025-12-26": "Drugi Dzień Bożego Narodzenia"
 };
@@ -56,7 +55,7 @@ const niedzieleLiturgiczne = {
     "2025-10-12": "XXVIII Niedziela zwykła",
     "2025-10-19": "XXIX Niedziela zwykła",
     "2025-10-26": "XXX Niedziela zwykła",
-    "2025-11-02": "XXXI Niedziela zwykła / Wszystkich Wiernych Zmarłych",
+    "2025-11-02": "XXXI Niedziela zwykła (Wspomnienie Wszystkich Wiernych Zmarłych)",
     "2025-11-09": "XXXII Niedziela zwykła",
     "2025-11-16": "XXXIII Niedziela zwykła",
     "2025-11-23": "Uroczystość Jezusa Chrystusa, Króla Wszechświata",
@@ -210,74 +209,18 @@ function czyNiedzielaLiturgiczna(data) {
 }
 
 // Zwraca nazwę święta dla danej daty
-function pobierzNazweSwieta(data, rok = 2025) {
-    // Dla roku 2025 używamy statycznych danych
-    if (rok === 2025) {
-        if (czySwietoNakazane(data) && czyNiedzielaLiturgiczna(data)) {
-            return `${niedzieleLiturgiczne[data]} / ${swietaNakazane[data]}`;
-        }
-        return swietaNakazane[data] || niedzieleLiturgiczne[data] || "";
+function pobierzNazweSwieta(data) {
+    if (czySwietoNakazane(data) && czyNiedzielaLiturgiczna(data)) {
+        return `${niedzieleLiturgiczne[data]} / ${swietaNakazane[data]}`;
     }
-    
-    // Dla innych lat generujemy kalendarz liturgiczny
-    const kalendarzLiturgiczny = generujKalendarzLiturgiczny(rok);
-    
-    // Sprawdź święta nakazane (przekształcone na wybrany rok)
-    const swietaNakazaneRok = {};
-    Object.keys(swietaNakazane).forEach(data => {
-        const nowaData = data.replace('2025-', `${rok}-`);
-        swietaNakazaneRok[nowaData] = swietaNakazane[data];
-    });
-    
-    const nazwaSwietaNakazanego = swietaNakazaneRok[data];
-    const nazwaNiedzieli = kalendarzLiturgiczny[data];
-    
-    if (nazwaSwietaNakazanego && nazwaNiedzieli) {
-        return `${nazwaNiedzieli} / ${nazwaSwietaNakazanego}`;
-    }
-    return nazwaSwietaNakazanego || nazwaNiedzieli || "";
+    return swietaNakazane[data] || niedzieleLiturgiczne[data] || "";
 }
 
 // Zwraca wszystkie daty świąt w formie posortowanej tablicy
-function pobierzWszystkieDaty(rok = 2025) {
-    // Dla roku 2025 używamy statycznych danych
-    if (rok === 2025) {
-        const wszystkieDaty = new Set([
-            ...Object.keys(swietaNakazane),
-            ...Object.keys(niedzieleLiturgiczne)
-        ]);
-        return Array.from(wszystkieDaty).sort();
-    }
-    
-    // Dla innych lat generujemy kalendarz liturgiczny
-    const kalendarzLiturgiczny = generujKalendarzLiturgiczny(rok);
-    
-    // Dla świąt nakazanych używamy przekształconych dat z 2025, ale poprawiamy święta ruchome
-    const swietaNakazaneRok = {};
-    Object.keys(swietaNakazane).forEach(data => {
-        const nowaData = data.replace('2025-', `${rok}-`);
-        swietaNakazaneRok[nowaData] = swietaNakazane[data];
-    });
-    
-    // Popraw święta ruchome dla konkretnego roku
-    const wielkanoc = wyznaczWielkanoc(rok);
-    const wielkanocData = wielkanoc.toISOString().slice(0, 10);
-    const zeslanieData = new Date(wielkanoc.getTime() + 49 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const bozeCialoData = new Date(wielkanoc.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    
-    // Zastąp błędne daty świąt ruchomych
-    delete swietaNakazaneRok[`${rok}-04-20`]; // Usuń starą datę Wielkanocy
-    delete swietaNakazaneRok[`${rok}-05-08`]; // Usuń starą datę Zesłania
-    delete swietaNakazaneRok[`${rok}-06-19`]; // Usuń starą datę Bożego Ciała
-    
-    // Dodaj poprawne daty świąt ruchomych
-    swietaNakazaneRok[wielkanocData] = "Niedziela Zmartwychwstania Pańskiego";
-    swietaNakazaneRok[zeslanieData] = "Niedziela Zesłania Ducha Świętego";
-    swietaNakazaneRok[bozeCialoData] = "Boże Ciało";
-    
+function pobierzWszystkieDaty() {
     const wszystkieDaty = new Set([
-        ...Object.keys(swietaNakazaneRok),
-        ...Object.keys(kalendarzLiturgiczny)
+        ...Object.keys(swietaNakazane),
+        ...Object.keys(niedzieleLiturgiczne)
     ]);
     return Array.from(wszystkieDaty).sort();
 }
@@ -297,25 +240,6 @@ function importujDaneSwiat(jsonDane) {
     Object.assign(niedzieleLiturgiczne, dane.niedzieleLiturgiczne);
 }
 
-// Test funkcji dla roku 2026
-function testRok2026() {
-    console.log('=== TEST ROKU 2026 ===');
-    const daty2026 = pobierzWszystkieDaty(2026);
-    console.log('Liczba dat w 2026:', daty2026.length);
-    console.log('Pierwsze 10 dat:', daty2026.slice(0, 10));
-    console.log('Ostatnie 10 dat:', daty2026.slice(-10));
-    
-    // Sprawdź kluczowe święta
-    const kluczoweDaty = ['2026-01-01', '2026-01-06', '2026-02-02', '2026-04-04', '2026-05-24', '2026-06-04', '2026-08-15', '2026-11-01', '2026-11-02', '2026-12-25', '2026-12-26'];
-    kluczoweDaty.forEach(data => {
-        if (daty2026.includes(data)) {
-            console.log('✓', data, '-', pobierzNazweSwieta(data, 2026));
-        } else {
-            console.log('✗', data, '- BRAK');
-        }
-    });
-}
-
 // Eksport funkcji jako moduły ES6
 export {
     czySwietoNakazane,
@@ -328,8 +252,7 @@ export {
     dodajNiedzieleLiturgiczna,
     usunSwietoNakazane,
     usunNiedzieleLiturgiczna,
-    generujKalendarzLiturgiczny,
-    testRok2026
+    generujKalendarzLiturgiczny
 };
 
 // Test eksportu

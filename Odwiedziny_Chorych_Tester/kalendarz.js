@@ -106,23 +106,14 @@ function generujSelect(wybranaOsoba = '') {
   return html;
 }
 
-export async function generujKalendarz(rok = null) {
-  // Jeśli rok nie został podany, pobierz z dropdown
-  if (!rok) {
-    const rokSelect = document.getElementById('wybierzRok');
-    rok = rokSelect ? rokSelect.value : new Date().getFullYear().toString();
-  }
+export async function generujKalendarz() {
 
-  // Aktualizuj dropdown, jeśli podano rok
-  if (rok && document.getElementById('wybierzRok')) {
-    document.getElementById('wybierzRok').value = rok;
-  }
-
+  
   listaSzafarzy = [...OSOBY_DOMYSLNE];
 
   let zapisaneDane = {};
   try {
-    const response = await fetchWithAuth(`api.php?plik=kalendarz&rok=${rok}`);
+    const response = await fetchWithAuth('api.php?plik=kalendarz');
     if (!response.ok) throw new Error('Błąd wczytywania danych kalendarza');
     zapisaneDane = await response.json();
   
@@ -131,17 +122,18 @@ export async function generujKalendarz(rok = null) {
     alert('Nie udało się wczytać zapisanych dyżurów.');
   }
 
-  const datyPosortowane = pobierzWszystkieDaty(rok);
+  const datyPosortowane = pobierzWszystkieDaty();
+
 
   const czyKalendarzPusty = Object.keys(zapisaneDane).length === 0 || 
                             datyPosortowane.every(data => !zapisaneDane[data] || 
                             (!zapisaneDane[data].osobaGlowna && !zapisaneDane[data].pomocnik));
 
     if (czyKalendarzPusty) {
-    zapisaneDane = automatyczniePrzypiszDyzurow(rok);
+    zapisaneDane = automatyczniePrzypiszDyzurow();
     try {
       const body = { action: 'zapisz_kalendarz', dane: zapisaneDane };
-      const response = await fetchWithAuth(`api.php?plik=kalendarz&rok=${rok}`, {
+      const response = await fetchWithAuth('api.php?plik=kalendarz', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -180,6 +172,8 @@ export async function generujKalendarz(rok = null) {
     }
   }));
 
+
+
   let liczbaWierszy = 0;
   datyPosortowane.forEach(dateStr => {
     const daneDnia = zapisaneDane[dateStr] || {};
@@ -193,7 +187,7 @@ export async function generujKalendarz(rok = null) {
 
     tr.innerHTML = `
       <td>${dateStr}</td>
-      <td>${pobierzNazweSwieta(dateStr, rok)}</td>
+      <td>${pobierzNazweSwieta(dateStr)}</td>
       <td>${generujSelect(daneDnia.osobaGlowna || '')}</td>
       <td>${generujSelect(daneDnia.pomocnik || '')}</td>
       <td contenteditable="true">${daneDnia.uwagi || ''}</td>
@@ -205,35 +199,7 @@ export async function generujKalendarz(rok = null) {
     liczbaWierszy++;
   });
 
-  // --- NOWOŚĆ: automatyczne podświetlanie i przewijanie do najbliższej niedzieli ---
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  let found = false;
-  const rows = tabela.querySelectorAll('tr');
-  for (let row of rows) {
-    const dateCell = row.querySelector('td');
-    if (!dateCell) continue;
-    const rowDate = new Date(dateCell.textContent.trim());
-    rowDate.setHours(0,0,0,0);
-    if (!found && rowDate >= today) {
-      row.classList.add('highlight-today');
-      // Przewiń do tego wiersza (wyśrodkuj)
-      setTimeout(() => {
-        row.scrollIntoView({block: 'center', behavior: 'smooth'});
-      }, 200);
-      found = true;
-      break;
-    }
-  }
-}
 
-// Funkcja do obsługi zmiany roku w dropdown
-export function zmienRokKalendarza() {
-  const rokSelect = document.getElementById('wybierzRok');
-  if (rokSelect) {
-    const wybranyRok = rokSelect.value;
-    generujKalendarz(wybranyRok);
-  }
 }
 
 export function drukujKalendarz() {
@@ -253,10 +219,10 @@ export function inicjalizujObslugeKalendarza() {
   }
 }
 
-function automatyczniePrzypiszDyzurow(rok, startIndeks = 1) {
-  const datyPosortowane = pobierzWszystkieDaty(rok);
+function automatyczniePrzypiszDyzurow() {
+  const datyPosortowane = pobierzWszystkieDaty();
   const przypisania = {};
-  let indeksOsoby = startIndeks; // Zacznij od określonej pozycji
+  let indeksOsoby = 1; // Zacznij od pierwszej osoby (pomijając pustą opcję)
 
   datyPosortowane.forEach(data => {
     // Usunięto pomijanie świąt nakazanych - szafarze będą przypisywani także do świąt
@@ -293,17 +259,15 @@ export async function resetujPrzypisaniaDyzurow() {
   }
 
   try {
-    // Pobierz aktualny rok z dropdown
-    const rokSelect = document.getElementById('wybierzRok');
-    const rok = rokSelect ? rokSelect.value : new Date().getFullYear().toString();
+  
     
     // Wygeneruj nowe automatyczne przypisania
-    const nowePrzypisania = automatyczniePrzypiszDyzurow(rok);
+    const nowePrzypisania = automatyczniePrzypiszDyzurow();
     
     // Dodaj pole action
     const body = { action: 'resetuj_kalendarz', dane: nowePrzypisania };
     // Zapisz na serwerze
-    const response = await fetchWithAuth(`api.php?plik=kalendarz&rok=${rok}`, {
+    const response = await fetchWithAuth('api.php?plik=kalendarz', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -314,7 +278,7 @@ export async function resetujPrzypisaniaDyzurow() {
     if (!response.ok) throw new Error(`Błąd sieci: ${response.statusText}`);
     
     // Odśwież kalendarz
-    await generujKalendarz(rok);
+    await generujKalendarz();
     
     alert('Przypisania dyżurów zostały zresetowane i automatycznie przypisane.');
     
@@ -322,10 +286,7 @@ export async function resetujPrzypisaniaDyzurow() {
     console.error('Błąd podczas resetowania przypisań:', error);
     alert('Wystąpił błąd podczas resetowania przypisań dyżurów.');
   }
-}
-
-// Eksport funkcji automatyczniePrzypiszDyzurow
-export { automatyczniePrzypiszDyzurow };
+} 
 
 // MODAL: Oznaczanie odwiedzonych chorych
 window.otworzModalOdwiedziny = async function(data) {
