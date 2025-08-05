@@ -111,7 +111,7 @@ export function drukujRaportMiesieczny(raport) {
         <head>
             <title>Raport miesięczny odwiedzin</title>
             <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
+                body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
                 .raport-miesieczny { max-width: 800px; margin: 0 auto; }
                 .statystyki { display: flex; gap: 20px; margin: 20px 0; }
                 .statystyka { text-align: center; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
