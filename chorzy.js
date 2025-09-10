@@ -143,8 +143,7 @@ export function dodajWierszChorych(zapisz = true) {
     <td contenteditable="true"></td>
     <td>
       <select class="status-select">
-        <option value="" selected></option>
-        <option value="TAK">TAK</option>
+        <option value="TAK" selected>TAK</option>
         <option value="NIE">NIE</option>
       </select>
     </td>

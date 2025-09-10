@@ -282,3 +282,4 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (rokSelect) {
     rokSelect.addEventListener('change', zmienRokKalendarza);
   }
+});

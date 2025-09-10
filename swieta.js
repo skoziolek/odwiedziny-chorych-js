@@ -3,7 +3,8 @@ const swietaNakazane = {
     "2025-01-06": "Objawienie Pańskie (Trzech Króli)",
     "2025-02-02": "Ofiarowanie Pańskie (Matki Bożej Gromnicznej)",
     "2025-04-20": "Niedziela Zmartwychwstania Pańskiego",
-    "2025-05-08": "Niedziela Zesłania Ducha Świętego",
+    "2025-04-21": "Poniedziałek Wielkanocny",
+    "2025-06-08": "Niedziela Zesłania Ducha Świętego",
     "2025-06-19": "Boże Ciało",
     "2025-08-15": "Wniebowzięcie NMP",
     "2025-11-01": "Uroczystość Wszystkich Świętych",
@@ -91,6 +92,14 @@ function naRzymskie(num) {
 
 // --- UNIWERSALNY GENERATOR KALENDARZA LITURGICZNEGO ---
 
+// Zwraca datę w formacie YYYY-MM-DD w lokalnej strefie czasowej
+function formatLocalISODate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
 // Funkcja wyznaczająca datę Wielkanocy (algorytm Gaussa)
 function wyznaczWielkanoc(rok) {
     let a = rok % 19;
@@ -135,7 +144,7 @@ function generujKalendarzLiturgiczny(rok) {
     while (current.getDay() !== 0) current.setDate(current.getDate() + 1);
 
     while (current <= koniecRoku) {
-        const iso = current.toISOString().slice(0, 10);
+        const iso = formatLocalISODate(current);
 
         if (current < new Date(rok, 0, 13)) {
             // Okres Bożego Narodzenia
@@ -261,9 +270,9 @@ function pobierzWszystkieDaty(rok = 2025) {
     
     // Popraw święta ruchome dla konkretnego roku
     const wielkanoc = wyznaczWielkanoc(rok);
-    const wielkanocData = wielkanoc.toISOString().slice(0, 10);
-    const zeslanieData = new Date(wielkanoc.getTime() + 49 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const bozeCialoData = new Date(wielkanoc.getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const wielkanocData = formatLocalISODate(wielkanoc);
+    const zeslanieData = formatLocalISODate(new Date(wielkanoc.getTime() + 49 * 24 * 60 * 60 * 1000));
+    const bozeCialoData = formatLocalISODate(new Date(wielkanoc.getTime() + 60 * 24 * 60 * 60 * 1000));
     
     // Zastąp błędne daty świąt ruchomych
     delete swietaNakazaneRok[`${rok}-04-20`]; // Usuń starą datę Wielkanocy

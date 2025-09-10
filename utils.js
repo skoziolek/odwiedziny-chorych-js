@@ -8,6 +8,33 @@ export function drukujZawartosc(elementId) {
     return;
   }
 
+  // Skopiuj HTML do tymczasowego elementu, aby można było go modyfikować
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = element.innerHTML;
+
+  // Specjalna obsługa dla zakładki 'chorzy' - zamiana selectów na tekst TAK/NIE
+  if (elementId === 'chorzy') {
+    // Znajdź wszystkie selecty w kolumnie 'Aktualne' w tempDiv i w oryginalnej tabeli
+    const selectsTemp = tempDiv.querySelectorAll('select');
+    const selectsOriginal = element.querySelectorAll('select');
+    selectsTemp.forEach((select, idx) => {
+      // Ustaw wartość selecta w tempDiv na aktualną wartość z DOM
+      if (selectsOriginal[idx]) {
+        select.value = selectsOriginal[idx].value;
+      }
+      // Pobierz tekst opcji odpowiadającej aktualnej wartości selecta
+      let selectedText = '';
+      for (const option of select.options) {
+        if (option.value === select.value) {
+          selectedText = option.textContent;
+          break;
+        }
+      }
+      const textNode = document.createTextNode(selectedText);
+      select.parentNode.replaceChild(textNode, select);
+    });
+  }
+
   // Utwórz nowe okno do drukowania
   const printWindow = window.open('', '_blank', 'width=800,height=600');
   
@@ -20,7 +47,7 @@ export function drukujZawartosc(elementId) {
       <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background-color: #f2f2f2; }
         .swieto { background-color: #ffe6e6; }
         .wiersz-tak { background-color: #e6ffe6; }
@@ -30,7 +57,7 @@ export function drukujZawartosc(elementId) {
       </style>
     </head>
     <body>
-      ${element.innerHTML}
+      ${tempDiv.innerHTML}
     </body>
     </html>
   `;
