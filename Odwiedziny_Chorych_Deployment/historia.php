@@ -118,8 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             // Przygotuj listę chorych z informacją o statusie odwiedzin
             $chorzyZStatusem = [];
             foreach ($chorzy as $chory) {
-                // Filtr: tylko status 'TAK' (domyślnie), z możliwością wyłączenia przez query param
-                $statusChorego = $chory['status'] ?? '';
+                // Filtr: tylko status 'TAK' (po trim i upper), domyślnie włączony
+                $statusChorego = isset($chory['status']) ? strtoupper(trim($chory['status'])) : '';
                 if ($tylkoTak && $statusChorego !== 'TAK') {
                     continue;
                 }
