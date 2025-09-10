@@ -198,7 +198,7 @@ export async function generujKalendarz(rok = null) {
       <td>${generujSelect(daneDnia.pomocnik || '')}</td>
       <td contenteditable="true">${daneDnia.uwagi || ''}</td>
       <td>
-        <button onclick="otworzModalOdwiedziny('${dateStr}')" class="${buttonClass}" data-status="${status}" ${buttonDisabled}>${buttonText}</button>
+        <button onclick="otworzModalOdwiedziny('${dateStr}', { tylkoTak: true })" class="${buttonClass}" data-status="${status}" ${buttonDisabled}>${buttonText}</button>
       </td>
     `;
     tabela.appendChild(tr);
@@ -328,9 +328,10 @@ export async function resetujPrzypisaniaDyzurow() {
 export { automatyczniePrzypiszDyzurow };
 
 // MODAL: Oznaczanie odwiedzonych chorych
-window.otworzModalOdwiedziny = async function(data) {
+window.otworzModalOdwiedziny = async function(data, opcje = {}) {
   try {
-    const resp = await fetch(`historia.php?action=pobierz_chorych_na_dzien&data=${data}`);
+    const tylkoTak = opcje.tylkoTak ? '1' : '0';
+    const resp = await fetch(`historia.php?action=pobierz_chorych_na_dzien&data=${data}&tylko_tak=${tylkoTak}`);
     if (!resp.ok) {
       throw new Error(`Błąd pobierania chorych: ${resp.status}`);
     }
