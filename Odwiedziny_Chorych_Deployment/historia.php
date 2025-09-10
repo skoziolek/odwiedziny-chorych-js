@@ -86,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         case 'pobierz_chorych_na_dzien':
             header('Content-Type: application/json');
             $data = $_GET['data'] ?? '';
+            $tylkoTak = isset($_GET['tylko_tak']) ? ($_GET['tylko_tak'] === '1' || strtolower($_GET['tylko_tak']) === 'true') : true;
             
             // Pobierz wszystkich chorych
             $chorzyFile = 'chorzy.json';
@@ -117,6 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             // Przygotuj listę chorych z informacją o statusie odwiedzin
             $chorzyZStatusem = [];
             foreach ($chorzy as $chory) {
+                // Filtr: tylko status 'TAK' (domyślnie), z możliwością wyłączenia przez query param
+                $statusChorego = $chory['status'] ?? '';
+                if ($tylkoTak && $statusChorego !== 'TAK') {
+                    continue;
+                }
                 $chorzyZStatusem[] = [
                     'id' => $chory['imieNazwisko'] ?? '',
                     'imieNazwisko' => $chory['imieNazwisko'] ?? '',
