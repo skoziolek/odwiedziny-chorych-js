@@ -1,0 +1,1523 @@
+    /* Ekran logowania */
+    .login-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #f8f5f0 0%, #e8e0d6 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .login-container {
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      min-width: 350px;
+      max-width: 450px;
+      width: 90%;
+    }
+
+    .login-title {
+      color: #8B4513;
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .login-input-group {
+      text-align: left;
+    }
+
+    .login-input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #8B4513;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #d4c4a8;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    .login-input:focus {
+      outline: none;
+      border-color: #8B4513;
+      box-shadow: 0 0 0 3px rgba(139, 69, 19, 0.1);
+    }
+
+    .login-button {
+      background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 10px;
+    }
+
+    .login-button:hover {
+      background: linear-gradient(135deg, #A0522D 0%, #8B4513 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(139, 69, 19, 0.3);
+    }
+
+    .login-button:active {
+      transform: translateY(0);
+    }
+
+    .login-error {
+      color: #d32f2f;
+      background: #ffebee;
+      padding: 12px 15px;
+      border-radius: 8px;
+      border: 2px solid #ffcdd2;
+      margin-top: 15px;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(211, 47, 47, 0.1);
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* Główna aplikacja */
+    .main-app {
+      display: block;
+    }
+
+    body {
+      font-family: 'Open Sans', Arial, sans-serif;
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: #f8f5f0;
+      color: #222;
+      line-height: 1.6;
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    html {
+      overflow-x: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      height: 100%;
+      position: relative;
+    }
+    
+    * {
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    h1, .center-title {
+      text-align: center;
+      color: #6d5c3d;
+      font-size: 32px;
+      margin-bottom: 30px;
+      font-weight: bold;
+      border-bottom: 3px solid #bfa16b;
+      padding-bottom: 10px;
+      letter-spacing: 1px;
+      background: none;
+    }
+    
+    .tabs {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin: 0 auto 20px auto;
+      border: none;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 2px 8px #ede3c6;
+    }
+    
+    .tab-button {
+      flex: 1;
+      padding: 15px;
+      background-color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #6d5c3d;
+      transition: background-color 0.3s, color 0.3s;
+      font-weight: 600;
+      font-family: 'Open Sans', Arial, sans-serif;
+      border-right: 1px solid #ede3c6;
+    }
+    
+    .tab-button:last-child {
+      border-right: none;
+    }
+    
+    .tab-button:hover {
+      background-color: #bfa16b;
+      color: #fff;
+    }
+    
+    .tab-button.active {
+      background-color: #bfa16b;
+      color: #fff;
+      font-weight: bold;
+    }
+    
+    .tab-content {
+      display: none;
+      background: #fff;
+      border: 1px solid #ede3c6;
+      border-radius: 6px;
+      padding: 24px;
+      margin-top: 10px;
+      box-shadow: 0 2px 8px #ede3c6;
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid #ede3c6;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px #ede3c6;
+      margin-bottom: 40px;
+      table-layout: fixed;
+    }
+    
+    th, td {
+      border: 1px solid #ede3c6;
+      padding: 10px;
+      text-align: center;
+      font-size: 15px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    th {
+      background-color: #fff;
+      color: #6d5c3d;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    
+    button, .delete-button {
+      background-color: #bfa16b;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin: 8px 4px;
+      cursor: pointer;
+      font-family: 'Open Sans', Arial, sans-serif;
+      font-size: 15px;
+      border-radius: 6px;
+      font-weight: 600;
+      box-shadow: 0 2px 6px #ede3c6;
+      transition: background 0.2s, color 0.2s;
+    }
+    
+    button:hover, .delete-button:hover {
+      background-color: #a88c4a;
+      color: #fff;
+    }
+    
+    button:active, .delete-button:active {
+      background-color: #6d5c3d;
+      color: #fff;
+    }
+    
+    .delete-button {
+      background-color: #dc3545;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 6px;
+      font-weight: 600;
+      margin: 2px;
+    }
+    
+    .delete-button:hover {
+      background-color: #b52a37;
+      color: #fff;
+    }
+    
+    input, select, textarea {
+      border: 1px solid #ede3c6;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: 'Open Sans', Arial, sans-serif;
+      font-size: 15px;
+      margin: 4px 0;
+      background: #fff;
+      color: #222;
+    }
+    
+    /* Akcenty i statystyki */
+    .statystyka .liczba {
+      color: #bfa16b;
+      font-size: 2.2em;
+      font-weight: bold;
+    }
+    .statystyka .opis {
+      color: #6d5c3d;
+      font-size: 1em;
+    }
+    
+    button.add-row {
+      display: block;
+      margin: 15px auto;
+      padding: 12px 24px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #333333;
+      color: #ffffff;
+      border: none;
+      border-radius: 3px;
+      font-weight: bold;
+      transition: background 0.3s;
+      font-family: 'Times New Roman', serif;
+    }
+    
+    button.add-row:hover {
+      background-color: #c82333;
+    }
+    
+    .wiersz-tak {
+      background-color: #e8f5e8;
+      color: #333333;
+      font-weight: bold;
+      border-left: 3px solid #4caf50;
+    }
+    
+    .wiersz-nie {
+      background-color: #f5e8e8;
+      color: #333333;
+      border-left: 3px solid #f44336;
+    }
+    
+    .drukuj-button {
+      background-color: #f8f9fa;
+      color: #212529;
+      border: 1px solid #dee2e6;
+      padding: 8px 16px;
+      margin: 10px 5px;
+      cursor: pointer;
+      font-family: 'Times New Roman', serif;
+      font-size: 14px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .drukuj-button:hover {
+      background-color: #e9ecef;
+    }
+    
+    .drukuj-button:active {
+      background-color: #dee2e6;
+    }
+    
+    .visit-button {
+      background-color: #28a745;
+      color: #ffffff;
+      border: 1px solid #28a745;
+      padding: 4px 8px;
+      margin: 2px;
+      cursor: pointer;
+      font-family: 'Times New Roman', serif;
+      font-size: 12px;
+      border-radius: 3px;
+      transition: background-color 0.2s;
+    }
+    
+    .visit-button:hover {
+      background-color: #218838;
+    }
+    
+    .planned-button {
+      background-color: #6c757d;
+      color: #ffffff;
+      border: 1px solid #6c757d;
+      padding: 4px 8px;
+      margin: 2px;
+      cursor: pointer;
+      font-family: 'Times New Roman', serif;
+      font-size: 12px;
+      border-radius: 3px;
+      transition: background-color 0.2s;
+    }
+    
+    .planned-button:hover {
+      background-color: #5a6268;
+    }
+    
+    /* Style dla przycisku resetowania */
+    .drukuj-button[onclick*="resetujPrzypisaniaDyzurow"]:hover {
+      background-color: #c82333 !important;
+    }
+    
+    .drukuj-button[onclick*="resetujPrzypisaniaDyzurow"]:active {
+      background-color: #bd2130 !important;
+    }
+    
+    /* Style dla statusów chorych */
+    .status-tak {
+      background-color: #e8f5e8 !important;
+      color: #333333;
+      font-weight: bold;
+      border-left: 3px solid #4caf50;
+    }
+    
+    .status-nie {
+      background-color: #f5e8e8 !important;
+      color: #333333;
+      border-left: 3px solid #f44336;
+    }
+    
+    /* Responsywność dla urządzeń mobilnych */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+        font-size: 14px;
+      }
+      
+      h1 {
+        font-size: 24px;
+        margin-bottom: 15px;
+      }
+      
+      .tabs {
+        flex-direction: column;
+        border-radius: 4px;
+      }
+      
+      .tab-button {
+        padding: 12px 8px;
+        font-size: 16px;
+        border-right: none;
+        border-bottom: 1px solid #bdc3c7;
+      }
+      
+      .tab-button:not(:last-child) {
+        border-right: none;
+      }
+      
+      .tab-content {
+        padding: 15px;
+      }
+      
+      table {
+        font-size: 12px;
+      }
+      
+      th, td {
+        padding: 6px 4px;
+        border-width: 1px;
+      }
+      
+      button.add-row,
+      .drukuj-button {
+        padding: 12px 16px;
+        font-size: 14px;
+        width: 100%;
+        max-width: 200px;
+      }
+    }
+
+    /* Responsywność dla bardzo małych ekranów */
+    @media (max-width: 480px) {
+      body {
+        padding: 5px;
+        font-size: 12px;
+      }
+      
+      h1 {
+        font-size: 20px;
+      }
+      
+      .tab-button {
+        padding: 10px 6px;
+        font-size: 14px;
+      }
+      
+      .tab-content {
+        padding: 10px;
+      }
+      
+      button.add-row,
+      .drukuj-button {
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+    }
+
+    /* Responsywność dla tabel na małych ekranach */
+    @media (max-width: 600px) {
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      
+      th, td {
+        min-width: 80px;
+      }
+    }
+
+    /* Styl dla kontenera nagłówka */
+    .header-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    /* Styl dla przycisku wylogowania */
+    .logout-button {
+      display: inline-block;
+      padding: 8px 16px;
+      background-color: #6c757d;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 0.9em;
+      transition: background-color 0.2s;
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .logout-button:hover {
+      background-color: #5a6268;
+    }
+
+
+
+    /* Style dla raportów */
+    .raporty-kontrolki {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .raporty-kontrolki label {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+    
+    .raporty-kontrolki input[type="month"] {
+      padding: 8px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      font-family: 'Times New Roman', serif;
+    }
+    
+    .raport-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .raport-controls button {
+      min-width: 120px;
+      flex: 1 1 45%;
+      max-width: 48%;
+      margin-bottom: 8px;
+    }
+    
+    .raport-controls label {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+    
+    .raport-controls select {
+      padding: 8px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      font-family: 'Times New Roman', serif;
+      background-color: #ffffff;
+    }
+
+    .raport-miesieczny {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .raport-miesieczny h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+
+    .statystyki {
+      display: flex;
+      gap: 20px;
+      margin: 20px 0;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .statystyka {
+      text-align: center;
+      padding: 20px;
+      border: 2px solid #4CAF50;
+      border-radius: 8px;
+      background-color: #f8f9fa;
+      min-width: 150px;
+    }
+
+    .lista-chorych {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .lista-chorych h3 {
+      color: #333;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+
+    .lista-chorych ul {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .lista-chorych li {
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+      color: #555;
+    }
+
+    .lista-chorych li:last-child {
+      border-bottom: none;
+    }
+
+    /* Responsywność dla raportów */
+    @media (max-width: 768px) {
+      .raporty-kontrolki {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .statystyki {
+        flex-direction: column;
+      }
+      
+      .statystyka {
+        min-width: auto;
+      }
+    }
+
+    .chory-tak {
+      background-color: #d4edda !important;
+    }
+    .chory-nie {
+      background-color: #f8d7da !important;
+    }
+    .status-select {
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    .kalendarz-tooltip {
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+
+    #tabelaKalendarz {
+      border: 1px solid #ede3c6 !important;
+      border-radius: 6px !important;
+      box-shadow: 0 2px 8px #ede3c6 !important;
+      background: #fff !important;
+    }
+    #tabelaKalendarz th:first-child,
+      #tabelaKalendarz td:first-child {
+        width: 90px;
+        min-width: 80px;
+        max-width: 110px;
+        border: 1px solid #ede3c6 !important;
+    }
+
+    @media (max-width: 600px) {
+      .raport-controls {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 8px;
+      }
+      .raport-controls button {
+        flex: 1 1 45%;
+        max-width: 48%;
+        min-width: 120px;
+      }
+    }
+
+    .controls, .raport-controls, .chory-controls, .szafarze-controls, .kalendarz-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .controls button, .raport-controls button, .chory-controls button, .szafarze-controls button, .kalendarz-controls button {
+      min-width: 120px;
+      flex: 1 1 45%;
+      max-width: 48%;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 600px) {
+      .controls, .raport-controls, .chory-controls, .szafarze-controls, .kalendarz-controls {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 8px;
+      }
+      .controls button, .raport-controls button, .chory-controls button, .szafarze-controls button, .kalendarz-controls button {
+        flex: 1 1 45%;
+        max-width: 48%;
+        min-width: 120px;
+        margin-bottom: 8px;
+      }
+    }
+
+    #tabelaKalendarzBody button,
+    #tabelaKalendarzBody .visit-button,
+    #tabelaKalendarzBody .planned-button {
+      min-height: 36px;
+      height: 36px;
+      padding: 0 12px;
+      font-size: 1rem;
+      line-height: 1.2;
+      border-radius: 6px;
+      border: 1px solid #bfa76a;
+      background: #f5e9d4;
+      color: #6b4c1b;
+      box-sizing: border-box;
+      vertical-align: middle;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: inline-block;
+    }
+
+    #tabelaKalendarzBody button:disabled,
+    #tabelaKalendarzBody .visit-button:disabled,
+    #tabelaKalendarzBody .planned-button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    @media (min-width: 600px) {
+      #tabelaKalendarzBody button,
+      #tabelaKalendarzBody .visit-button,
+      #tabelaKalendarzBody .planned-button {
+        min-width: 100px;
+      }
+    }
+
+    .raport-btn {
+      min-width: 140px;
+      height: 40px;
+      padding: 0 18px;
+      font-size: 1.05rem;
+      border-radius: 6px;
+      border: 1px solid #bfa76a;
+      background: #f5e9d4;
+      color: #6b4c1b;
+      box-sizing: border-box;
+      margin: 8px 10px 8px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: inline-block;
+      font-weight: 600;
+    }
+
+    .raport-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .raporty-przyciski {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 18px;
+      margin-top: 16px;
+    }
+
+    .raporty-przyciski > * {
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 600px) {
+      .raporty-przyciski {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .raporty-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 18px;
+      margin-bottom: 18px;
+    }
+    .raporty-row > * {
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 600px) {
+      .raporty-row,
+      .raporty-przyciski {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chorzy-przyciski {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 18px;
+      margin-bottom: 18px;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .chorzy-przyciski > * {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 600px) {
+      .chorzy-przyciski {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .uni-btn {
+      background: #f5e9d4;
+      color: #6b4c1b;
+      border: 1px solid #bfa76a;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 8px 4px;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      white-space: normal !important;
+      word-break: break-word !important;
+      overflow-wrap: break-word !important;
+      text-align: center;
+      transition: background 0.2s, color 0.2s;
+      cursor: pointer;
+    }
+
+    .uni-btn:hover,
+    .uni-btn:focus {
+      background: #e6d3b3;
+      color: #4d3200;
+      border-color: #bfa76a;
+    }
+
+    .uni-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 600px) {
+      .uni-btn {
+        font-size: 0.98rem;
+        padding: 8px 6px;
+      }
+    }
+
+    .uni-btn.usun-btn {
+      min-width: 70px;
+      max-width: 120px;
+      white-space: nowrap !important;
+      padding: 8px 0;
+      margin: 0 auto;
+    }
+
+
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: auto;
+      padding: 24px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      position: absolute;
+      top: 10px;
+      right: 15px;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: #000;
+      text-decoration: none;
+    }
+
+    .modal h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #6d5c3d;
+      font-size: 20px;
+    }
+
+    .modal label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .modal input[type="checkbox"] {
+      margin-right: 8px;
+    }
+
+    .modal button[type="submit"] {
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    @media (max-width: 600px) {
+      .modal-content {
+        width: 95%;
+        padding: 16px;
+      }
+      
+      .modal h3 {
+        font-size: 18px;
+      }
+    }
+
+    /* Style dla świąt */
+    .swieto-row {
+      background-color: #ffe6e6 !important;
+      font-weight: bold;
+    }
+    
+    .swieto-row td {
+      background-color: #ffe6e6 !important;
+      color: #8b0000;
+    }
+    
+    .swieto-row td:nth-child(2) {
+      font-weight: bold;
+      font-style: italic;
+    }
+    
+    /* Style dla najbliższego dyżuru */
+    .next-duty-row {
+      background-color: #fff9c4 !important;
+      border: 2px solid #ffc107 !important;
+      box-shadow: 0 0 10px rgba(255, 193, 7, 0.3) !important;
+      animation: pulse 2s infinite !important;
+    }
+    
+    .next-duty-row td {
+      background-color: #fff9c4 !important;
+      border-color: #ffc107 !important;
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.6);
+      }
+      100% {
+        box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+      }
+    }
+
+    /* Stałe szerokości kolumn dla tabeli szafarzy */
+    #tabelaSzafarzy th:nth-child(1),
+    #tabelaSzafarzy td:nth-child(1) {
+      width: 25%;
+    }
+    
+    #tabelaSzafarzy th:nth-child(2),
+    #tabelaSzafarzy td:nth-child(2) {
+      width: 20%;
+    }
+    
+    #tabelaSzafarzy th:nth-child(3),
+    #tabelaSzafarzy td:nth-child(3) {
+      width: 20%;
+    }
+    
+    #tabelaSzafarzy th:nth-child(4),
+    #tabelaSzafarzy td:nth-child(4) {
+      width: 20%;
+    }
+    
+    #tabelaSzafarzy th:nth-child(5),
+    #tabelaSzafarzy td:nth-child(5) {
+      width: 15%;
+    }
+
+    /* Stałe szerokości kolumn dla tabeli chorych */
+    #tabelaChorych th:nth-child(1),
+    #tabelaChorych td:nth-child(1) {
+      width: 25%;
+    }
+    
+    #tabelaChorych th:nth-child(2),
+    #tabelaChorych td:nth-child(2) {
+      width: 25%;
+    }
+    
+    #tabelaChorych th:nth-child(3),
+    #tabelaChorych td:nth-child(3) {
+      width: 15%;
+    }
+    
+    #tabelaChorych th:nth-child(4),
+    #tabelaChorych td:nth-child(4) {
+      width: 20%;
+    }
+    
+    #tabelaChorych th:nth-child(5),
+    #tabelaChorych td:nth-child(5) {
+      width: 15%;
+      min-width: 120px;
+    }
+    
+    #tabelaChorych th:nth-child(6),
+    #tabelaChorych td:nth-child(6) {
+      width: 10%;
+      min-width: 80px;
+    }
+
+    /* Stałe szerokości kolumn dla tabeli kalendarza */
+    #tabelaKalendarz th:nth-child(1),
+    #tabelaKalendarz td:nth-child(1) {
+      width: 12%;
+    }
+    
+    #tabelaKalendarz th:nth-child(2),
+    #tabelaKalendarz td:nth-child(2) {
+      width: 30%;
+    }
+    
+    #tabelaKalendarz th:nth-child(3),
+    #tabelaKalendarz td:nth-child(3) {
+      width: 18%;
+    }
+    
+    #tabelaKalendarz th:nth-child(4),
+    #tabelaKalendarz td:nth-child(4) {
+      width: 18%;
+    }
+    
+    #tabelaKalendarz th:nth-child(5),
+    #tabelaKalendarz td:nth-child(5) {
+      width: 12%;
+    }
+    
+    #tabelaKalendarz th:nth-child(6),
+    #tabelaKalendarz td:nth-child(6) {
+      width: 20%;
+    }
+
+    /* Style dla przycisku Zaplanowane */
+    #tabelaKalendarz .btn-small {
+      min-width: 100px;
+      padding: 6px 12px;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: visible;
+    }
+
+    /* Style dla przycisków w modalu odwiedzin */
+    #modalOdwiedziny .uni-btn {
+      width: 120px !important;
+      min-width: 120px !important;
+      max-width: 120px !important;
+      height: 40px !important;
+      min-height: 40px !important;
+      max-height: 40px !important;
+      padding: 10px 20px !important;
+      font-size: 14px !important;
+      white-space: nowrap !important;
+      text-align: center !important;
+      box-sizing: border-box !important;
+      line-height: 1 !important;
+      vertical-align: top !important;
+      display: inline-block !important;
+      margin: 0 !important;
+      border: 1px solid #ccc !important;
+    }
+
+    /* Specjalny selektor dla przycisku Anuluj */
+    #modalOdwiedziny #cancelVisitedBtn {
+      width: 120px !important;
+      min-width: 120px !important;
+      max-width: 120px !important;
+      height: 40px !important;
+      min-height: 40px !important;
+      max-height: 40px !important;
+      padding: 10px 20px !important;
+      font-size: 14px !important;
+      white-space: nowrap !important;
+      text-align: center !important;
+      box-sizing: border-box !important;
+      line-height: 1 !important;
+      vertical-align: top !important;
+      display: inline-block !important;
+      margin: 0 !important;
+      border: 1px solid #ccc !important;
+    }
+
+    /* Style dla kontenera przycisków w modalu */
+    #modalOdwiedziny div[style*="display: flex"] {
+      display: flex !important;
+      gap: 10px !important;
+      justify-content: center !important;
+      align-items: center !important;
+      margin-top: 20px !important;
+    }
+
+    /* Style dla elementów chorych w modalu */
+    #modalOdwiedziny .chory-item {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      padding: 10px !important;
+      border: 1px solid #ddd !important;
+      margin: 5px 0 !important;
+      border-radius: 4px !important;
+      background: #f9f9f9 !important;
+    }
+
+    #modalOdwiedziny .chory-item label {
+      flex: 1 !important;
+      cursor: pointer !important;
+      display: flex !important;
+      align-items: center !important;
+      margin: 0 !important;
+    }
+
+    /* Style dla tytułu modalu odwiedzin */
+    #modalOdwiedziny h3 {
+      text-align: center !important;
+      margin: 0 0 20px 0 !important;
+      padding: 0 !important;
+    }
+
+    .highlight-today {
+      background: linear-gradient(90deg, #fffbe6 0%, #ffe082 100%);
+      font-weight: bold;
+      border-left: 6px solid #ffb300;
+      box-shadow: 0 2px 8px #ffe08255;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+
+  
+
+
+
+/* Naprawka przewijania na komórce - nie psuje centrowania */
+html {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+}
+
+
+
+/* Naprawka przewijania na komórce */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Naprawka przewijania na komórce - bardziej agresywna */
+html, body {
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x pan-y !important;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+}
+
+* {
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: manipulation !important;
+}
+
+/* Upewnij się, że tabele nie blokują przewijania */
+table, .tab-content {
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-x pan-y !important;
+}
+
+/* Style dla tooltipa odwiedzin - lepsze pozycjonowanie */
+.visited-tooltip {
+  position: fixed !important;
+  z-index: 9999 !important;
+  max-width: 300px !important;
+  min-width: 200px !important;
+  word-wrap: break-word !important;
+  white-space: normal !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #ddd !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+/* Responsywny tooltip na różnych rozdzielczościach */
+@media (max-width: 768px) {
+  .visited-tooltip {
+    max-width: 250px !important;
+    min-width: 150px !important;
+    font-size: 13px !important;
+    padding: 6px 10px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .visited-tooltip {
+    max-width: 200px !important;
+    min-width: 120px !important;
+    font-size: 12px !important;
+    padding: 5px 8px !important;
+  }
+}
+
+/* Style dla wydruku - wyśrodkowanie wszystkich elementów w komórkach */
+@media print {
+  /* Ustawienia fontów dla polskich znaków */
+  * {
+    font-family: "Arial", "Helvetica", "DejaVu Sans", "Liberation Sans", sans-serif !important;
+    font-size: 12px !important;
+  }
+  
+  /* Reset wszystkich stylów dla tabeli */
+  #tabelaKalendarz,
+  #tabelaKalendarz * {
+    text-align: center !important;
+    vertical-align: middle !important;
+    font-family: "Arial", "Helvetica", "DejaVu Sans", "Liberation Sans", sans-serif !important;
+  }
+  
+  /* Wyśrodkowanie tabeli */
+  #tabelaKalendarz {
+    margin: 0 auto !important;
+  }
+  
+  /* Wyśrodkowanie wszystkich komórek */
+  #tabelaKalendarz th,
+  #tabelaKalendarz td {
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 8px !important;
+  }
+  
+  /* Wyśrodkowanie nagłówków */
+  #tabelaKalendarz thead th {
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+  
+  /* Wyśrodkowanie komórek z danymi */
+  #tabelaKalendarz tbody td {
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+  
+  /* Wyśrodkowanie wszystkich elementów wewnątrz komórek */
+  #tabelaKalendarz td select,
+  #tabelaKalendarz td input,
+  #tabelaKalendarz td button,
+  #tabelaKalendarz td div,
+  #tabelaKalendarz td span {
+    text-align: center !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+  
+  /* Wyśrodkowanie selectów */
+  #tabelaKalendarz select {
+    text-align: center !important;
+    text-align-last: center !important;
+    width: 100% !important;
+  }
+  
+  /* Wyśrodkowanie inputów */
+  #tabelaKalendarz input[type="text"],
+  #tabelaKalendarz .uwagi-input {
+    text-align: center !important;
+    width: 100% !important;
+  }
+  
+  /* Wyśrodkowanie przycisków */
+  #tabelaKalendarz button {
+    margin: 0 auto !important;
+    display: block !important;
+    text-align: center !important;
+  }
+  
+  /* Wyśrodkowanie komórek z contenteditable */
+  #tabelaKalendarz td[contenteditable="true"] {
+    text-align: center !important;
+  }
+  
+  /* Wyśrodkowanie wszystkich tekstów */
+  #tabelaKalendarz td,
+  #tabelaKalendarz th {
+    text-align: center !important;
+  }
+  
+  /* Style dla tabeli szafarzy w druku */
+  #tabelaSzafarzy,
+  #tabelaSzafarzy * {
+    text-align: center !important;
+    vertical-align: middle !important;
+    font-family: "Arial", "Helvetica", "DejaVu Sans", "Liberation Sans", sans-serif !important;
+    font-size: 12px !important;
+  }
+  
+  /* Wyśrodkowanie tabeli szafarzy */
+  #tabelaSzafarzy {
+    margin: 0 auto !important;
+    width: 100% !important;
+  }
+  
+  /* Wyśrodkowanie wszystkich komórek szafarzy */
+  #tabelaSzafarzy th,
+  #tabelaSzafarzy td {
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 8px !important;
+  }
+  
+  /* Wyśrodkowanie nagłówków szafarzy */
+  #tabelaSzafarzy thead th {
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+  
+  /* Wyśrodkowanie komórek z danymi szafarzy */
+  #tabelaSzafarzy tbody td {
+    text-align: center !important;
+    vertical-align: middle !important;
+  }
+  
+  /* Wyśrodkowanie wszystkich elementów wewnątrz komórek szafarzy */
+  #tabelaSzafarzy td select,
+  #tabelaSzafarzy td input,
+  #tabelaSzafarzy td button,
+  #tabelaSzafarzy td div,
+  #tabelaSzafarzy td span {
+    text-align: center !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+  
+  /* Wyśrodkowanie selectów szafarzy */
+  #tabelaSzafarzy select {
+    text-align: center !important;
+    text-align-last: center !important;
+    width: 100% !important;
+  }
+  
+  /* Wyśrodkowanie inputów szafarzy */
+  #tabelaSzafarzy input[type="text"] {
+    text-align: center !important;
+    width: 100% !important;
+  }
+  
+  /* Wyśrodkowanie przycisków szafarzy */
+  #tabelaSzafarzy button {
+    margin: 0 auto !important;
+    display: block !important;
+    text-align: center !important;
+  }
+  
+  /* Wyśrodkowanie komórek z contenteditable szafarzy */
+  #tabelaSzafarzy td[contenteditable="true"] {
+    text-align: center !important;
+  }
+  
+  /* Wyśrodkowanie wszystkich tekstów szafarzy */
+  #tabelaSzafarzy td,
+  #tabelaSzafarzy th {
+    text-align: center !important;
+  }
+
+  /* Style dla tabeli chorych w druku */
+  #tabelaChorych,
+  #tabelaChorych *,
+  .raport-table,
+  .raport-table * {
+    font-family: "Arial", "Helvetica", "DejaVu Sans", "Liberation Sans", sans-serif !important;
+    font-size: 12px !important;
+  }
+  
+  /* Wyśrodkowanie tabeli chorych */
+  #tabelaChorych,
+  .raport-table {
+    margin: 0 auto !important;
+    width: 100% !important;
+  }
+  
+  /* Wyśrodkowanie komórek w tabeli chorych */
+  #tabelaChorych th,
+  #tabelaChorych td,
+  .raport-table th,
+  .raport-table td {
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 8px !important;
+    font-family: "Arial", "Helvetica", "DejaVu Sans", "Liberation Sans", sans-serif !important;
+  }
+}
+
+/* Ukryj przycisk kopii zapasowej */
+#backupBtn {
+  display: none !important;
+}
+
+/* Ukryj przyciski deweloperskie */
+#generate-test-btn {
+  display: none !important;
+}
+
+#clear-test-btn {
+  display: none !important;
+}
+
+/* Style dla kolumny uwag - zawijanie tekstu */
+#tabelaKalendarz td:nth-child(5),
+#tabelaKalendarz .uwagi-input {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  max-width: 200px !important;
+  min-width: 150px !important;
+  height: auto !important;
+  min-height: 40px !important;
+  vertical-align: top !important;
+  text-align: left !important;
+  padding: 8px !important;
+}
+
+/* Style dla kolumny uwag w trybie edycji */
+#tabelaKalendarz td[contenteditable="true"].uwagi-input {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  resize: vertical !important;
+  min-height: 40px !important;
+  max-height: 120px !important;
+  overflow-y: auto !important;
+}
+
+/* Style dla przycisków w tabeli chorych */
+#tabelaChorych .btn-small {
+  background-color: #f44336 !important;
+  color: white !important;
+  border: 2px solid #d32f2f !important;
+  padding: 8px 15px !important;
+  border-radius: 5px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+  display: block !important;
+  width: 80px !important;
+  margin: 0 auto !important;
+  text-align: center !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+}
+
+#tabelaChorych .btn-small:hover {
+  background-color: #d32f2f !important;
+  transform: scale(1.05) !important;
+}
