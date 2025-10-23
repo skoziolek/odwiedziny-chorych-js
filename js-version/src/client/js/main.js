@@ -55,8 +55,8 @@ class App {
       const password = document.getElementById('passwordInput').value;
       const errorDiv = document.getElementById('loginError');
       
-      // Sprawdź hasło
-      if (password === 'PomocDlaChorych!') {
+        // Sprawdź hasło (hasło jest sprawdzane po stronie serwera)
+        if (password && password.length > 0) {
         // Ukryj błąd jeśli był widoczny
         errorDiv.style.display = 'none';
         

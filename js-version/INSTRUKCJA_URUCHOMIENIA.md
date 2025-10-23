@@ -26,7 +26,7 @@ Otwórz przeglądarkę i przejdź do: `http://localhost:3000`
 ## Dane logowania
 
 **Proste logowanie:**
-- **Hasło**: `PomocDlaChorych!`
+- **Hasło**: Ustaw w zmiennej środowiskowej `LOGIN_PASSWORD` (domyślnie: `PomocDlaChorych!`)
 - Po wpisaniu hasła aplikacja automatycznie się loguje
 
 ## Konfiguracja

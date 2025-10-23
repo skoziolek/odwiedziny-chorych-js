@@ -87,8 +87,17 @@ router.post('/simple-login', (req, res) => {
       return res.status(400).json({ error: 'Hasło jest wymagane' });
     }
     
-    // Sprawdź hasło
-    if (password === 'PomocDlaChorych!') {
+    // Sprawdź hasło z zmiennych środowiskowych
+    const LOGIN_PASSWORD = process.env.LOGIN_PASSWORD || 'PomocDlaChorych!';
+    
+    // Ostrzeżenie bezpieczeństwa
+    if (!process.env.LOGIN_PASSWORD) {
+      console.warn('⚠️  UWAGA BEZPIECZEŃSTWA: LOGIN_PASSWORD nie jest ustawiony!');
+      console.warn('⚠️  Używane jest domyślne hasło - ZMIEŃ TO W PRODUKCJI!');
+      console.warn('⚠️  Ustaw LOGIN_PASSWORD w pliku .env');
+    }
+    
+    if (password === LOGIN_PASSWORD) {
       // Generuj sesję
       const sessionId = addSimpleSession();
       
