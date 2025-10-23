@@ -9,6 +9,14 @@ const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
 const historiaRoutes = require('./routes/historia');
 
+// Walidacja zmiennych środowiskowych
+if (!process.env.ENCRYPTION_KEY) {
+  console.warn('⚠️  UWAGA: ENCRYPTION_KEY nie jest ustawiony w zmiennych środowiskowych!');
+  console.warn('⚠️  To może być niebezpieczne w produkcji!');
+  console.warn('⚠️  Skopiuj plik env.example jako .env i ustaw ENCRYPTION_KEY');
+  console.warn('⚠️  Wygeneruj silny klucz: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -48,18 +56,18 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/html/index.html'));
 });
 
-// Obsługa błędów
+// 404 handler - MUSI być przed error handlerem
+app.use((req, res) => {
+  res.status(404).json({ error: 'Nie znaleziono' });
+});
+
+// Obsługa błędów - MUSI być na końcu
 app.use((err, req, res, next) => {
   console.error('Błąd serwera:', err);
   res.status(500).json({ 
     error: 'Wystąpił błąd serwera',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Błąd wewnętrzny'
   });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Nie znaleziono' });
 });
 
 // Uruchomienie serwera

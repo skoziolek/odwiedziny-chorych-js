@@ -157,8 +157,13 @@ router.post('/', async (req, res) => {
  * @param {string} year - Rok
  * @returns {Promise<Object>} - Dane kalendarza
  */
-async function getKalendarzData(year = '2025') {
+async function getKalendarzData(year = null) {
   try {
+    // Jeśli rok nie jest podany, użyj aktualnego roku
+    if (!year) {
+      year = new Date().getFullYear().toString();
+    }
+    
     const kalendarzFile = path.join(__dirname, `../../data/kalendarz_${year}.json`);
     if (!await fs.pathExists(kalendarzFile)) {
       return {};
@@ -178,8 +183,13 @@ async function getKalendarzData(year = '2025') {
  * @param {string} year - Rok
  * @returns {Promise<boolean>} - True jeśli zapis się powiódł
  */
-async function saveKalendarzData(data, year = '2025') {
+async function saveKalendarzData(data, year = null) {
   try {
+    // Jeśli rok nie jest podany, użyj aktualnego roku
+    if (!year) {
+      year = new Date().getFullYear().toString();
+    }
+    
     const kalendarzFile = path.join(__dirname, `../../data/kalendarz_${year}.json`);
     await fs.writeJson(kalendarzFile, data, { spaces: 2 });
     return true;

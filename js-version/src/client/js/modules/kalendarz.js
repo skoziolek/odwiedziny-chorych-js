@@ -5,7 +5,7 @@ export class KalendarzManager {
   constructor(authManager) {
     this.utils = new Utils();
     this.authManager = authManager;
-    this.currentYear = '2025';
+    this.currentYear = new Date().getFullYear().toString();
     this.kalendarzData = {};
     this.szafarze = [];
     this.debouncedSave = this.utils.debounce(() => this.saveKalendarz(), 1000, 'kalendarz');
@@ -13,6 +13,9 @@ export class KalendarzManager {
 
   async init() {
     try {
+      // Inicjalizuj opcje roku
+      this.initializeYearOptions();
+      
       // Pobierz dane szafarzy
       await this.loadSzafarze();
       
@@ -32,6 +35,33 @@ export class KalendarzManager {
       console.error('Błąd inicjalizacji kalendarza:', error);
       this.utils.showError('Błąd inicjalizacji kalendarza');
     }
+  }
+
+  initializeYearOptions() {
+    const rokSelect = document.getElementById('wybierzRok');
+    if (!rokSelect) return;
+
+    // Wyczyść istniejące opcje
+    rokSelect.innerHTML = '';
+
+    // Generuj opcje dla aktualnego roku i 2 lata w przód
+    const currentYear = new Date().getFullYear();
+    for (let year = currentYear; year <= currentYear + 2; year++) {
+      const option = document.createElement('option');
+      option.value = year.toString();
+      option.textContent = year.toString();
+      if (year === currentYear) {
+        option.selected = true;
+      }
+      rokSelect.appendChild(option);
+    }
+
+    // Ustaw nasłuchiwanie na zmiany roku
+    rokSelect.addEventListener('change', async (e) => {
+      this.currentYear = e.target.value;
+      await this.loadKalendarz();
+      await this.generateKalendarz();
+    });
   }
 
   async loadSzafarze() {

@@ -28,7 +28,7 @@ class App {
       return;
     }
 
-    // Inicjalizuj aplikację
+    // Inicjalizuj aplikację (zawiera inicjalizację klucza szyfrowania)
     await this.initializeApp();
   }
 
@@ -60,15 +60,20 @@ class App {
         // Ukryj błąd jeśli był widoczny
         errorDiv.style.display = 'none';
         
-        // Ukryj ekran logowania, pokaż aplikację
-        loginScreen.style.display = 'none';
-        mainApp.style.display = 'block';
-        
-        // Ustaw token w pamięci (znika po odświeżeniu strony)
-        this.authManager.setToken('simple-login-token');
-        
-        // Inicjalizuj aplikację
-        await this.initializeApp();
+        // Użyj nowego systemu logowania z sesją
+        try {
+          const success = await this.authManager.simpleLogin(password);
+          if (success) {
+            // Inicjalizuj aplikację (zawiera inicjalizację klucza szyfrowania)
+            await this.initializeApp();
+          } else {
+            errorDiv.textContent = 'Błąd logowania';
+            errorDiv.style.display = 'block';
+          }
+        } catch (error) {
+          errorDiv.textContent = 'Błąd logowania: ' + error.message;
+          errorDiv.style.display = 'block';
+        }
       } else {
         // Pokaż błąd
         errorDiv.textContent = 'Nieprawidłowe hasło';
@@ -111,16 +116,21 @@ class App {
 
   async initializeApp() {
     try {
+      // Inicjalizuj klucz szyfrowania
+      console.log('🔐 Inicjalizacja klucza szyfrowania...');
+      await Utils.initializeEncryptionKey();
+      
       // Ukryj ekran logowania, pokaż aplikację
       const loginScreen = document.getElementById('loginScreen');
       const mainApp = document.getElementById('mainApp');
-      loginScreen.style.display = 'none';
-      mainApp.style.display = 'block';
+      if (loginScreen) loginScreen.style.display = 'none';
+      if (mainApp) mainApp.style.display = 'block';
       
       // Ustaw menedżery jako globalne dla onclick PRZED inicjalizacją
       window.kalendarzManager = this.kalendarzManager;
       window.chorzyManager = this.chorzyManager;
       window.szafarzeManager = this.szafarzeManager;
+      window.authManager = this.authManager;
       window.raportyManager = this.raportyManager;
       
       // Inicjalizuj wszystkie moduły

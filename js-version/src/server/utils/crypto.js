@@ -1,8 +1,15 @@
 const crypto = require('crypto');
 
 // Konfiguracja szyfrowania (RODO)
-const ENCRYPTION_KEY = 'OdwiedzinyChorych2024!@#$%^&*()_+';
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'OdwiedzinyChorych2024!@#$%^&*()_+';
 const ALGORITHM = 'aes-256-cbc';
+
+// Walidacja klucza szyfrowania
+if (!process.env.ENCRYPTION_KEY) {
+  console.warn('⚠️  UWAGA: ENCRYPTION_KEY nie jest ustawiony w zmiennych środowiskowych!');
+  console.warn('⚠️  Używany jest domyślny klucz - to nie jest bezpieczne w produkcji!');
+  console.warn('⚠️  Ustaw ENCRYPTION_KEY w pliku .env lub zmiennych środowiskowych');
+}
 
 /**
  * Szyfruje dane używając AES-256-CBC

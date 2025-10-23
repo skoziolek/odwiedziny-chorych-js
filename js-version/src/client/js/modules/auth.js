@@ -2,6 +2,7 @@
 export class AuthManager {
   constructor() {
     this.token = null; // Nie zapisuj tokenu - wymuś logowanie przy każdym odświeżeniu
+    this.sessionId = null; // ID sesji dla prostego logowania
     this.user = null;
   }
 
@@ -11,13 +12,18 @@ export class AuthManager {
     // Nie zapisuj w sessionStorage - token znika po odświeżeniu
   }
 
+  // Metoda do ustawienia sesji po prostym logowaniu
+  setSession(sessionId) {
+    this.sessionId = sessionId;
+  }
+
   async checkAuth() {
-    if (!this.token) {
+    if (!this.token && !this.sessionId) {
       return false;
     }
 
-    // Sprawdź czy to nowy system logowania (prosty token)
-    if (this.token === 'simple-login-token') {
+    // Sprawdź czy to nowy system logowania (prosty token z sesją)
+    if (this.token === 'simple-login-token' && this.sessionId) {
       this.user = { username: 'admin', loggedin: true };
       return true;
     }
@@ -70,6 +76,32 @@ export class AuthManager {
     }
   }
 
+  async simpleLogin(password) {
+    try {
+      const response = await fetch('/api/simple-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        this.token = 'simple-login-token';
+        this.sessionId = data.sessionId;
+        this.user = { username: 'admin', loggedin: true };
+        return true;
+      } else {
+        throw new Error(data.error || 'Błąd logowania');
+      }
+    } catch (error) {
+      console.error('Błąd prostego logowania:', error);
+      throw error;
+    }
+  }
+
   async logout() {
     try {
       if (this.token) {
@@ -89,6 +121,7 @@ export class AuthManager {
 
   clearAuth() {
     this.token = null;
+    this.sessionId = null;
     this.user = null;
     // Nie ma potrzeby czyścić sessionStorage - nie używamy go
   }
@@ -98,10 +131,14 @@ export class AuthManager {
       throw new Error('Brak tokenu autoryzacji');
     }
     
-    // Dla nowego systemu logowania, zwróć nagłówki z prostym tokenem
+    // Dla nowego systemu logowania, zwróć nagłówki z prostym tokenem i sesją
     if (this.token === 'simple-login-token') {
+      if (!this.sessionId) {
+        throw new Error('Brak ID sesji');
+      }
       return {
         'Authorization': 'Bearer simple-login-token',
+        'X-Session-Id': this.sessionId,
         'Content-Type': 'application/json'
       };
     }

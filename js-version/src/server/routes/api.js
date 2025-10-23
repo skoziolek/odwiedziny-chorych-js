@@ -7,25 +7,32 @@ const router = express.Router();
 
 // Prosty middleware autoryzacji dla API
 const authenticateAPI = (req, res, next) => {
-  // Sprawdź czy to prosty token (dla nowego systemu logowania)
   const authHeader = req.headers['authorization'];
   
-  if (authHeader === 'Bearer simple-login-token') {
-    // Prosty token - pozwól na dostęp
-    return next();
-  }
-  
-  // Sprawdź czy to standardowy JWT token
   if (authHeader && authHeader.startsWith('Bearer ')) {
-    const jwt = require('jsonwebtoken');
-    const JWT_SECRET = process.env.JWT_SECRET || 'OdwiedzinyChorych2024!@#$%^&*()_+';
     const token = authHeader.split(' ')[1];
     
-    try {
-      jwt.verify(token, JWT_SECRET);
+    // Sprawdź czy to standardowy JWT token
+    if (token !== 'simple-login-token') {
+      const jwt = require('jsonwebtoken');
+      const JWT_SECRET = process.env.JWT_SECRET || 'OdwiedzinyChorych2024!@#$%^&*()_+';
+      
+      try {
+        jwt.verify(token, JWT_SECRET);
+        return next();
+      } catch (error) {
+        return res.status(401).json({ error: 'Nieprawidłowy token' });
+      }
+    }
+    
+    // Sprawdź czy to prosty token - ale tylko jeśli użytkownik się zalogował
+    if (token === 'simple-login-token') {
+      // Sprawdź czy użytkownik rzeczywiście się zalogował (sprawdź sesję)
+      const sessionId = req.headers['x-session-id'];
+      if (!sessionId || !isValidSimpleSession(sessionId)) {
+        return res.status(401).json({ error: 'Nieprawidłowa sesja' });
+      }
       return next();
-    } catch (error) {
-      return res.status(401).json({ error: 'Nieprawidłowy token' });
     }
   }
   
@@ -33,8 +40,82 @@ const authenticateAPI = (req, res, next) => {
   return res.status(401).json({ error: 'Brak autoryzacji' });
 };
 
+// Proste sesje w pamięci (w produkcji użyj Redis lub bazy danych)
+const activeSessions = new Map();
+
+// Generuj unikalny ID sesji
+function generateSessionId() {
+  return require('crypto').randomBytes(32).toString('hex');
+}
+
+// Sprawdź czy sesja jest ważna
+function isValidSimpleSession(sessionId) {
+  if (!sessionId) return false;
+  
+  const session = activeSessions.get(sessionId);
+  if (!session) return false;
+  
+  // Sprawdź czy sesja nie wygasła (24 godziny)
+  const now = Date.now();
+  if (now - session.createdAt > 24 * 60 * 60 * 1000) {
+    activeSessions.delete(sessionId);
+    return false;
+  }
+  
+  return true;
+}
+
+// Dodaj nową sesję
+function addSimpleSession() {
+  const sessionId = generateSessionId();
+  activeSessions.set(sessionId, {
+    createdAt: Date.now(),
+    type: 'simple-login'
+  });
+  return sessionId;
+}
+
 // Ścieżka do folderu z danymi
 const DATA_DIR = path.join(__dirname, '../../data');
+
+// POST /api/simple-login - Proste logowanie z hasłem
+router.post('/simple-login', (req, res) => {
+  try {
+    const { password } = req.body;
+    
+    if (!password) {
+      return res.status(400).json({ error: 'Hasło jest wymagane' });
+    }
+    
+    // Sprawdź hasło
+    if (password === 'PomocDlaChorych!') {
+      // Generuj sesję
+      const sessionId = addSimpleSession();
+      
+      res.json({
+        success: true,
+        sessionId: sessionId,
+        message: 'Zalogowano pomyślnie'
+      });
+    } else {
+      res.status(401).json({ error: 'Nieprawidłowe hasło' });
+    }
+  } catch (error) {
+    console.error('Błąd prostego logowania:', error);
+    res.status(500).json({ error: 'Błąd serwera podczas logowania' });
+  }
+});
+
+// GET /api/encryption-key - Pobieranie klucza szyfrowania dla klienta
+router.get('/encryption-key', authenticateAPI, (req, res) => {
+  try {
+    const encryptionKey = process.env.ENCRYPTION_KEY || 'OdwiedzinyChorych2024!@#$%^&*()_+';
+    res.json({ encryptionKey });
+  } catch (error) {
+    console.error('Błąd pobierania klucza szyfrowania:', error);
+    res.status(500).json({ error: 'Błąd serwera podczas pobierania klucza szyfrowania' });
+  }
+});
 
 /**
  * Pobiera dane z pliku JSON z obsługą szyfrowania
@@ -218,7 +299,7 @@ router.post('/:file', authenticateAPI, async (req, res) => {
 // Funkcje generowania danych testowych
 function generateTestCalendarData() {
   const data = {};
-  const year = 2025;
+  const year = new Date().getFullYear();
   const startDate = new Date(year, 0, 1);
   const endDate = new Date(year, 11, 31);
   

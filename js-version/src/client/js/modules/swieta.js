@@ -165,10 +165,29 @@ function dodajSwietoNakazane(data, nazwa) { swietaNakazane[data] = nazwa; }
 function dodajNiedzieleLiturgiczna(data, nazwa) { niedzieleLiturgiczne[data] = nazwa; }
 function usunSwietoNakazane(data) { delete swietaNakazane[data]; }
 function usunNiedzieleLiturgiczna(data) { delete niedzieleLiturgiczne[data]; }
-function czySwietoNakazane(data) { return data in swietaNakazane; }
+function czySwietoNakazane(data, rok = null) {
+    // Jeśli rok nie jest podany, wyciągnij z daty
+    if (!rok) {
+        rok = parseInt(data.split('-')[0]);
+    }
+    
+    // Dla roku 2025 użyj statycznych danych
+    if (rok === 2025) {
+        return data in swietaNakazane;
+    }
+    
+    // Dla innych lat sprawdź czy to święto nakazane
+    const nazwa = pobierzNazweSwieta(data, rok);
+    return nazwa && !nazwa.includes('Niedziela') && !nazwa.includes('zwykła');
+}
 function czyNiedzielaLiturgiczna(data) { return data in niedzieleLiturgiczne; }
 
-function pobierzNazweSwieta(data, rok = 2025) {
+function pobierzNazweSwieta(data, rok = null) {
+    // Jeśli rok nie jest podany, użyj aktualnego roku
+    if (!rok) {
+        rok = new Date().getFullYear();
+    }
+    
     if (rok === 2025) {
         // priorytet dla święta nakazanego
         if (czySwietoNakazane(data)) {
@@ -207,7 +226,12 @@ function pobierzNazweSwieta(data, rok = 2025) {
     return nazwaNiedzieli || "";
 }
 
-function pobierzWszystkieDaty(rok = 2025) {
+function pobierzWszystkieDaty(rok = null) {
+    // Jeśli rok nie jest podany, użyj aktualnego roku
+    if (!rok) {
+        rok = new Date().getFullYear();
+    }
+    
     if (rok === 2025) {
         const wszystkieDaty = new Set([...Object.keys(swietaNakazane), ...Object.keys(niedzieleLiturgiczne)]);
         return Array.from(wszystkieDaty).sort();

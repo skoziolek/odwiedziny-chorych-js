@@ -34,11 +34,23 @@ Otwórz przeglądarkę i przejdź do: `http://localhost:3000`
 ### Zmienne środowiskowe (opcjonalne)
 Utwórz plik `.env` w katalogu `js-version`:
 
+```bash
+# Skopiuj plik przykładowy
+cp env.example .env
+```
+
+Następnie edytuj plik `.env` i ustaw odpowiednie wartości:
+
 ```env
 NODE_ENV=development
 PORT=3000
 JWT_SECRET=twoj-sekretny-klucz-jwt
-ENCRYPTION_KEY=twoj-klucz-szyfrowania
+ENCRYPTION_KEY=twoj-silny-klucz-szyfrowania-32-znaki
+```
+
+**WAŻNE:** Wygeneruj silny klucz szyfrowania używając:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 ### Port serwera
