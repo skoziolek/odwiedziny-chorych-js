@@ -1521,3 +1521,262 @@ table, .tab-content {
   background-color: #d32f2f !important;
   transform: scale(1.05) !important;
 }
+
+/* Style dla ukrytej zakładki administracyjnej */
+.hidden-tab {
+  display: none !important;
+}
+
+.hidden-tab.visible {
+  display: inline-block !important;
+}
+
+#admin {
+  background-color: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 10px 0;
+}
+
+#admin h3 {
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+#admin h4 {
+  color: #6c757d;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+#admin ul {
+  color: #495057;
+  line-height: 1.6;
+}
+
+#adminDebugInfo {
+  background-color: #e9ecef !important;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+#adminDebugInfo div {
+  margin: 5px 0;
+  padding: 2px 0;
+}
+
+#adminDebugInfo strong {
+  color: #495057;
+  font-weight: 600;
+}
+
+/* Animacja dla ukrytej zakładki */
+.tab-button.hidden-tab {
+  transition: all 0.3s ease;
+  opacity: 0.7;
+}
+
+.tab-button.hidden-tab.visible {
+  opacity: 1;
+}
+
+/* Style dla kalendarza adwentowego */
+.advent-calendar {
+  background-color: #ffffff;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.advent-calendar h3 {
+  color: #8B4513;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* Style dla tabeli adwentowej - identyczne z głównym kalendarzem */
+#tabelaAdwentowa {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #ede3c6;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px #ede3c6;
+  margin-bottom: 40px;
+  table-layout: auto;
+}
+
+/* Responsywność dla kalendarza adwentowego na małych ekranach */
+@media (max-width: 600px) {
+  #tabelaAdwentowa {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  #tabelaAdwentowa th,
+  #tabelaAdwentowa td {
+    min-width: 80px;
+  }
+}
+
+#tabelaAdwentowa th, 
+#tabelaAdwentowa td {
+  border: 1px solid #ede3c6;
+  padding: 10px;
+  text-align: center;
+  font-size: 15px;
+  overflow: visible;
+  white-space: normal;
+  min-width: 120px;
+}
+
+#tabelaAdwentowa th {
+  background-color: #fff;
+  color: #6d5c3d;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+#tabelaAdwentowa select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d4c4a8;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+  color: #6d5c3d;
+  transition: border-color 0.3s ease;
+}
+
+#tabelaAdwentowa select:focus {
+  outline: none;
+  border-color: #8B4513;
+  box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1);
+}
+
+#tabelaAdwentowa .uwagi-input {
+  min-height: 20px;
+  padding: 8px;
+  border: 1px solid #d4c4a8;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+  color: #6d5c3d;
+  transition: border-color 0.3s ease;
+  text-align: left;
+}
+
+#tabelaAdwentowa .uwagi-input:focus {
+  outline: none;
+  border-color: #8B4513;
+  box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.1);
+}
+
+#tabelaAdwentowa .uwagi-input:empty:before {
+  content: "";
+  color: #999;
+  font-style: italic;
+}
+
+.advent-calendar p {
+  color: #6c757d;
+  text-align: center;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.advent-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.advent-table {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.advent-table thead {
+  background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%);
+  color: white;
+}
+
+.advent-table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.advent-table tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.advent-table tbody tr:hover {
+  background-color: #e3f2fd;
+  transition: background-color 0.2s ease;
+}
+
+.advent-table select {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background-color: white;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.advent-table select:focus {
+  border-color: #8B4513;
+  box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.25);
+  outline: none;
+}
+
+.advent-table input[type="text"] {
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.advent-table input[type="text"]:focus {
+  border-color: #8B4513;
+  box-shadow: 0 0 0 2px rgba(139, 69, 19, 0.25);
+  outline: none;
+}
+
+/* Responsywność dla kalendarza adwentowego */
+@media (max-width: 768px) {
+  .advent-table {
+    font-size: 14px;
+  }
+  
+  .advent-table th,
+  .advent-table td {
+    padding: 8px 5px;
+  }
+  
+  .advent-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .advent-buttons .uni-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}

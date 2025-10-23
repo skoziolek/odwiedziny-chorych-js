@@ -34,10 +34,12 @@
   
   <div class="tabs">
     <button class="tab-button active" data-tab="kalendarz">📅 Kalendarz</button>
+          <button class="tab-button hidden-tab" data-tab="admin" style="display: none;">🕯️ Kalendarz Adwentowy</button>
     <button class="tab-button" data-tab="chorzy">🧑‍⚕️ Dane chorych</button>
     <button class="tab-button" data-tab="szafarze">🙋‍♂️ Dane szafarzy</button>
     <button class="tab-button" data-tab="raporty">📊 Raporty</button>
   </div>
+  
 
   <!-- Zakładka Kalendarz -->
   <div id="kalendarz" class="tab-content active">
@@ -63,6 +65,14 @@
         <!-- Tutaj będą generowane wiersze kalendarza -->
       </tbody>
     </table>
+  </div>
+
+        <!-- Zakładka Kalendarz Adwentowy (ukryta) -->
+        <div id="admin" class="tab-content">
+          <!-- Kalendarz Adwentowy -->
+          <div id="adventCalendarContainer">
+            <!-- Kalendarz będzie generowany dynamicznie przez JavaScript -->
+          </div>
   </div>
 
   <!-- Zakładka Dane chorych -->
@@ -134,6 +144,7 @@
       <button class="uni-btn" id="drukujRaportBtn">Drukuj raport</button>
       <button class="uni-btn" id="eksportujPDFBtn">Eksportuj do PDF</button>
       <button class="uni-btn" id="backupBtn">Wykonaj kopię zapasową</button>
+          <button class="uni-btn" id="showAdminTabBtn">🕯️ Kalendarz Adwentowy</button>
     </div>
     <div id="raportContainer">
       <!-- Tutaj będzie wyświetlany raport -->
@@ -154,6 +165,7 @@
       </form>
     </div>
   </div>
+
   </div> <!-- Koniec mainApp -->
 
   <!-- MODAL: Logowanie -->
