@@ -34,19 +34,33 @@ function findSzafarzEmailByName(szafarze, name) {
   if (!name) return null;
   const norm = (s) => String(s || '').trim().toLowerCase();
   const target = norm(name);
-  const found = szafarze.find(s => norm(s.imieNazwisko) === target);
-  return found && found.email ? String(found.email).trim() : null;
+
+  // 1) Próba pełnego dopasowania "Imię Nazwisko"
+  let found = szafarze.find(s => norm(s.imieNazwisko) === target);
+  if (found && found.email) return String(found.email).trim();
+
+  // 2) Fallback: dopasowanie po pierwszym imieniu (gdy w kalendarzu zapisano samo imię)
+  const candidates = szafarze.filter(s => {
+    const first = norm((s.imieNazwisko || '').split(' ')[0]);
+    return first && first === target;
+  });
+
+  if (candidates.length === 1 && candidates[0].email) {
+    return String(candidates[0].email).trim();
+  }
+
+  // 3) Brak jednoznacznego dopasowania
+  return null;
 }
 
-async function buildTomorrowReminders() {
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  const year = tomorrow.getFullYear();
+async function buildRemindersForDate(targetDate) {
+  const dateObj = new Date(targetDate);
+  if (isNaN(dateObj)) return [];
+  const year = dateObj.getFullYear();
 
   // Kalendarz może być w pliku rocznym lub ogólnym
-  const isoKey = toISO(tomorrow);         // np. 2025-02-01
-  const dotKey = toLegacyDotFormat(tomorrow); // np. 1.02.2025
+  const isoKey = toISO(dateObj);         // np. 2025-02-01
+  const dotKey = toLegacyDotFormat(dateObj); // np. 1.02.2025
   const kalendarzYearFile = `kalendarz_${year}.json`;
   const kalendarzData = (await loadJson(kalendarzYearFile)) || (await loadJson('kalendarz.json')) || {};
   const entry = kalendarzData[isoKey] || kalendarzData[dotKey] || null;
@@ -81,32 +95,60 @@ async function buildTomorrowReminders() {
 
 // Proste szablony HTML (MVP)
 function templateReminder({ dateLabel, dutyName, role, link, patients = [] }) {
-  const patientsHtml = Array.isArray(patients) && patients.length
+  const tableRows = Array.isArray(patients) && patients.length
+    ? patients.map(p => {
+        const name = (p.imieNazwisko||'').replace(/</g,'&lt;');
+        const addr = (p.adres||'').replace(/</g,'&lt;');
+        const tel = (p.telefon||'').replace(/</g,'&lt;');
+        const uw = (p.uwagi||'').replace(/</g,'&lt;');
+        return `
+          <tr>
+            <td style="padding:8px;border:1px solid #e6e2d3">${name}</td>
+            <td style="padding:8px;border:1px solid #e6e2d3">${addr}</td>
+            <td style="padding:8px;border:1px solid #e6e2d3;white-space:nowrap;">${tel || ''}</td>
+            <td style="padding:8px;border:1px solid #e6e2d3">${uw || ''}</td>
+          </tr>`;
+      }).join('')
+    : '';
+
+  const patientsTable = tableRows
     ? `
-      <div style="margin-top:16px;padding:12px;background:#f7f7f7;border:1px solid #e3e3e3;border-radius:6px">
-        <div style="font-weight:bold;margin-bottom:8px">Aktualna lista chorych do odwiedzenia</div>
-        <ul style="margin:0;padding-left:18px">${patients.map(p => {
-          const name = (p.imieNazwisko||'').replace(/</g,'&lt;');
-          const addr = (p.adres||'').replace(/</g,'&lt;');
-          const tel = (p.telefon||'').replace(/</g,'&lt;');
-          const uw = (p.uwagi||'').replace(/</g,'&lt;');
-          const telPart = tel ? `, tel: <strong>${tel}</strong>` : '';
-          const uwPart = uw ? ` — uwagi: <em>${uw}</em>` : '';
-          return `<li>${name} — ${addr}${telPart}${uwPart}</li>`;
-        }).join('')}</ul>
+      <div style="margin-top:16px">
+        <div style="font-weight:600;margin:0 0 8px 0;color:#5d4a2a">Aktualna lista chorych do odwiedzenia</div>
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;background:#fff;border:1px solid #e6e2d3">
+          <thead>
+            <tr style="background:#faf6ef;color:#5d4a2a">
+              <th align="left" style="padding:10px;border:1px solid #e6e2d3;font-size:13px">Imię i nazwisko</th>
+              <th align="left" style="padding:10px;border:1px solid #e6e2d3;font-size:13px">Adres</th>
+              <th align="left" style="padding:10px;border:1px solid #e6e2d3;font-size:13px">Telefon</th>
+              <th align="left" style="padding:10px;border:1px solid #e6e2d3;font-size:13px">Uwagi</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
       </div>
     `
     : '';
+
   return `
-    <div style="font-family:Arial,sans-serif;font-size:14px;color:#222">
-      <h2 style="margin:0 0 12px 0">Przypomnienie o dyżurze - ${dateLabel}</h2>
-      <p>Masz zaplanowany dyżur: <strong>${dutyName}</strong> (${role}).</p>
-      <p><a href="${link}" target="_blank">Otwórz aplikację</a></p>
-      ${patientsHtml}
-      <hr>
-      <p style="font-size:12px;color:#666">Jeśli nie chcesz otrzymywać e‑maili, skontaktuj się z koordynatorem.</p>
+  <div style="margin:0;padding:0;background:#f6f3ec">
+    <div style="max-width:680px;margin:0 auto;padding:20px;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;color:#2c2a28;font-size:14px;line-height:1.5">
+      <div style="background:#fff;border:1px solid #e6e2d3;border-radius:8px;padding:20px">
+        <h2 style="margin:0 0 8px 0;color:#5d4a2a;font-size:18px">Przypomnienie o dyżurze</h2>
+        <div style="margin:0 0 14px 0;color:#7a6a4a;font-size:13px">Data: <strong>${dateLabel}</strong></div>
+        <div style="margin:0 0 12px 0">Masz zaplanowany dyżur: <strong>${dutyName}</strong> (<em>${role}</em>).</div>
+        <div style="margin:12px 0 18px 0">
+          <a href="${link}" target="_blank" style="display:inline-block;background:#bfa16b;color:#fff;text-decoration:none;padding:10px 16px;border-radius:6px;font-weight:600">Otwórz aplikację</a>
+        </div>
+        ${patientsTable}
+        <div style="margin-top:18px;padding-top:12px;border-top:1px solid #eee;color:#817763;font-size:12px">
+          Jeśli nie chcesz otrzymywać e‑maili, skontaktuj się z koordynatorem.
+        </div>
+      </div>
     </div>
-  `;
+  </div>`;
 }
 
 function templateChange({ dateLabel, dutyName, changeInfo, link }) {
@@ -166,7 +208,10 @@ router.get('/test', async (req, res) => {
 });
 
 async function sendTomorrowReminders() {
-  const jobs = await buildTomorrowReminders();
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const jobs = await buildRemindersForDate(tomorrow);
   let sent = 0;
   for (const job of jobs) {
     try {
@@ -185,7 +230,21 @@ module.exports.sendTomorrowReminders = sendTomorrowReminders;
 // Ręczne uruchomienie przypomnień "jutro dyżur"
 router.post('/run/reminders', async (req, res) => {
   try {
-    const jobs = await buildTomorrowReminders();
+    const { date } = req.query;
+    let targetDate;
+    if (date) {
+      // Obsłuż zarówno YYYY-MM-DD jak i D.MM.YYYY
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        targetDate = new Date(date);
+      } else if (/^\d{1,2}\.\d{2}\.\d{4}$/.test(date)) {
+        const [d, m, y] = date.split('.');
+        targetDate = new Date(parseInt(y,10), parseInt(m,10)-1, parseInt(d,10));
+      }
+    }
+    const now = new Date();
+    const fallbackTomorrow = new Date(now);
+    fallbackTomorrow.setDate(now.getDate() + 1);
+    const jobs = await buildRemindersForDate(targetDate || fallbackTomorrow);
     if (jobs.length === 0) return res.json({ ok: true, sent: 0, note: 'Brak dyżurów na jutro lub brak adresów e‑mail' });
     let sent = 0;
     for (const job of jobs) {
