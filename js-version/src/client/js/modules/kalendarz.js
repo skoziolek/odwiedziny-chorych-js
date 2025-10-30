@@ -292,6 +292,8 @@ export class KalendarzManager {
 
   createKalendarzRow(dateStr, swietoName, isSwieto) {
     const row = document.createElement('tr');
+    // Zachowaj maszynowy klucz daty do poprawnego zapisu/odczytu
+    row.setAttribute('data-date', dateStr);
     const data = this.kalendarzData[dateStr] || {};
     
     
@@ -357,7 +359,8 @@ export class KalendarzManager {
 
       rows.forEach(row => {
         const cells = row.querySelectorAll('td');
-        const date = cells[0].textContent.trim();
+        // Użyj maszynowego klucza z data-date (YYYY-MM-DD)
+        const date = row.getAttribute('data-date');
         if (!date) return;
 
         const [selectGlowna, selectPomocnik] = row.querySelectorAll('select');
