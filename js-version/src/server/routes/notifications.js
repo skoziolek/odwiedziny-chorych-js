@@ -59,28 +59,42 @@ async function buildTomorrowReminders() {
   const baseLink = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
   const dateLabel = isoKey;
   const dutyName = entry.nazwa || 'Odwiedziny chorych';
+  // Lista chorych o statusie "TAK" do dołączenia do maila
+  const chorzy = (await loadJson('chorzy.json')) || [];
+  const patients = chorzy
+    .filter(c => c && c.status === 'TAK')
+    .map(c => ({ imieNazwisko: c.imieNazwisko, adres: c.adres }));
 
   // osoba główna
   const mainEmail = findSzafarzEmailByName(szafarze, entry.osobaGlowna);
   if (mainEmail) {
-    recipients.push({ to: mainEmail, subject: `Przypomnienie: dyżur jutro (${dateLabel})`, html: templateReminder({ dateLabel, dutyName, role: 'główny', link: baseLink }), text: `Przypomnienie o dyżurze jutro (${dateLabel})` });
+    recipients.push({ to: mainEmail, subject: `Przypomnienie: dyżur jutro (${dateLabel})`, html: templateReminder({ dateLabel, dutyName, role: 'główny', link: baseLink, patients }), text: `Przypomnienie o dyżurze jutro (${dateLabel})` });
   }
   // pomocnik
   const helperEmail = findSzafarzEmailByName(szafarze, entry.pomocnik);
   if (helperEmail) {
-    recipients.push({ to: helperEmail, subject: `Przypomnienie: dyżur jutro (${dateLabel})`, html: templateReminder({ dateLabel, dutyName, role: 'pomocnik', link: baseLink }), text: `Przypomnienie o dyżurze jutro (${dateLabel})` });
+    recipients.push({ to: helperEmail, subject: `Przypomnienie: dyżur jutro (${dateLabel})`, html: templateReminder({ dateLabel, dutyName, role: 'pomocnik', link: baseLink, patients }), text: `Przypomnienie o dyżurze jutro (${dateLabel})` });
   }
 
   return recipients;
 }
 
 // Proste szablony HTML (MVP)
-function templateReminder({ dateLabel, dutyName, role, link }) {
+function templateReminder({ dateLabel, dutyName, role, link, patients = [] }) {
+  const patientsHtml = Array.isArray(patients) && patients.length
+    ? `
+      <div style="margin-top:16px;padding:12px;background:#f7f7f7;border:1px solid #e3e3e3;border-radius:6px">
+        <div style="font-weight:bold;margin-bottom:8px">Lista chorych (status: TAK):</div>
+        <ul style="margin:0;padding-left:18px">${patients.map(p => `<li>${(p.imieNazwisko||'').replace(/</g,'&lt;')} — ${(p.adres||'').replace(/</g,'&lt;')}</li>`).join('')}</ul>
+      </div>
+    `
+    : '';
   return `
     <div style="font-family:Arial,sans-serif;font-size:14px;color:#222">
       <h2 style="margin:0 0 12px 0">Przypomnienie o dyżurze - ${dateLabel}</h2>
       <p>Masz zaplanowany dyżur: <strong>${dutyName}</strong> (${role}).</p>
       <p><a href="${link}" target="_blank">Otwórz aplikację</a></p>
+      ${patientsHtml}
       <hr>
       <p style="font-size:12px;color:#666">Jeśli nie chcesz otrzymywać e‑maili, skontaktuj się z koordynatorem.</p>
     </div>
@@ -101,16 +115,23 @@ function templateChange({ dateLabel, dutyName, changeInfo, link }) {
 }
 
 // Podgląd HTML w przeglądarce
-router.get('/preview', (req, res) => {
+router.get('/preview', async (req, res) => {
   const { type = 'reminder' } = req.query;
   const link = req.query.link || 'http://localhost:3000';
   const dateLabel = req.query.dateLabel || 'jutro (sobota)';
   const dutyName = req.query.dutyName || 'Odwiedziny - Parafia';
+  let patients = [];
+  try {
+    const chorzy = (await loadJson('chorzy.json')) || [];
+    patients = chorzy
+      .filter(c => c && c.status === 'TAK')
+      .map(c => ({ imieNazwisko: c.imieNazwisko, adres: c.adres }));
+  } catch (_) {}
   if (type === 'change') {
     const html = templateChange({ dateLabel, dutyName, changeInfo: 'Zamiana osoby pomocniczej.', link });
     return res.type('html').send(html);
   }
-  const html = templateReminder({ dateLabel, dutyName, role: 'główny', link });
+  const html = templateReminder({ dateLabel, dutyName, role: 'główny', link, patients });
   return res.type('html').send(html);
 });
 
@@ -119,7 +140,15 @@ router.get('/test', async (req, res) => {
   const to = req.query.to;
   if (!to) return res.status(400).json({ error: 'Parametr ?to= jest wymagany' });
   try {
-    const html = templateReminder({ dateLabel: 'jutro', dutyName: 'Dyżur testowy', role: 'główny', link: req.query.link || 'http://localhost:3000' });
+    // Do testu też dorzuć listę chorych (TAK)
+    let patients = [];
+    try {
+      const chorzy = (await loadJson('chorzy.json')) || [];
+      patients = chorzy
+        .filter(c => c && c.status === 'TAK')
+        .map(c => ({ imieNazwisko: c.imieNazwisko, adres: c.adres }));
+    } catch (_) {}
+    const html = templateReminder({ dateLabel: 'jutro', dutyName: 'Dyżur testowy', role: 'główny', link: req.query.link || 'http://localhost:3000', patients });
     const info = await sendEmail({ to, subject: 'Test: przypomnienie o dyżurze', html, text: 'Test przypomnienia o dyżurze' });
     return res.json({ ok: true, info, emailEnabled: isEmailEnabled() });
   } catch (e) {
