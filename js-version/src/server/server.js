@@ -8,6 +8,8 @@ const fs = require('fs-extra');
 const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
 const historiaRoutes = require('./routes/historia');
+const notificationsRoutes = require('./routes/notifications');
+const { startSchedulers } = require('./utils/scheduler');
 
 // Walidacja zmiennych środowiskowych
 if (!process.env.ENCRYPTION_KEY) {
@@ -47,6 +49,7 @@ app.use((req, res, next) => {
 app.use('/auth', authRoutes);
 app.use('/api', apiRoutes);
 app.use('/historia', historiaRoutes);
+app.use('/notifications', notificationsRoutes);
 
 // Serwowanie plików statycznych (PO routingach API!)
 app.use(express.static(path.join(__dirname, '../client')));
@@ -75,6 +78,13 @@ app.listen(PORT, () => {
   console.log(`🚀 Serwer uruchomiony na porcie ${PORT}`);
   console.log(`📱 Aplikacja dostępna pod adresem: http://localhost:${PORT}`);
   console.log(`🔧 Tryb: ${process.env.NODE_ENV || 'development'}`);
+  // Start harmonogramów (na razie z pustym wywołaniem; logika dojdzie w etapie 2)
+  startSchedulers({
+    onRemindersRun: async () => {
+      console.log('⏰ [Symulacja] Uruchomienie joba przypomnień (MVP szkielet).');
+      // TODO: tu zostanie dołączona logika wyboru dyżurów na jutro i wysyłka maili
+    },
+  });
 });
 
 module.exports = app;
