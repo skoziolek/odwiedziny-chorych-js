@@ -84,7 +84,7 @@ function templateReminder({ dateLabel, dutyName, role, link, patients = [] }) {
   const patientsHtml = Array.isArray(patients) && patients.length
     ? `
       <div style="margin-top:16px;padding:12px;background:#f7f7f7;border:1px solid #e3e3e3;border-radius:6px">
-        <div style="font-weight:bold;margin-bottom:8px">Lista chorych (status: TAK):</div>
+        <div style="font-weight:bold;margin-bottom:8px">Aktualna lista chorych do odwiedzenia</div>
         <ul style="margin:0;padding-left:18px">${patients.map(p => `<li>${(p.imieNazwisko||'').replace(/</g,'&lt;')} — ${(p.adres||'').replace(/</g,'&lt;')}</li>`).join('')}</ul>
       </div>
     `
