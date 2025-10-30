@@ -1,6 +1,78 @@
 const express = require('express');
 const router = express.Router();
 const { sendEmail, isEmailEnabled } = require('../utils/mailer');
+const fs = require('fs-extra');
+const path = require('path');
+const { decryptData, isEncrypted } = require('../utils/crypto');
+
+const DATA_DIR = path.join(__dirname, '../../data');
+
+async function loadJson(filename) {
+  const filePath = path.join(DATA_DIR, filename);
+  if (!await fs.pathExists(filePath)) {
+    return null;
+  }
+  const data = await fs.readJson(filePath);
+  if (isEncrypted(data)) {
+    return decryptData(data) || [];
+  }
+  return data;
+}
+
+function toISO(dateObj) {
+  return dateObj.toISOString().split('T')[0];
+}
+
+function toLegacyDotFormat(dateObj) {
+  const d = dateObj.getDate();
+  const m = dateObj.getMonth() + 1;
+  const y = dateObj.getFullYear();
+  return `${d}.${m < 10 ? '0'+m : m}.${y}`;
+}
+
+function findSzafarzEmailByName(szafarze, name) {
+  if (!name) return null;
+  const norm = (s) => String(s || '').trim().toLowerCase();
+  const target = norm(name);
+  const found = szafarze.find(s => norm(s.imieNazwisko) === target);
+  return found && found.email ? String(found.email).trim() : null;
+}
+
+async function buildTomorrowReminders() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const year = tomorrow.getFullYear();
+
+  // Kalendarz może być w pliku rocznym lub ogólnym
+  const isoKey = toISO(tomorrow);         // np. 2025-02-01
+  const dotKey = toLegacyDotFormat(tomorrow); // np. 1.02.2025
+  const kalendarzYearFile = `kalendarz_${year}.json`;
+  const kalendarzData = (await loadJson(kalendarzYearFile)) || (await loadJson('kalendarz.json')) || {};
+  const entry = kalendarzData[isoKey] || kalendarzData[dotKey] || null;
+
+  if (!entry) return [];
+
+  const szafarze = (await loadJson('szafarze.json')) || [];
+
+  const recipients = [];
+  const baseLink = process.env.APP_URL || `http://localhost:${process.env.PORT || 3000}`;
+  const dateLabel = isoKey;
+  const dutyName = entry.nazwa || 'Odwiedziny chorych';
+
+  // osoba główna
+  const mainEmail = findSzafarzEmailByName(szafarze, entry.osobaGlowna);
+  if (mainEmail) {
+    recipients.push({ to: mainEmail, subject: `Przypomnienie: dyżur jutro (${dateLabel})`, html: templateReminder({ dateLabel, dutyName, role: 'główny', link: baseLink }), text: `Przypomnienie o dyżurze jutro (${dateLabel})` });
+  }
+  // pomocnik
+  const helperEmail = findSzafarzEmailByName(szafarze, entry.pomocnik);
+  if (helperEmail) {
+    recipients.push({ to: helperEmail, subject: `Przypomnienie: dyżur jutro (${dateLabel})`, html: templateReminder({ dateLabel, dutyName, role: 'pomocnik', link: baseLink }), text: `Przypomnienie o dyżurze jutro (${dateLabel})` });
+  }
+
+  return recipients;
+}
 
 // Proste szablony HTML (MVP)
 function templateReminder({ dateLabel, dutyName, role, link }) {
@@ -56,6 +128,42 @@ router.get('/test', async (req, res) => {
   }
 });
 
+async function sendTomorrowReminders() {
+  const jobs = await buildTomorrowReminders();
+  let sent = 0;
+  for (const job of jobs) {
+    try {
+      await sendEmail(job);
+      sent++;
+    } catch (e) {
+      console.error('Błąd wysyłki przypomnienia:', e);
+    }
+  }
+  return { planned: jobs.length, sent };
+}
+
 module.exports = router;
+module.exports.sendTomorrowReminders = sendTomorrowReminders;
+
+// Ręczne uruchomienie przypomnień "jutro dyżur"
+router.post('/run/reminders', async (req, res) => {
+  try {
+    const jobs = await buildTomorrowReminders();
+    if (jobs.length === 0) return res.json({ ok: true, sent: 0, note: 'Brak dyżurów na jutro lub brak adresów e‑mail' });
+    let sent = 0;
+    for (const job of jobs) {
+      try {
+        await sendEmail(job);
+        sent++;
+      } catch (e) {
+        console.error('Błąd wysyłki przypomnienia:', e);
+      }
+    }
+    return res.json({ ok: true, sent });
+  } catch (e) {
+    console.error('Błąd uruchomienia reminders:', e);
+    return res.status(500).json({ error: 'Błąd uruchomienia reminders', message: e.message });
+  }
+});
 
 

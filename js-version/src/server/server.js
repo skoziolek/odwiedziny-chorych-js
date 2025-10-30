@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const apiRoutes = require('./routes/api');
 const historiaRoutes = require('./routes/historia');
 const notificationsRoutes = require('./routes/notifications');
+const { sendTomorrowReminders } = require('./routes/notifications');
 const { startSchedulers } = require('./utils/scheduler');
 
 // Walidacja zmiennych środowiskowych
@@ -81,8 +82,12 @@ app.listen(PORT, () => {
   // Start harmonogramów (na razie z pustym wywołaniem; logika dojdzie w etapie 2)
   startSchedulers({
     onRemindersRun: async () => {
-      console.log('⏰ [Symulacja] Uruchomienie joba przypomnień (MVP szkielet).');
-      // TODO: tu zostanie dołączona logika wyboru dyżurów na jutro i wysyłka maili
+      if (process.env.NOTIFICATIONS_EMAIL_ENABLED === 'true') {
+        const result = await sendTomorrowReminders();
+        console.log(`📧 Reminders: planned=${result.planned}, sent=${result.sent}`);
+      } else {
+        console.log('📧 Reminders pominięte: NOTIFICATIONS_EMAIL_ENABLED != true');
+      }
     },
   });
 });
