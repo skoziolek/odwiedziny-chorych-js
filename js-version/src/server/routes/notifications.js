@@ -63,7 +63,7 @@ async function buildTomorrowReminders() {
   const chorzy = (await loadJson('chorzy.json')) || [];
   const patients = chorzy
     .filter(c => c && c.status === 'TAK')
-    .map(c => ({ imieNazwisko: c.imieNazwisko, adres: c.adres }));
+    .map(c => ({ imieNazwisko: c.imieNazwisko, adres: c.adres, telefon: c.telefon, uwagi: c.uwagi }));
 
   // osoba główna
   const mainEmail = findSzafarzEmailByName(szafarze, entry.osobaGlowna);
@@ -85,7 +85,15 @@ function templateReminder({ dateLabel, dutyName, role, link, patients = [] }) {
     ? `
       <div style="margin-top:16px;padding:12px;background:#f7f7f7;border:1px solid #e3e3e3;border-radius:6px">
         <div style="font-weight:bold;margin-bottom:8px">Aktualna lista chorych do odwiedzenia</div>
-        <ul style="margin:0;padding-left:18px">${patients.map(p => `<li>${(p.imieNazwisko||'').replace(/</g,'&lt;')} — ${(p.adres||'').replace(/</g,'&lt;')}</li>`).join('')}</ul>
+        <ul style="margin:0;padding-left:18px">${patients.map(p => {
+          const name = (p.imieNazwisko||'').replace(/</g,'&lt;');
+          const addr = (p.adres||'').replace(/</g,'&lt;');
+          const tel = (p.telefon||'').replace(/</g,'&lt;');
+          const uw = (p.uwagi||'').replace(/</g,'&lt;');
+          const telPart = tel ? `, tel: <strong>${tel}</strong>` : '';
+          const uwPart = uw ? ` — uwagi: <em>${uw}</em>` : '';
+          return `<li>${name} — ${addr}${telPart}${uwPart}</li>`;
+        }).join('')}</ul>
       </div>
     `
     : '';
@@ -125,7 +133,7 @@ router.get('/preview', async (req, res) => {
     const chorzy = (await loadJson('chorzy.json')) || [];
     patients = chorzy
       .filter(c => c && c.status === 'TAK')
-      .map(c => ({ imieNazwisko: c.imieNazwisko, adres: c.adres }));
+      .map(c => ({ imieNazwisko: c.imieNazwisko, adres: c.adres, telefon: c.telefon, uwagi: c.uwagi }));
   } catch (_) {}
   if (type === 'change') {
     const html = templateChange({ dateLabel, dutyName, changeInfo: 'Zamiana osoby pomocniczej.', link });
@@ -146,7 +154,7 @@ router.get('/test', async (req, res) => {
       const chorzy = (await loadJson('chorzy.json')) || [];
       patients = chorzy
         .filter(c => c && c.status === 'TAK')
-        .map(c => ({ imieNazwisko: c.imieNazwisko, adres: c.adres }));
+        .map(c => ({ imieNazwisko: c.imieNazwisko, adres: c.adres, telefon: c.telefon, uwagi: c.uwagi }));
     } catch (_) {}
     const html = templateReminder({ dateLabel: 'jutro', dutyName: 'Dyżur testowy', role: 'główny', link: req.query.link || 'http://localhost:3000', patients });
     const info = await sendEmail({ to, subject: 'Test: przypomnienie o dyżurze', html, text: 'Test przypomnienia o dyżurze' });
