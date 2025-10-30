@@ -217,7 +217,10 @@ export class ChorzyManager {
 
   async saveChorzy() {
     try {
-      // Użyj danych z this.chorzyData (bez synchronizacji z DOM)
+      // Najpierw zsynchronizuj dane z DOM, aby zapisać bieżące edycje (np. uwagi)
+      this.syncDataFromDOM();
+
+      // Użyj zsynchronizowanych danych
       const dataToSave = this.chorzyData.filter(chory => 
         chory.imieNazwisko && chory.imieNazwisko.trim()
       );
