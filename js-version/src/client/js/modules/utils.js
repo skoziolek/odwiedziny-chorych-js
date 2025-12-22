@@ -10,7 +10,6 @@ export class Utils {
       "2025-06-01": "Uroczystość Wniebowstąpienia Pańskiego",
       "2025-06-08": "Uroczystość Zesłania Ducha Świętego",
       "2025-06-19": "Boże Ciało",
-      "2025-06-29": "Uroczystość Świętych Apostołów Piotra i Pawła",
       "2025-08-15": "Wniebowzięcie NMP",
       "2025-11-01": "Uroczystość Wszystkich Świętych",
       "2025-12-25": "Boże Narodzenie",
@@ -25,7 +24,29 @@ export class Utils {
       "2026-08-15": "Wniebowzięcie NMP",
       "2026-11-01": "Uroczystość Wszystkich Świętych",
       "2026-12-25": "Boże Narodzenie",
-      "2026-12-26": "Drugi Dzień Bożego Narodzenia"
+      "2026-12-26": "Drugi Dzień Bożego Narodzenia",
+      "2027-01-01": "Świętej Bożej Rodzicielki Maryi",
+      "2027-01-06": "Objawienie Pańskie (Trzech Króli)",
+      "2027-03-28": "Niedziela Zmartwychwstania Pańskiego",
+      "2027-03-29": "Poniedziałek Wielkanocny",
+      "2027-05-09": "Uroczystość Wniebowstąpienia Pańskiego",
+      "2027-05-16": "Uroczystość Zesłania Ducha Świętego",
+      "2027-05-27": "Boże Ciało",
+      "2027-08-15": "Wniebowzięcie NMP",
+      "2027-11-01": "Uroczystość Wszystkich Świętych",
+      "2027-12-25": "Boże Narodzenie",
+      "2027-12-26": "Drugi Dzień Bożego Narodzenia",
+      "2028-01-01": "Świętej Bożej Rodzicielki Maryi",
+      "2028-01-06": "Objawienie Pańskie (Trzech Króli)",
+      "2028-04-16": "Niedziela Zmartwychwstania Pańskiego",
+      "2028-04-17": "Poniedziałek Wielkanocny",
+      "2028-05-28": "Uroczystość Wniebowstąpienia Pańskiego",
+      "2028-06-04": "Uroczystość Zesłania Ducha Świętego",
+      "2028-06-15": "Boże Ciało",
+      "2028-08-15": "Wniebowzięcie NMP",
+      "2028-11-01": "Uroczystość Wszystkich Świętych",
+      "2028-12-25": "Boże Narodzenie",
+      "2028-12-26": "Drugi Dzień Bożego Narodzenia"
   };
 
   static niedzieleLiturgiczne = {
@@ -49,29 +70,31 @@ export class Utils {
       "2025-05-11": "IV Niedziela Wielkanocna",
       "2025-05-18": "V Niedziela Wielkanocna",
       "2025-05-25": "VI Niedziela Wielkanocna",
-      "2025-06-08": "IX Niedziela zwykła",
-      "2025-06-15": "X Niedziela zwykła",
-      "2025-06-22": "XI Niedziela zwykła",
-      "2025-07-06": "XII Niedziela zwykła",
-      "2025-07-13": "XIII Niedziela zwykła",
-      "2025-07-20": "XIV Niedziela zwykła",
-      "2025-07-27": "XV Niedziela zwykła",
-      "2025-08-03": "XVI Niedziela zwykła",
-      "2025-08-10": "XVII Niedziela zwykła",
-      "2025-08-17": "XVIII Niedziela zwykła",
-      "2025-08-24": "XIX Niedziela zwykła",
-      "2025-08-31": "XX Niedziela zwykła",
-      "2025-09-07": "XXI Niedziela zwykła",
-      "2025-09-14": "XXII Niedziela zwykła",
-      "2025-09-21": "XXIII Niedziela zwykła",
-      "2025-09-28": "XXIV Niedziela zwykła",
-      "2025-10-05": "XXV Niedziela zwykła",
-      "2025-10-12": "XXVI Niedziela zwykła",
-      "2025-10-19": "XXVII Niedziela zwykła",
-      "2025-10-26": "XXVIII Niedziela zwykła",
-      "2025-11-02": "XXIX Niedziela zwykła",
-      "2025-11-09": "XXX Niedziela zwykła",
-      "2025-11-16": "XXXI Niedziela zwykła",
+      "2025-06-01": "Uroczystość Wniebowstąpienia Pańskiego",
+      "2025-06-08": "Uroczystość Zesłania Ducha Świętego",
+      "2025-06-15": "Uroczystość Najświętszej Trójcy",
+      "2025-06-22": "XII Niedziela zwykła",
+      "2025-06-29": "XIII Niedziela zwykła",
+      "2025-07-06": "XIV Niedziela zwykła",
+      "2025-07-13": "XV Niedziela zwykła",
+      "2025-07-20": "XVI Niedziela zwykła",
+      "2025-07-27": "XVII Niedziela zwykła",
+      "2025-08-03": "XVIII Niedziela zwykła",
+      "2025-08-10": "XIX Niedziela zwykła",
+      "2025-08-17": "XX Niedziela zwykła",
+      "2025-08-24": "XXI Niedziela zwykła",
+      "2025-08-31": "XXII Niedziela zwykła",
+      "2025-09-07": "XXIII Niedziela zwykła",
+      "2025-09-14": "XXIV Niedziela zwykła",
+      "2025-09-21": "XXV Niedziela zwykła",
+      "2025-09-28": "XXVI Niedziela zwykła",
+      "2025-10-05": "XXVII Niedziela zwykła",
+      "2025-10-12": "XXVIII Niedziela zwykła",
+      "2025-10-19": "XXIX Niedziela zwykła",
+      "2025-10-26": "XXX Niedziela zwykła",
+      "2025-11-02": "XXXI Niedziela zwykła",
+      "2025-11-09": "XXXII Niedziela zwykła",
+      "2025-11-16": "XXXIII Niedziela zwykła",
       "2025-11-23": "Uroczystość Jezusa Chrystusa Króla Wszechświata",
       "2025-11-30": "I Niedziela Adwentu",
       "2025-12-07": "II Niedziela Adwentu",
@@ -85,11 +108,11 @@ export class Utils {
       "2026-02-01": "IV Niedziela zwykła",
       "2026-02-08": "V Niedziela zwykła",
       "2026-02-15": "VI Niedziela zwykła",
-      "2026-02-22": "VII Niedziela zwykła",
-      "2026-03-01": "VIII Niedziela zwykła",
-      "2026-03-08": "I Niedziela Wielkiego Postu",
-      "2026-03-15": "II Niedziela Wielkiego Postu",
-      "2026-03-22": "III Niedziela Wielkiego Postu",
+      "2026-02-22": "I Niedziela Wielkiego Postu",
+      "2026-03-01": "II Niedziela Wielkiego Postu",
+      "2026-03-08": "III Niedziela Wielkiego Postu",
+      "2026-03-15": "IV Niedziela Wielkiego Postu",
+      "2026-03-22": "V Niedziela Wielkiego Postu",
       "2026-03-29": "Niedziela Palmowa",
       "2026-04-05": "Niedziela Zmartwychwstania Pańskiego",
       "2026-04-12": "II Niedziela Wielkanocna (Miłosierdzia Bożego)",
@@ -100,36 +123,141 @@ export class Utils {
       "2026-05-17": "Uroczystość Wniebowstąpienia Pańskiego",
       "2026-05-24": "Uroczystość Zesłania Ducha Świętego",
       "2026-05-31": "Uroczystość Najświętszej Trójcy",
-      "2026-06-07": "IX Niedziela zwykła",
-      "2026-06-14": "X Niedziela zwykła",
-      "2026-06-21": "XI Niedziela zwykła",
-      "2026-06-28": "Uroczystość Świętych Apostołów Piotra i Pawła",
-      "2026-07-05": "XII Niedziela zwykła",
-      "2026-07-12": "XIII Niedziela zwykła",
-      "2026-07-19": "XIV Niedziela zwykła",
-      "2026-07-26": "XV Niedziela zwykła",
-      "2026-08-02": "XVI Niedziela zwykła",
-      "2026-08-09": "XVII Niedziela zwykła",
-      "2026-08-16": "XVIII Niedziela zwykła",
-      "2026-08-23": "XIX Niedziela zwykła",
-      "2026-08-30": "XX Niedziela zwykła",
-      "2026-09-06": "XXI Niedziela zwykła",
-      "2026-09-13": "XXII Niedziela zwykła",
-      "2026-09-20": "XXIII Niedziela zwykła",
-      "2026-09-27": "XXIV Niedziela zwykła",
-      "2026-10-04": "XXV Niedziela zwykła",
-      "2026-10-11": "XXVI Niedziela zwykła",
-      "2026-10-18": "XXVII Niedziela zwykła",
-      "2026-10-25": "XXVIII Niedziela zwykła",
+      "2026-06-07": "X Niedziela zwykła",
+      "2026-06-14": "XI Niedziela zwykła",
+      "2026-06-21": "XII Niedziela zwykła",
+      "2026-06-28": "XIII Niedziela zwykła",
+      "2026-07-05": "XIV Niedziela zwykła",
+      "2026-07-12": "XV Niedziela zwykła",
+      "2026-07-19": "XVI Niedziela zwykła",
+      "2026-07-26": "XVII Niedziela zwykła",
+      "2026-08-02": "XVIII Niedziela zwykła",
+      "2026-08-09": "XIX Niedziela zwykła",
+      "2026-08-16": "XX Niedziela zwykła",
+      "2026-08-23": "XXI Niedziela zwykła",
+      "2026-08-30": "XXII Niedziela zwykła",
+      "2026-09-06": "XXIII Niedziela zwykła",
+      "2026-09-13": "XXIV Niedziela zwykła",
+      "2026-09-20": "XXV Niedziela zwykła",
+      "2026-09-27": "XXVI Niedziela zwykła",
+      "2026-10-04": "XXVII Niedziela zwykła",
+      "2026-10-11": "XXVIII Niedziela zwykła",
+      "2026-10-18": "XXIX Niedziela zwykła",
+      "2026-10-25": "XXX Niedziela zwykła",
       "2026-11-01": "Uroczystość Wszystkich Świętych",
-      "2026-11-08": "XXIX Niedziela zwykła",
-      "2026-11-15": "XXX Niedziela zwykła",
+      "2026-11-08": "XXXII Niedziela zwykła",
+      "2026-11-15": "XXXIII Niedziela zwykła",
       "2026-11-22": "Uroczystość Jezusa Chrystusa Króla Wszechświata",
       "2026-11-29": "I Niedziela Adwentu",
       "2026-12-06": "II Niedziela Adwentu",
       "2026-12-13": "III Niedziela Adwentu",
       "2026-12-20": "IV Niedziela Adwentu",
-      "2026-12-27": "Święto Świętej Rodziny Jezusa, Maryi i Józefa"
+      "2026-12-27": "Święto Świętej Rodziny Jezusa, Maryi i Józefa",
+      "2027-01-03": "II Niedziela po Narodzeniu Pańskim",
+      "2027-01-10": "Niedziela Chrztu Pańskiego",
+      "2027-01-17": "II Niedziela zwykła",
+      "2027-01-24": "III Niedziela zwykła",
+      "2027-01-31": "IV Niedziela zwykła",
+      "2027-02-07": "V Niedziela zwykła",
+      "2027-02-14": "VI Niedziela zwykła",
+      "2027-02-21": "I Niedziela Wielkiego Postu",
+      "2027-02-28": "II Niedziela Wielkiego Postu",
+      "2027-03-07": "III Niedziela Wielkiego Postu",
+      "2027-03-14": "IV Niedziela Wielkiego Postu",
+      "2027-03-21": "Niedziela Palmowa",
+      "2027-03-28": "Niedziela Zmartwychwstania Pańskiego",
+      "2027-04-04": "II Niedziela Wielkanocna (Miłosierdzia Bożego)",
+      "2027-04-11": "III Niedziela Wielkanocna",
+      "2027-04-18": "IV Niedziela Wielkanocna",
+      "2027-04-25": "V Niedziela Wielkanocna",
+      "2027-05-02": "VI Niedziela Wielkanocna",
+      "2027-05-09": "Uroczystość Wniebowstąpienia Pańskiego",
+      "2027-05-16": "Uroczystość Zesłania Ducha Świętego",
+      "2027-05-23": "Uroczystość Najświętszej Trójcy",
+      "2027-05-30": "IX Niedziela zwykła",
+      "2027-06-06": "X Niedziela zwykła",
+      "2027-06-13": "XI Niedziela zwykła",
+      "2027-06-20": "XII Niedziela zwykła",
+      "2027-06-27": "XIII Niedziela zwykła",
+      "2027-07-04": "XIV Niedziela zwykła",
+      "2027-07-11": "XV Niedziela zwykła",
+      "2027-07-18": "XVI Niedziela zwykła",
+      "2027-07-25": "XVII Niedziela zwykła",
+      "2027-08-01": "XVIII Niedziela zwykła",
+      "2027-08-08": "XIX Niedziela zwykła",
+      "2027-08-15": "Wniebowzięcie NMP",
+      "2027-08-22": "XXI Niedziela zwykła",
+      "2027-08-29": "XXII Niedziela zwykła",
+      "2027-09-05": "XXIII Niedziela zwykła",
+      "2027-09-12": "XXIV Niedziela zwykła",
+      "2027-09-19": "XXV Niedziela zwykła",
+      "2027-09-26": "XXVI Niedziela zwykła",
+      "2027-10-03": "XXVII Niedziela zwykła",
+      "2027-10-10": "XXVIII Niedziela zwykła",
+      "2027-10-17": "XXIX Niedziela zwykła",
+      "2027-10-24": "XXX Niedziela zwykła",
+      "2027-10-31": "XXXI Niedziela zwykła",
+      "2027-11-07": "XXXII Niedziela zwykła",
+      "2027-11-14": "XXXIII Niedziela zwykła",
+      "2027-11-21": "Uroczystość Jezusa Chrystusa Króla Wszechświata",
+      "2027-11-28": "I Niedziela Adwentu",
+      "2027-12-05": "II Niedziela Adwentu",
+      "2027-12-12": "III Niedziela Adwentu",
+      "2027-12-19": "IV Niedziela Adwentu",
+      "2027-12-26": "Święto Świętej Rodziny Jezusa, Maryi i Józefa",
+      "2028-01-02": "II Niedziela po Narodzeniu Pańskim",
+      "2028-01-09": "Niedziela Chrztu Pańskiego",
+      "2028-01-16": "II Niedziela zwykła",
+      "2028-01-23": "III Niedziela zwykła",
+      "2028-01-30": "IV Niedziela zwykła",
+      "2028-02-06": "V Niedziela zwykła",
+      "2028-02-13": "VI Niedziela zwykła",
+      "2028-02-20": "VII Niedziela zwykła",
+      "2028-02-27": "VIII Niedziela zwykła",
+      "2028-03-05": "I Niedziela Wielkiego Postu",
+      "2028-03-12": "II Niedziela Wielkiego Postu",
+      "2028-03-19": "III Niedziela Wielkiego Postu",
+      "2028-03-26": "IV Niedziela Wielkiego Postu",
+      "2028-04-02": "V Niedziela Wielkiego Postu",
+      "2028-04-09": "Niedziela Palmowa",
+      "2028-04-16": "Niedziela Zmartwychwstania Pańskiego",
+      "2028-04-23": "II Niedziela Wielkanocna (Miłosierdzia Bożego)",
+      "2028-04-30": "III Niedziela Wielkanocna",
+      "2028-05-07": "IV Niedziela Wielkanocna",
+      "2028-05-14": "V Niedziela Wielkanocna",
+      "2028-05-21": "VI Niedziela Wielkanocna",
+      "2028-05-28": "Uroczystość Wniebowstąpienia Pańskiego",
+      "2028-06-04": "Uroczystość Zesłania Ducha Świętego",
+      "2028-06-11": "Uroczystość Najświętszej Trójcy",
+      "2028-06-18": "XI Niedziela zwykła",
+      "2028-06-25": "XII Niedziela zwykła",
+      "2028-07-02": "XIII Niedziela zwykła",
+      "2028-07-09": "XIV Niedziela zwykła",
+      "2028-07-16": "XV Niedziela zwykła",
+      "2028-07-23": "XVI Niedziela zwykła",
+      "2028-07-30": "XVII Niedziela zwykła",
+      "2028-08-06": "XVIII Niedziela zwykła",
+      "2028-08-13": "XIX Niedziela zwykła",
+      "2028-08-20": "XX Niedziela zwykła",
+      "2028-08-27": "XXI Niedziela zwykła",
+      "2028-09-03": "XXII Niedziela zwykła",
+      "2028-09-10": "XXIII Niedziela zwykła",
+      "2028-09-17": "XXIV Niedziela zwykła",
+      "2028-09-24": "XXV Niedziela zwykła",
+      "2028-10-01": "XXVI Niedziela zwykła",
+      "2028-10-08": "XXVII Niedziela zwykła",
+      "2028-10-15": "XXVIII Niedziela zwykła",
+      "2028-10-22": "XXIX Niedziela zwykła",
+      "2028-10-29": "XXX Niedziela zwykła",
+      "2028-11-05": "XXXI Niedziela zwykła",
+      "2028-11-12": "XXXII Niedziela zwykła",
+      "2028-11-19": "XXXIII Niedziela zwykła",
+      "2028-11-26": "Uroczystość Jezusa Chrystusa Króla Wszechświata",
+      "2028-12-03": "I Niedziela Adwentu",
+      "2028-12-10": "II Niedziela Adwentu",
+      "2028-12-17": "III Niedziela Adwentu",
+      "2028-12-24": "IV Niedziela Adwentu",
+      "2028-12-31": "Święto Świętej Rodziny Jezusa, Maryi i Józefa"
   };
 
   constructor() {
@@ -277,24 +405,58 @@ export class Utils {
       return;
     }
 
+    // Sklonuj element i usuń kolumnę z przyciskami "Akcje"
+    const clonedElement = element.cloneNode(true);
+    
+    // Usuń ostatnią kolumnę (Akcje) z nagłówków
+    const headerRow = clonedElement.querySelector('thead tr');
+    if (headerRow) {
+      const lastHeader = headerRow.querySelector('th:last-child');
+      if (lastHeader && lastHeader.textContent.trim() === 'Akcje') {
+        lastHeader.remove();
+      }
+    }
+    
+    // Usuń ostatnią kolumnę z każdego wiersza danych
+    const dataRows = clonedElement.querySelectorAll('tbody tr');
+    dataRows.forEach(row => {
+      const lastCell = row.querySelector('td:last-child');
+      if (lastCell) {
+        lastCell.remove();
+      }
+    });
+
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
       <html>
         <head>
           <title>Druk - ${document.title}</title>
           <style>
+            * { box-sizing: border-box; }
             body { font-family: Arial, sans-serif; margin: 20px; }
-            table { border-collapse: collapse; width: 100%; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
+            table { 
+              border-collapse: collapse; 
+              width: 100%; 
+              max-width: 100%;
+              table-layout: auto;
+              border: 1px solid #333;
+            }
+            th, td { 
+              border: 1px solid #333; 
+              padding: 8px; 
+              text-align: center; 
+              vertical-align: middle; 
+            }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            button { display: none; }
             @media print {
-              body { margin: 0; }
+              body { margin: 10px; }
               .no-print { display: none; }
             }
           </style>
         </head>
         <body>
-          ${element.outerHTML}
+          ${clonedElement.outerHTML}
         </body>
       </html>
     `);

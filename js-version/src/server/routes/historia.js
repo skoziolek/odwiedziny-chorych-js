@@ -214,9 +214,32 @@ async function generateMonthlyReport(miesiac) {
     );
     
     // Statystyki
+    // Zbierz unikalne daty odwiedzin z historii dla danego miesiąca
+    const uniqueVisitDates = [...new Set(miesiacHistoria.map(item => item.data))];
+    
+    // Zbierz unikalnych chorych odwiedzonych w danym miesiącu
+    const uniqueChorzyMiesiac = new Set();
+    miesiacHistoria.forEach(item => {
+      if (item.chorzy && Array.isArray(item.chorzy)) {
+        item.chorzy.forEach(chory => uniqueChorzyMiesiac.add(chory));
+      }
+    });
+    
+    // Zbierz unikalnych chorych odwiedzonych od początku roku (narastająco)
+    const yearHistoria = historiaData.filter(item => 
+      item.data && item.data.startsWith(year)
+    );
+    const uniqueChorzyRok = new Set();
+    yearHistoria.forEach(item => {
+      if (item.chorzy && Array.isArray(item.chorzy)) {
+        item.chorzy.forEach(chory => uniqueChorzyRok.add(chory));
+      }
+    });
+    
     const statystyki = {
-      lacznaLiczbaOdwiedzin: Object.keys(miesiacData).length,
-      odwiedzeniChorzy: miesiacHistoria.reduce((acc, item) => acc + (item.chorzy ? item.chorzy.length : 0), 0),
+      lacznaLiczbaOdwiedzin: uniqueVisitDates.length,
+      odwiedzeniChorzyMiesiac: uniqueChorzyMiesiac.size,
+      odwiedzeniChorzy: uniqueChorzyRok.size, // Łączna liczba od początku roku
       szafarze: [...new Set(Object.values(miesiacData).map(d => d.osobaGlowna).filter(Boolean))],
       daty: Object.keys(miesiacData).sort()
     };

@@ -108,7 +108,7 @@ export class ChorzyManager {
       <td contenteditable="true" data-field="uwagi">${chory.uwagi || ''}</td>
       <td>
         <select class="status-select" data-field="status">
-          <option value="" ${!chory.status ? 'selected' : ''}></option>
+          <option value="" ${!chory.status ? 'selected' : ''}>-</option>
           <option value="TAK" ${chory.status === 'TAK' ? 'selected' : ''}>TAK</option>
           <option value="NIE" ${chory.status === 'NIE' ? 'selected' : ''}>NIE</option>
         </select>
@@ -123,29 +123,19 @@ export class ChorzyManager {
     const editableCells = row.querySelectorAll('[contenteditable="true"]');
     const statusSelect = row.querySelector('.status-select');
     
-    [...editableCells, statusSelect].forEach(element => {
+    editableCells.forEach(element => {
       element.addEventListener('input', () => this.debouncedSave());
       element.addEventListener('change', () => this.debouncedSave());
     });
-
-    // Dodaj obsługę zmiany statusu dla kolorowania wiersza
+    
+    // Obsługa zmiany statusu
     if (statusSelect) {
       statusSelect.addEventListener('change', () => {
-        // Synchronizuj dane z DOM przed zmianą statusu
-        this.syncDataFromDOM();
-        
-        // Zaktualizuj status w danych
-        chory.status = statusSelect.value;
-        
-        // Zaktualizuj kolorowanie wiersza
-        if (chory.status === 'TAK') row.className = 'chory-tak';
-        else if (chory.status === 'NIE') row.className = 'chory-nie';
-        else row.className = '';
-        
-        // Przerenderuj tabelę po zmianie statusu (dla automatycznego sortowania)
-        this.renderChorzy();
+        this.debouncedSave();
       });
     }
+
+    // Obsługa zmiany statusu w custom-select - już zintegrowana w powyższym click handlerze
 
     // Dodaj obsługę przycisku usuwania
     const deleteBtn = row.querySelector('.delete-chory-btn');
@@ -217,7 +207,9 @@ export class ChorzyManager {
 
   async saveChorzy() {
     try {
-      // Użyj danych z this.chorzyData (bez synchronizacji z DOM)
+      // Synchronizuj dane z DOM przed zapisem
+      this.syncDataFromDOM();
+      
       const dataToSave = this.chorzyData.filter(chory => 
         chory.imieNazwisko && chory.imieNazwisko.trim()
       );

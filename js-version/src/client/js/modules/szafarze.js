@@ -60,10 +60,11 @@ export class SzafarzeManager {
     const row = document.createElement('tr');
 
     row.innerHTML = `
-      <td contenteditable="true" data-field="imieNazwisko">${szafarz.imieNazwisko || ''}</td>
-      <td contenteditable="true" data-field="telefon">${szafarz.telefon || ''}</td>
+      <td contenteditable="true" data-field="imie">${szafarz.imie || ''}</td>
+      <td contenteditable="true" data-field="nazwisko">${szafarz.nazwisko || ''}</td>
+      <td contenteditable="true" data-field="adres">${szafarz.adres || ''}</td>
       <td contenteditable="true" data-field="email">${szafarz.email || ''}</td>
-      <td contenteditable="true" data-field="uwagi">${szafarz.uwagi || ''}</td>
+      <td contenteditable="true" data-field="telefon">${szafarz.telefon || ''}</td>
       <td>
         <button class="btn-small delete-szafarz-btn" data-index="${index}">Usuń</button>
       </td>
@@ -78,7 +79,11 @@ export class SzafarzeManager {
 
     // Dodaj obsługę przycisku usuwania
     const deleteBtn = row.querySelector('.delete-szafarz-btn');
-    deleteBtn.addEventListener('click', () => this.deleteSzafarz(index));
+    deleteBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.deleteSzafarz(index);
+    });
 
     return row;
   }
@@ -86,10 +91,11 @@ export class SzafarzeManager {
   addSzafarzRow() {
     const tbody = document.getElementById('tabelaSzafarzyBody');
     const newSzafarz = {
-      imieNazwisko: '',
-      telefon: '',
+      imie: '',
+      nazwisko: '',
+      adres: '',
       email: '',
-      uwagi: ''
+      telefon: ''
     };
 
     this.szafarzeData.push(newSzafarz);
@@ -116,8 +122,8 @@ export class SzafarzeManager {
         szafarz[field] = value;
       });
 
-      // Dodaj tylko jeśli ma imię i nazwisko
-      if (szafarz.imieNazwisko && szafarz.imieNazwisko.trim()) {
+      // Dodaj tylko jeśli ma imię lub nazwisko
+      if ((szafarz.imie && szafarz.imie.trim()) || (szafarz.nazwisko && szafarz.nazwisko.trim())) {
         newData.push(szafarz);
       }
     });
@@ -125,14 +131,16 @@ export class SzafarzeManager {
     this.szafarzeData = newData;
   }
 
-  async saveSzafarze() {
+  async saveSzafarze(skipSync = false) {
     try {
-      // Synchronizuj dane z DOM przed zapisem
-      this.syncDataFromDOM();
+      // Synchronizuj dane z DOM przed zapisem (chyba że pominięto)
+      if (!skipSync) {
+        this.syncDataFromDOM();
+      }
       
       // Użyj danych z this.szafarzeData zamiast pobierać z DOM
       const dataToSave = this.szafarzeData.filter(szafarz => 
-        szafarz.imieNazwisko && szafarz.imieNazwisko.trim()
+        (szafarz.imie && szafarz.imie.trim()) || (szafarz.nazwisko && szafarz.nazwisko.trim())
       );
 
       const response = await this.authManager.fetchWithAuth('/api/szafarze', {
@@ -161,17 +169,21 @@ export class SzafarzeManager {
     const confirmed = await this.utils.confirm('Czy na pewno chcesz usunąć tego szafarza?');
     if (!confirmed) return;
 
-    // Najpierw zsynchronizuj dane z DOM do this.szafarzeData
-    this.syncDataFromDOM();
-    
-    // Usuń szafarza z tablicy
-    this.szafarzeData.splice(index, 1);
-    
-    // Zapisz zmiany
-    await this.saveSzafarze();
-    
-    // Przerenderuj tabelę
-    this.renderSzafarze();
+    try {
+      // Usuń szafarza bezpośrednio z tablicy
+      if (index >= 0 && index < this.szafarzeData.length) {
+        this.szafarzeData.splice(index, 1);
+      }
+      
+      // Zapisz zmiany (pomiń sync z DOM bo dane są już przygotowane)
+      await this.saveSzafarze(true);
+      
+      // Przerenderuj tabelę
+      this.renderSzafarze();
+    } catch (error) {
+      console.error('Błąd usuwania szafarza:', error);
+      this.utils.showError('Błąd usuwania szafarza');
+    }
   }
 
   setupEventListeners() {
@@ -220,33 +232,43 @@ export class SzafarzeManager {
     });
   }
 
+  // Pobierz pełne imię i nazwisko szafarza
+  getFullName(szafarz) {
+    const imie = szafarz.imie || '';
+    const nazwisko = szafarz.nazwisko || '';
+    return `${imie} ${nazwisko}`.trim();
+  }
+
   // Pobierz listę szafarzy (używane przez inne moduły)
   getSzafarzeList() {
-    return this.szafarzeData.filter(szafarz => szafarz.imieNazwisko && szafarz.imieNazwisko.trim());
+    return this.szafarzeData.filter(szafarz => 
+      (szafarz.imie && szafarz.imie.trim()) || (szafarz.nazwisko && szafarz.nazwisko.trim())
+    );
   }
 
   // Pobierz imiona i nazwiska szafarzy
   getSzafarzeNames() {
-    return this.getSzafarzeList().map(szafarz => szafarz.imieNazwisko);
+    return this.getSzafarzeList().map(szafarz => this.getFullName(szafarz));
   }
 
   // Pobierz szafarza po imieniu i nazwisku
   getSzafarzByName(name) {
-    return this.szafarzeData.find(szafarz => szafarz.imieNazwisko === name);
+    return this.szafarzeData.find(szafarz => this.getFullName(szafarz) === name);
   }
 
   // Sprawdź czy szafarz istnieje
   hasSzafarz(name) {
-    return this.szafarzeData.some(szafarz => szafarz.imieNazwisko === name);
+    return this.szafarzeData.some(szafarz => this.getFullName(szafarz) === name);
   }
 
   // Dodaj nowego szafarza programowo
   async addSzafarz(szafarzData) {
     const newSzafarz = {
-      imieNazwisko: szafarzData.imieNazwisko || '',
-      telefon: szafarzData.telefon || '',
+      imie: szafarzData.imie || '',
+      nazwisko: szafarzData.nazwisko || '',
+      adres: szafarzData.adres || '',
       email: szafarzData.email || '',
-      uwagi: szafarzData.uwagi || ''
+      telefon: szafarzData.telefon || ''
     };
 
     this.szafarzeData.push(newSzafarz);
@@ -256,7 +278,7 @@ export class SzafarzeManager {
 
   // Aktualizuj szafarza programowo
   async updateSzafarz(name, updateData) {
-    const index = this.szafarzeData.findIndex(szafarz => szafarz.imieNazwisko === name);
+    const index = this.szafarzeData.findIndex(szafarz => this.getFullName(szafarz) === name);
     if (index !== -1) {
       this.szafarzeData[index] = { ...this.szafarzeData[index], ...updateData };
       await this.saveSzafarze();
@@ -266,7 +288,7 @@ export class SzafarzeManager {
 
   // Usuń szafarza programowo
   async removeSzafarz(name) {
-    const index = this.szafarzeData.findIndex(szafarz => szafarz.imieNazwisko === name);
+    const index = this.szafarzeData.findIndex(szafarz => this.getFullName(szafarz) === name);
     if (index !== -1) {
       this.szafarzeData.splice(index, 1);
       await this.saveSzafarze();

@@ -1,0 +1,34 @@
+/**
+ * Style panelu administracyjnego
+ */
+
+.oc-admin-info {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    max-width: 600px;
+}
+
+.oc-admin-info h2 {
+    margin-top: 0;
+    color: #23282d;
+}
+
+.oc-admin-info code {
+    background: #f0f0f1;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.oc-admin-info ul {
+    list-style: disc;
+    margin-left: 20px;
+}
+
+.oc-admin-info li {
+    margin-bottom: 8px;
+}
+
+

@@ -1,0 +1,605 @@
+/**
+ * Style aplikacji Odwiedziny Chorych
+ */
+
+/* Reset i podstawowe style */
+.oc-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f0e6 0%, #e8dcc8 100%);
+    min-height: 100vh;
+}
+
+/* Ukryj WordPress admin bar (dla wszystkich poza administratorami edytującymi) */
+body:not(.wp-admin) #wpadminbar {
+    display: none !important;
+}
+
+/* Ukryj tytuł strony WordPress i header przed aplikacją */
+.oc-container {
+    margin-top: -40px; /* Kompensuj miejsce po ukrytym tytule */
+}
+
+body:not(.wp-admin) .entry-title,
+body:not(.wp-admin) .entry-header h1,
+body:not(.wp-admin) .page-title {
+    display: none !important;
+}
+
+/* Ukryj cały header strony WordPress przed aplikacją */
+body:not(.wp-admin) .site-header:not(.oc-header),
+body:not(.wp-admin) .entry-header:has(+ .oc-container) {
+    display: none !important;
+}
+
+.oc-container * {
+    box-sizing: border-box;
+}
+
+/* Ekran logowania */
+.oc-login-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+}
+
+.oc-login-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(109, 92, 61, 0.2);
+    padding: 40px;
+    max-width: 400px;
+    width: 100%;
+    border: 1px solid #d4c4a8;
+}
+
+.oc-login-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.oc-login-header h1 {
+    color: #6d5c3d;
+    font-size: 1.8rem;
+    margin: 0 0 10px 0;
+}
+
+.oc-login-header p {
+    color: #8b7355;
+    margin: 0;
+}
+
+.oc-login-form .oc-form-group {
+    margin-bottom: 20px;
+}
+
+.oc-login-form label {
+    display: block;
+    margin-bottom: 8px;
+    color: #6d5c3d;
+    font-weight: 600;
+}
+
+.oc-login-form input[type="password"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #d4c4a8;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.oc-login-form input[type="password"]:focus {
+    outline: none;
+    border-color: #bfa16b;
+}
+
+.oc-error {
+    background: #fee;
+    color: #c00;
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border: 1px solid #fcc;
+}
+
+/* Ukryj WordPress admin bar dla użytkowników końcowych */
+.oc-container ~ #wpadminbar,
+.oc-container ~ .wpadminbar {
+    display: none !important;
+}
+
+/* Nagłówek */
+.oc-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #6d5c3d 0%, #8b7355 100%);
+    color: #fff;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(109, 92, 61, 0.3);
+}
+
+.oc-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+/* Przycisk wylogowania w prawym rogu */
+.oc-header #oc-logoutBtn {
+    position: absolute;
+    right: 20px;
+}
+
+/* Przyciski */
+.oc-btn {
+    background: #f5e9d4;
+    color: #6b4c1b;
+    border: 1px solid #bfa76a;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 10px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.oc-btn:hover {
+    background: #e6d3b3;
+    color: #4d3200;
+    border-color: #bfa76a;
+}
+
+.oc-btn-primary {
+    background: linear-gradient(135deg, #6d5c3d 0%, #8b7355 100%);
+    color: #fff;
+    border: none;
+}
+
+.oc-btn-primary:hover {
+    background: linear-gradient(135deg, #5a4d33 0%, #7a6548 100%);
+    color: #fff;
+}
+
+.oc-btn-secondary {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.oc-btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+}
+
+.oc-btn-success {
+    background: #4caf50;
+    color: #fff;
+    border: none;
+}
+
+.oc-btn-success:hover {
+    background: #43a047;
+    color: #fff;
+}
+
+.oc-btn-danger {
+    background: #f44336;
+    color: #fff;
+    border: none;
+}
+
+.oc-btn-danger:hover {
+    background: #e53935;
+    color: #fff;
+}
+
+/* Zakładki */
+.oc-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 20px;
+    background: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(109, 92, 61, 0.1);
+    justify-content: center;
+}
+
+.oc-tab-button {
+    background: transparent;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #8b7355;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.oc-tab-button:hover {
+    background: #f5e9d4;
+    color: #6d5c3d;
+}
+
+.oc-tab-button.active {
+    background: linear-gradient(135deg, #6d5c3d 0%, #8b7355 100%);
+    color: #fff;
+}
+
+.oc-tab-content {
+    display: none;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(109, 92, 61, 0.1);
+}
+
+.oc-tab-content.active {
+    display: block;
+}
+
+/* Przyciski w zakładkach */
+.oc-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.oc-buttons .oc-btn {
+    min-width: 180px;
+    flex: 0 0 auto;
+}
+
+/* Wybór roku/miesiąca */
+.oc-year-select,
+.oc-raport-select {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.oc-year-select select,
+.oc-raport-select select {
+    padding: 8px 12px;
+    border: 1px solid #d4c4a8;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    background: #fff;
+}
+
+/* Tabele */
+.oc-table-container {
+    overflow-x: auto;
+}
+
+.oc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.oc-table th,
+.oc-table td {
+    padding: 12px 15px;
+    text-align: center;
+    border: 1px solid #d4c4a8;
+    vertical-align: middle;
+}
+
+.oc-table th {
+    background: linear-gradient(135deg, #6d5c3d 0%, #8b7355 100%);
+    color: #fff;
+    font-weight: 600;
+}
+
+.oc-table tbody tr:nth-child(even) {
+    background: #faf7f2;
+}
+
+.oc-table tbody tr:hover {
+    background: #f5e9d4;
+}
+
+.oc-table tbody tr.status-tak {
+    background: #e8f5e9;
+}
+
+.oc-table tbody tr.status-nie {
+    background: #ffebee;
+}
+
+.oc-table tbody tr.next-duty-row {
+    background: #fff9c4 !important; /* Bladożółte tło */
+    outline: 3px solid #ffc107 !important; /* Żółta obwódka widoczna z wszystkich stron */
+    outline-offset: -3px !important; /* Obwódka wewnątrz wiersza */
+    position: relative;
+    z-index: 1;
+}
+
+.oc-table tbody tr.swieto-row {
+    background: #e3f2fd;
+}
+
+/* Selecty w tabelach */
+.oc-table select {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #d4c4a8;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    background: #fff;
+}
+
+/* Pola edytowalne */
+.oc-table td[contenteditable="true"] {
+    min-width: 100px;
+    cursor: text;
+}
+
+.oc-table td[contenteditable="true"]:focus {
+    outline: 2px solid #bfa16b;
+    outline-offset: -2px;
+}
+
+/* Modal */
+.oc-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+.oc-modal-content {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.oc-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #6d5c3d 0%, #8b7355 100%);
+    color: #fff;
+}
+
+.oc-modal-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.oc-modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.oc-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.oc-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+}
+
+.oc-chorzy-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.oc-chorzy-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.oc-chorzy-item:last-child {
+    border-bottom: none;
+}
+
+.oc-chorzy-item label {
+    flex: 1;
+    cursor: pointer;
+}
+
+.oc-chorzy-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Raport */
+.oc-raport-container {
+    padding: 20px;
+    background: #faf7f2;
+    border-radius: 8px;
+}
+
+.oc-raport-stats {
+    margin-bottom: 20px;
+}
+
+.oc-raport-stats ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.oc-raport-stats li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+/* Status select */
+.oc-status-select {
+    padding: 6px 10px;
+    border: 1px solid #d4c4a8;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    background: #fff;
+    cursor: pointer;
+}
+
+.oc-status-select.status-tak {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.oc-status-select.status-nie {
+    background: #ffebee;
+    color: #c62828;
+}
+
+/* Responsywność */
+@media (max-width: 768px) {
+    .oc-container {
+        padding: 10px;
+    }
+    
+    .oc-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+        padding: 15px 60px 15px 15px; /* Zostaw miejsce na przycisk wylogowania */
+    }
+    
+    .oc-header #oc-logoutBtn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+    
+    .oc-tabs {
+        flex-direction: column;
+    }
+    
+    .oc-tab-button {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .oc-buttons {
+        flex-direction: column;
+    }
+    
+    .oc-btn {
+        width: 100%;
+    }
+    
+    .oc-table {
+        font-size: 0.8rem;
+    }
+    
+    .oc-table th,
+    .oc-table td {
+        padding: 8px;
+    }
+}
+
+/* Drukowanie */
+@media print {
+    .oc-header,
+    .oc-tabs,
+    .oc-buttons,
+    .oc-year-select,
+    .oc-raport-select,
+    .oc-modal {
+        display: none !important;
+    }
+    
+    /* Ukryj kolumnę "Akcje" (ostatnia kolumna) tylko w tabelach, które ją mają */
+    /* Wyklucz tabelę Adwentu, która nie ma kolumny "Akcje" */
+    #oc-tabelaKalendarz th:last-child,
+    #oc-tabelaKalendarz td:last-child,
+    #oc-tabelaChorzy th:last-child,
+    #oc-tabelaChorzy td:last-child,
+    #oc-tabelaSzafarze th:last-child,
+    #oc-tabelaSzafarze td:last-child {
+        display: none !important;
+    }
+    
+    .oc-container {
+        background: #fff;
+        padding: 0;
+    }
+    
+    /* Ukryj wszystkie zakładki oprócz aktywnej */
+    .oc-tab-content:not(.active) {
+        display: none !important;
+    }
+    
+    /* Pokaż tylko aktywną zakładkę */
+    .oc-tab-content.active {
+        display: block !important;
+        box-shadow: none;
+        padding: 0;
+    }
+    
+    .oc-table {
+        width: 100%;
+    }
+    
+    .oc-table th {
+        background: #333 !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* Tooltip dla przycisku Odwiedzone */
+.oc-visited-tooltip {
+    position: fixed;
+    background: #fff;
+    color: #6d5c3d;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    white-space: pre-line;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(109, 92, 61, 0.3);
+    border: 1px solid #bfa16b;
+    z-index: 999999;
+    pointer-events: none;
+    min-width: 150px;
+    max-width: 280px;
+    font-family: 'Open Sans', Arial, sans-serif;
+    line-height: 1.5;
+}

@@ -34,6 +34,7 @@
   
   <div class="tabs">
     <button class="tab-button active" data-tab="kalendarz">📅 Kalendarz</button>
+    <button class="tab-button" data-tab="adwent" id="adwentTabBtn" style="display: none;">🕯️ Adwent</button>
     <button class="tab-button" data-tab="chorzy">🧑‍⚕️ Dane chorych</button>
     <button class="tab-button" data-tab="szafarze">🙋‍♂️ Dane szafarzy</button>
     <button class="tab-button" data-tab="raporty">📊 Raporty</button>
@@ -47,6 +48,8 @@
       <select id="wybierzRok" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
         <option value="2025" selected>2025</option>
         <option value="2026">2026</option>
+        <option value="2027">2027</option>
+        <option value="2028">2028</option>
       </select>
     </div>
     <table id="tabelaKalendarz" style="border:0 !important; outline:0 !important; box-shadow:none !important; border-radius:0 !important;">
@@ -62,6 +65,36 @@
       </thead>
       <tbody id="tabelaKalendarzBody">
         <!-- Tutaj będą generowane wiersze kalendarza -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Zakładka Adwent -->
+  <div id="adwent" class="tab-content">
+    <div class="chorzy-przyciski" id="adwent-buttons">
+      <button class="uni-btn" id="drukujAdwentBtn">Drukuj</button>
+    </div>
+    <div class="rok-wybor" style="margin: 10px 0; display: flex; align-items: center; gap: 10px;">
+      <label for="wybierzRokAdwent">Wybierz rok:</label>
+      <select id="wybierzRokAdwent" style="padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+        <option value="2025" selected>2025</option>
+        <option value="2026">2026</option>
+        <option value="2027">2027</option>
+        <option value="2028">2028</option>
+      </select>
+    </div>
+    <table id="tabelaAdwent" border="1">
+      <thead>
+        <tr>
+          <th scope="col">Data</th>
+          <th scope="col">Dzień tygodnia</th>
+          <th scope="col">Tydzień Adwentu</th>
+          <th scope="col">Osoba Główna</th>
+          <th scope="col">Pomocnik</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaAdwentBody">
+        <!-- Tutaj będą generowane wiersze adwentu -->
       </tbody>
     </table>
   </div>
@@ -98,10 +131,11 @@
     <table id="tabelaSzafarzy" border="1">
       <thead>
         <tr>
-          <th scope="col">Imię i nazwisko</th>
-          <th scope="col">Telefon</th>
-          <th scope="col">Email</th>
-          <th scope="col">Uwagi</th>
+          <th scope="col">Imię</th>
+          <th scope="col">Nazwisko</th>
+          <th scope="col">Adres zamieszkania</th>
+          <th scope="col">Adres email</th>
+          <th scope="col">Numer telefonu</th>
           <th scope="col">Akcje</th>
         </tr>
       </thead>

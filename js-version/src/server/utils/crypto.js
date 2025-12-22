@@ -1,7 +1,8 @@
 const crypto = require('crypto');
+const config = require('../config/security');
 
 // Konfiguracja szyfrowania (RODO)
-const ENCRYPTION_KEY = 'OdwiedzinyChorych2024!@#$%^&*()_+';
+const ENCRYPTION_KEY = config.encryptionKey;
 const ALGORITHM = 'aes-256-cbc';
 
 /**

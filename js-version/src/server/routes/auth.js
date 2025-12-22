@@ -3,12 +3,13 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const fs = require('fs-extra');
 const path = require('path');
+const config = require('../config/security');
 
 const router = express.Router();
 
-// Konfiguracja JWT
-const JWT_SECRET = process.env.JWT_SECRET || 'OdwiedzinyChorych2024!@#$%^&*()_+';
-const JWT_EXPIRES_IN = '24h';
+// Konfiguracja JWT z pliku konfiguracyjnego
+const JWT_SECRET = config.jwtSecret;
+const JWT_EXPIRES_IN = config.sessionExpiry + 's'; // sekundy
 
 // Ścieżka do pliku z danymi logowania
 const LOGIN_LOCK_FILE = path.join(__dirname, '../../data/login_lock.json');
@@ -69,7 +70,52 @@ async function setLoginLock(attempts) {
   }
 }
 
-// POST /auth/login - Logowanie
+// POST /auth/simple-login - Proste logowanie tylko hasłem
+router.post('/simple-login', async (req, res) => {
+  try {
+    const { password } = req.body;
+    const ip = req.ip || req.connection.remoteAddress;
+
+    if (!password) {
+      return res.status(400).json({ error: 'Hasło jest wymagane' });
+    }
+
+    // Sprawdź hasło z konfiguracji
+    if (password !== config.appPassword) {
+      // Zarejestruj nieudaną próbę
+      if (req.app.locals.registerFailedLogin) {
+        req.app.locals.registerFailedLogin(ip);
+      }
+      return res.status(401).json({ error: 'Nieprawidłowe hasło' });
+    }
+
+    // Resetuj licznik prób po udanym logowaniu
+    if (req.app.locals.resetLoginAttempts) {
+      req.app.locals.resetLoginAttempts(ip);
+    }
+
+    // Generuj token JWT
+    const token = jwt.sign(
+      { authenticated: true, loginTime: Date.now() },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    console.log(`✅ Udane logowanie z IP: ${ip}`);
+
+    res.json({
+      success: true,
+      token,
+      expiresIn: config.sessionExpiry
+    });
+
+  } catch (error) {
+    console.error('Błąd logowania:', error);
+    res.status(500).json({ error: 'Błąd serwera podczas logowania' });
+  }
+});
+
+// POST /auth/login - Logowanie z nazwą użytkownika (legacy)
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;

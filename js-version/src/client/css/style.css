@@ -278,13 +278,22 @@
       color: #fff;
     }
     
-    input, select, textarea {
+    input, textarea {
       border: 1px solid #ede3c6;
       border-radius: 4px;
       padding: 8px;
       font-family: 'Open Sans', Arial, sans-serif;
       font-size: 15px;
       margin: 4px 0;
+      background: #fff;
+      color: #222;
+    }
+    
+    select {
+      border-radius: 4px;
+      padding: 8px;
+      font-family: 'Open Sans', Arial, sans-serif;
+      font-size: 15px;
       background: #fff;
       color: #222;
     }
@@ -666,10 +675,19 @@
     .chory-nie {
       background-color: #f8d7da !important;
     }
+    /* Style dla rozwijalnej listy statusu - minimalny styl */
     .status-select {
-      padding: 2px 8px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    
+    /* Naprawka dla komórki tabeli ze statusem */
+    #tabelaChorych td:nth-child(5) {
+      padding: 8px !important;
+      vertical-align: middle;
+      text-align: center;
     }
 
     .kalendarz-tooltip {
@@ -1017,17 +1035,17 @@
     /* Stałe szerokości kolumn dla tabeli szafarzy */
     #tabelaSzafarzy th:nth-child(1),
     #tabelaSzafarzy td:nth-child(1) {
-      width: 25%;
+      width: 12%;
     }
     
     #tabelaSzafarzy th:nth-child(2),
     #tabelaSzafarzy td:nth-child(2) {
-      width: 20%;
+      width: 15%;
     }
     
     #tabelaSzafarzy th:nth-child(3),
     #tabelaSzafarzy td:nth-child(3) {
-      width: 20%;
+      width: 25%;
     }
     
     #tabelaSzafarzy th:nth-child(4),
@@ -1038,6 +1056,11 @@
     #tabelaSzafarzy th:nth-child(5),
     #tabelaSzafarzy td:nth-child(5) {
       width: 15%;
+    }
+    
+    #tabelaSzafarzy th:nth-child(6),
+    #tabelaSzafarzy td:nth-child(6) {
+      width: 13%;
     }
 
     /* Stałe szerokości kolumn dla tabeli chorych */
@@ -1082,6 +1105,10 @@
     #tabelaKalendarz th:nth-child(2),
     #tabelaKalendarz td:nth-child(2) {
       width: 30%;
+      white-space: normal !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      line-height: 1.3;
     }
     
     #tabelaKalendarz th:nth-child(3),
@@ -1105,13 +1132,31 @@
     }
 
     /* Style dla przycisku Zaplanowane */
-    #tabelaKalendarz .btn-small {
+    #tabelaKalendarz .btn-small,
+    #tabelaAdwent .btn-small {
       min-width: 100px;
       padding: 6px 12px;
       font-size: 13px;
       white-space: nowrap;
       overflow: visible;
     }
+
+/* Style dla tabeli Adwent - zawijanie tekstu */
+#tabelaAdwent th,
+#tabelaAdwent td {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.3;
+  text-align: center;
+  vertical-align: middle;
+}
+
+#tabelaAdwent th:nth-child(1), #tabelaAdwent td:nth-child(1) { width: 15%; } /* Data */
+#tabelaAdwent th:nth-child(2), #tabelaAdwent td:nth-child(2) { width: 18%; } /* Dzień tygodnia */
+#tabelaAdwent th:nth-child(3), #tabelaAdwent td:nth-child(3) { width: 27%; } /* Tydzień Adwentu */
+#tabelaAdwent th:nth-child(4), #tabelaAdwent td:nth-child(4) { width: 20%; } /* Osoba Główna */
+#tabelaAdwent th:nth-child(5), #tabelaAdwent td:nth-child(5) { width: 20%; } /* Pomocnik */
 
     /* Style dla przycisków w modalu odwiedzin */
     #modalOdwiedziny .uni-btn {
@@ -1520,4 +1565,23 @@ table, .tab-content {
 #tabelaChorych .btn-small:hover {
   background-color: #d32f2f !important;
   transform: scale(1.05) !important;
+}
+
+/* Tooltip dla przycisku Odwiedzone */
+.visited-tooltip-container {
+  position: fixed;
+  background: #fff;
+  color: #6d5c3d;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: pre-line;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(109, 92, 61, 0.3);
+  border: 1px solid #bfa16b;
+  z-index: 999999;
+  pointer-events: none;
+  min-width: 150px;
+  max-width: 280px;
+  font-family: 'Open Sans', Arial, sans-serif;
 }

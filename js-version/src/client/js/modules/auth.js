@@ -1,14 +1,15 @@
 // Moduł zarządzania autentykacją
 export class AuthManager {
   constructor() {
-    this.token = null; // Nie zapisuj tokenu - wymuś logowanie przy każdym odświeżeniu
+    // Odczytaj token z sessionStorage (znika po zamknięciu przeglądarki)
+    this.token = sessionStorage.getItem('authToken') || null;
     this.user = null;
   }
 
   // Metoda do aktualizacji tokenu po zalogowaniu
   setToken(token) {
     this.token = token;
-    // Nie zapisuj w sessionStorage - token znika po odświeżeniu
+    sessionStorage.setItem('authToken', token);
   }
 
   async checkAuth() {
@@ -59,7 +60,7 @@ export class AuthManager {
       if (response.ok && data.success) {
         this.token = data.token;
         this.user = data.user;
-        localStorage.setItem('authToken', this.token);
+        sessionStorage.setItem('authToken', this.token);
         return true;
       } else {
         throw new Error(data.error || 'Błąd logowania');
@@ -90,7 +91,7 @@ export class AuthManager {
   clearAuth() {
     this.token = null;
     this.user = null;
-    // Nie ma potrzeby czyścić sessionStorage - nie używamy go
+    sessionStorage.removeItem('authToken');
   }
 
   getAuthHeaders() {

@@ -4,6 +4,7 @@ import { KalendarzManager } from './modules/kalendarz.js';
 import { ChorzyManager } from './modules/chorzy.js';
 import { SzafarzeManager } from './modules/szafarze.js';
 import { RaportyManager } from './modules/raporty.js';
+import { AdwentManager } from './modules/adwent.js';
 import { Utils } from './modules/utils.js';
 
 class App {
@@ -14,6 +15,7 @@ class App {
     this.chorzyManager = new ChorzyManager(this.authManager);
     this.szafarzeManager = new SzafarzeManager(this.authManager);
     this.raportyManager = new RaportyManager(this.authManager);
+    this.adwentManager = new AdwentManager(this.authManager);
     this.utils = new Utils();
     
     this.init();
@@ -54,27 +56,57 @@ class App {
       
       const password = document.getElementById('passwordInput').value;
       const errorDiv = document.getElementById('loginError');
+      const submitBtn = newForm.querySelector('button[type="submit"]');
       
-      // Sprawdź hasło
-      if (password === 'PomocDlaChorych!') {
-        // Ukryj błąd jeśli był widoczny
-        errorDiv.style.display = 'none';
+      // Wyłącz przycisk podczas logowania
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Logowanie...';
+      
+      try {
+        // Wyślij hasło do serwera
+        const response = await fetch('/auth/simple-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ password })
+        });
         
-        // Ukryj ekran logowania, pokaż aplikację
-        loginScreen.style.display = 'none';
-        mainApp.style.display = 'block';
+        const data = await response.json();
         
-        // Ustaw token w pamięci (znika po odświeżeniu strony)
-        this.authManager.setToken('simple-login-token');
-        
-        // Inicjalizuj aplikację
-        await this.initializeApp();
-      } else {
-        // Pokaż błąd
-        errorDiv.textContent = 'Nieprawidłowe hasło';
+        if (response.ok && data.success) {
+          // Ukryj błąd jeśli był widoczny
+          errorDiv.style.display = 'none';
+          
+          // Ukryj ekran logowania, pokaż aplikację
+          loginScreen.style.display = 'none';
+          mainApp.style.display = 'block';
+          
+          // Ustaw token JWT w pamięci
+          this.authManager.setToken(data.token);
+          
+          // Inicjalizuj aplikację
+          await this.initializeApp();
+        } else if (response.status === 429) {
+          // Zbyt wiele prób
+          errorDiv.textContent = `Zbyt wiele prób logowania. Spróbuj ponownie za ${data.retryAfter || 60} sekund.`;
+          errorDiv.style.display = 'block';
+          passwordInput.value = '';
+        } else {
+          // Pokaż błąd
+          errorDiv.textContent = data.error || 'Nieprawidłowe hasło';
+          errorDiv.style.display = 'block';
+          passwordInput.value = '';
+          passwordInput.focus();
+        }
+      } catch (error) {
+        console.error('Błąd logowania:', error);
+        errorDiv.textContent = 'Błąd połączenia z serwerem';
         errorDiv.style.display = 'block';
-        passwordInput.value = '';
-        passwordInput.focus();
+      } finally {
+        // Włącz przycisk ponownie
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Zaloguj';
       }
     });
     
@@ -122,6 +154,7 @@ class App {
       window.chorzyManager = this.chorzyManager;
       window.szafarzeManager = this.szafarzeManager;
       window.raportyManager = this.raportyManager;
+      window.adwentManager = this.adwentManager;
       
       // Inicjalizuj wszystkie moduły
       console.log('Ładowanie modułów...');
@@ -151,6 +184,13 @@ class App {
         console.log('✓ Raporty');
       } catch (error) {
         console.error('Błąd inicjalizacji raportów:', error);
+      }
+      
+      try {
+        await this.adwentManager.init();
+        console.log('✓ Adwent');
+      } catch (error) {
+        console.error('Błąd inicjalizacji adwentu:', error);
       }
 
       // Ustaw obsługę zakładek

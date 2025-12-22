@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
 const fs = require('fs-extra');
+const config = require('./config/security');
 
 // Import modułów
 const authRoutes = require('./routes/auth');
@@ -10,7 +11,68 @@ const apiRoutes = require('./routes/api');
 const historiaRoutes = require('./routes/historia');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.port;
+
+// Rate limiting - ochrona przed brute force
+const loginAttempts = new Map(); // IP -> { count, lastAttempt, blocked }
+
+function rateLimitMiddleware(req, res, next) {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  
+  if (!loginAttempts.has(ip)) {
+    loginAttempts.set(ip, { count: 0, lastAttempt: now, blocked: false });
+  }
+  
+  const attempt = loginAttempts.get(ip);
+  
+  // Sprawdź czy IP jest zablokowane
+  if (attempt.blocked) {
+    const timeLeft = config.rateLimit.loginBlockTime - (now - attempt.lastAttempt);
+    if (timeLeft > 0) {
+      return res.status(429).json({ 
+        error: 'Zbyt wiele prób logowania',
+        retryAfter: Math.ceil(timeLeft / 1000)
+      });
+    } else {
+      // Odblokuj po upływie czasu
+      attempt.blocked = false;
+      attempt.count = 0;
+    }
+  }
+  
+  // Resetuj licznik po oknie czasowym
+  if (now - attempt.lastAttempt > config.rateLimit.windowMs) {
+    attempt.count = 0;
+  }
+  
+  next();
+}
+
+// Funkcja do rejestrowania nieudanej próby logowania
+function registerFailedLogin(ip) {
+  if (!loginAttempts.has(ip)) {
+    loginAttempts.set(ip, { count: 0, lastAttempt: Date.now(), blocked: false });
+  }
+  
+  const attempt = loginAttempts.get(ip);
+  attempt.count++;
+  attempt.lastAttempt = Date.now();
+  
+  if (attempt.count >= config.rateLimit.maxLoginAttempts) {
+    attempt.blocked = true;
+    console.log(`🚫 IP ${ip} zablokowane po ${attempt.count} nieudanych próbach logowania`);
+  }
+}
+
+// Funkcja do resetowania licznika po udanym logowaniu
+function resetLoginAttempts(ip) {
+  loginAttempts.delete(ip);
+}
+
+// Eksportuj funkcje dla routes
+app.locals.registerFailedLogin = registerFailedLogin;
+app.locals.resetLoginAttempts = resetLoginAttempts;
 
 // Middleware
 app.use(helmet({
@@ -35,8 +97,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
-app.use('/auth', authRoutes);
+// Routes z rate limiting dla logowania
+app.use('/auth', rateLimitMiddleware, authRoutes);
 app.use('/api', apiRoutes);
 app.use('/historia', historiaRoutes);
 

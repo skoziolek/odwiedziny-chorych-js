@@ -5,32 +5,29 @@ const { encryptData, decryptData, isEncrypted } = require('../utils/crypto');
 
 const router = express.Router();
 
-// Prosty middleware autoryzacji dla API
+const config = require('../config/security');
+
+// Middleware autoryzacji dla API - tylko JWT
 const authenticateAPI = (req, res, next) => {
-  // Sprawdź czy to prosty token (dla nowego systemu logowania)
   const authHeader = req.headers['authorization'];
   
-  if (authHeader === 'Bearer simple-login-token') {
-    // Prosty token - pozwól na dostęp
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Brak autoryzacji' });
+  }
+  
+  const jwt = require('jsonwebtoken');
+  const token = authHeader.split(' ')[1];
+  
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret);
+    req.user = decoded;
     return next();
-  }
-  
-  // Sprawdź czy to standardowy JWT token
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const jwt = require('jsonwebtoken');
-    const JWT_SECRET = process.env.JWT_SECRET || 'OdwiedzinyChorych2024!@#$%^&*()_+';
-    const token = authHeader.split(' ')[1];
-    
-    try {
-      jwt.verify(token, JWT_SECRET);
-      return next();
-    } catch (error) {
-      return res.status(401).json({ error: 'Nieprawidłowy token' });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Sesja wygasła. Zaloguj się ponownie.' });
     }
+    return res.status(401).json({ error: 'Nieprawidłowy token' });
   }
-  
-  // Brak autoryzacji - zwróć błąd
-  return res.status(401).json({ error: 'Brak autoryzacji' });
 };
 
 // Ścieżka do folderu z danymi
@@ -45,8 +42,8 @@ const DATA_DIR = path.join(__dirname, '../../data');
 async function getDataFromFile(filename, year = null) {
   try {
     let filePath;
-    if (filename === 'kalendarz' && year) {
-      filePath = path.join(DATA_DIR, `kalendarz_${year}.json`);
+    if ((filename === 'kalendarz' || filename === 'adwent') && year) {
+      filePath = path.join(DATA_DIR, `${filename}_${year}.json`);
     } else {
       filePath = path.join(DATA_DIR, `${filename}.json`);
     }
@@ -80,8 +77,8 @@ async function getDataFromFile(filename, year = null) {
 async function saveDataToFile(filename, data, year = null) {
   try {
     let filePath;
-    if (filename === 'kalendarz' && year) {
-      filePath = path.join(DATA_DIR, `kalendarz_${year}.json`);
+    if ((filename === 'kalendarz' || filename === 'adwent') && year) {
+      filePath = path.join(DATA_DIR, `${filename}_${year}.json`);
     } else {
       filePath = path.join(DATA_DIR, `${filename}.json`);
     }
@@ -107,7 +104,7 @@ router.get('/:file', authenticateAPI, async (req, res) => {
     const { file } = req.params;
     const { rok } = req.query;
 
-    if (!['chorzy', 'szafarze', 'kalendarz', 'historia'].includes(file)) {
+    if (!['chorzy', 'szafarze', 'kalendarz', 'historia', 'adwent'].includes(file)) {
       return res.status(400).json({ error: 'Nieprawidłowy plik' });
     }
 
@@ -126,8 +123,23 @@ router.post('/:file', authenticateAPI, async (req, res) => {
     const { rok } = req.query;
     const data = req.body;
 
-    if (!['chorzy', 'szafarze', 'kalendarz', 'historia'].includes(file)) {
+    if (!['chorzy', 'szafarze', 'kalendarz', 'historia', 'adwent'].includes(file)) {
       return res.status(400).json({ error: 'Nieprawidłowy plik' });
+    }
+
+    // Obsługa akcji specjalnych dla adwentu
+    if (file === 'adwent') {
+      const { action } = data;
+      
+      if (action === 'zapisz_adwent') {
+        const success = await saveDataToFile(file, data.dane || {}, rok);
+        if (success) {
+          res.json({ success: true });
+        } else {
+          res.status(500).json({ error: 'Błąd zapisu do pliku' });
+        }
+        return;
+      }
     }
 
     // Obsługa akcji specjalnych dla kalendarza

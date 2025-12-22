@@ -37,24 +37,29 @@ export class KalendarzManager {
   async loadSzafarze() {
     try {
       const response = await this.authManager.fetchWithAuth('/api/szafarze');
+      
       if (response.ok) {
         const data = await response.json();
-        // Wyodrębnij tylko imię z imieNazwisko
+        
+        // Pobierz imiona szafarzy (nowa struktura: imie, nazwisko)
         this.szafarze = data.map(s => {
+          // Nowa struktura z osobnymi polami imie i nazwisko
+          if (s.imie) {
+            return s.imie.trim();
+          }
+          // Stara struktura z imieNazwisko (kompatybilność wsteczna)
           if (s.imieNazwisko) {
-            // Podziel na części i weź pierwszą (imię)
             const parts = s.imieNazwisko.trim().split(' ');
             return parts[0];
           }
           return '';
         }).filter(Boolean);
       } else {
-        // Użyj domyślnej listy
-        this.szafarze = ["Tomasz", "Andrzej", "Piotr", "Dawid", "Mateusz", "Damian", "Sebastian"];
+        this.szafarze = [];
       }
     } catch (error) {
       console.error('Błąd ładowania szafarzy:', error);
-      this.szafarze = ["Tomasz", "Andrzej", "Piotr", "Dawid", "Mateusz", "Damian", "Sebastian"];
+      this.szafarze = [];
     }
   }
 
@@ -64,28 +69,11 @@ export class KalendarzManager {
       if (response.ok) {
         return await response.json();
       } else {
-        // Zwróć domyślną listę szafarzy
-        return [
-          { imieNazwisko: "Tomasz Kowalski" },
-          { imieNazwisko: "Andrzej Nowak" },
-          { imieNazwisko: "Piotr Wiśniewski" },
-          { imieNazwisko: "Dawid Kowalczyk" },
-          { imieNazwisko: "Mateusz Zieliński" },
-          { imieNazwisko: "Damian Kaczmarek" },
-          { imieNazwisko: "Sebastian Lewandowski" }
-        ];
+        return [];
       }
     } catch (error) {
       console.error('Błąd ładowania danych szafarzy:', error);
-      return [
-        { imieNazwisko: "Tomasz Kowalski" },
-        { imieNazwisko: "Andrzej Nowak" },
-        { imieNazwisko: "Piotr Wiśniewski" },
-        { imieNazwisko: "Dawid Kowalczyk" },
-        { imieNazwisko: "Mateusz Zieliński" },
-        { imieNazwisko: "Damian Kaczmarek" },
-        { imieNazwisko: "Sebastian Lewandowski" }
-      ];
+      return [];
     }
   }
 
@@ -214,6 +202,11 @@ export class KalendarzManager {
       if (response.ok) {
         const data = await response.json();
         const newSzafarze = data.map(s => {
+          // Nowa struktura z osobnymi polami imie i nazwisko
+          if (s.imie) {
+            return s.imie.trim();
+          }
+          // Stara struktura z imieNazwisko (kompatybilność wsteczna)
           if (s.imieNazwisko) {
             const parts = s.imieNazwisko.trim().split(' ');
             return parts[0];
@@ -264,11 +257,22 @@ export class KalendarzManager {
     const row = document.createElement('tr');
     const data = this.kalendarzData[dateStr] || {};
     
+    // Pobierz lokalną kopię szafarzy
+    const szafarzeList = this.szafarze || [];
     
     // Dodaj klasę dla świąt
     if (isSwieto) {
       row.classList.add('swieto-row');
     }
+    
+    // Generuj opcje dla selectów
+    const szafarzeOptions = szafarzeList.map(szafarz => 
+      `<option value="${szafarz}" ${data.osobaGlowna === szafarz ? 'selected' : ''}>${szafarz}</option>`
+    ).join('');
+    
+    const pomocnikOptions = szafarzeList.map(szafarz => 
+      `<option value="${szafarz}" ${data.pomocnik === szafarz ? 'selected' : ''}>${szafarz}</option>`
+    ).join('');
     
     row.innerHTML = `
       <td>${this.utils.formatDate(new Date(dateStr))}</td>
@@ -276,17 +280,13 @@ export class KalendarzManager {
       <td>
         <select class="osoba-glowna-select">
           <option value="" ${!data.osobaGlowna ? 'selected' : ''}>-- Wybierz --</option>
-          ${this.szafarze.map(szafarz => 
-            `<option value="${szafarz}" ${data.osobaGlowna === szafarz ? 'selected' : ''}>${szafarz}</option>`
-          ).join('')}
+          ${szafarzeOptions}
         </select>
       </td>
       <td>
         <select class="pomocnik-select">
           <option value="" ${!data.pomocnik ? 'selected' : ''}>-- Wybierz --</option>
-          ${this.szafarze.map(szafarz => 
-            `<option value="${szafarz}" ${data.pomocnik === szafarz ? 'selected' : ''}>${szafarz}</option>`
-          ).join('')}
+          ${pomocnikOptions}
         </select>
       </td>
       <td contenteditable="true" class="uwagi-input">${data.uwagi || ''}</td>
@@ -327,14 +327,18 @@ export class KalendarzManager {
 
       rows.forEach(row => {
         const cells = row.querySelectorAll('td');
-        const date = cells[0].textContent.trim();
-        if (!date) return;
+        const dateDisplay = cells[0].textContent.trim();
+        if (!dateDisplay) return;
+
+        // Konwertuj datę z formatu "17.12.2025" na "2025-12-17"
+        const [day, month, year] = dateDisplay.split('.');
+        const dateKey = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
         const [selectGlowna, selectPomocnik] = row.querySelectorAll('select');
         const uwagi = cells[4].textContent.trim();
 
         if (selectGlowna.value.trim() || selectPomocnik.value.trim() || uwagi) {
-          dataToSave[date] = {
+          dataToSave[dateKey] = {
             osobaGlowna: selectGlowna.value,
             pomocnik: selectPomocnik.value,
             uwagi: uwagi
@@ -388,11 +392,9 @@ export class KalendarzManager {
     console.log('Dodaję przyciski do kalendarza');
     buttonsContainer.innerHTML = `
       <button class="uni-btn" id="print-btn">Drukuj</button>
-      <button class="uni-btn" id="generate-test-btn" style="background-color: #ff9800;">Generuj dane testowe</button>
-      <button class="uni-btn" id="clear-test-btn" style="background-color: #f44336;">Wyczyść dane testowe</button>
-      <button class="uni-btn" id="create-year-btn" style="background-color: #2196f3; color: white;">Utwórz nowy rok</button>
-      <button class="uni-btn" id="reset-assignments-btn" style="background-color: #4caf50; color: white;">Resetuj przypisania dyżurów</button>
-      <button class="uni-btn" id="auto-assign-btn" style="background-color: #9c27b0; color: white;">Auto-przypisz szafarzy</button>
+      <button class="uni-btn" id="create-year-btn">Utwórz nowy rok</button>
+      <button class="uni-btn" id="auto-assign-btn">Auto-przypisz szafarzy</button>
+      <button class="uni-btn" id="adwent-btn">🕯️ Adwent</button>
     `;
 
     // Dodaj event listenery
@@ -411,24 +413,6 @@ export class KalendarzManager {
       });
     }
 
-    // Przycisk generowania danych testowych
-    const generateTestBtn = document.getElementById('generate-test-btn');
-    if (generateTestBtn) {
-      generateTestBtn.addEventListener('click', () => {
-        console.log('Przycisk Generuj dane testowe kliknięty');
-        this.generateTestData();
-      });
-    }
-
-    // Przycisk czyszczenia danych testowych
-    const clearTestBtn = document.getElementById('clear-test-btn');
-    if (clearTestBtn) {
-      clearTestBtn.addEventListener('click', () => {
-        console.log('Przycisk Wyczyść dane testowe kliknięty');
-        this.clearTestData();
-      });
-    }
-
     // Przycisk tworzenia nowego roku
     const createYearBtn = document.getElementById('create-year-btn');
     if (createYearBtn) {
@@ -438,26 +422,29 @@ export class KalendarzManager {
       });
     }
 
-    // Przycisk resetowania przypisań
-    const resetAssignmentsBtn = document.getElementById('reset-assignments-btn');
-    if (resetAssignmentsBtn) {
-      resetAssignmentsBtn.addEventListener('click', () => {
-        console.log('Przycisk Resetuj przypisania dyżurów kliknięty');
-        this.resetAssignments();
-      });
-    }
-
     // Przycisk auto-przypisywania szafarzy
     const autoAssignBtn = document.getElementById('auto-assign-btn');
     if (autoAssignBtn) {
       autoAssignBtn.addEventListener('click', () => {
         console.log('Przycisk Auto-przypisz szafarzy kliknięty');
-        console.log('kalendarzManager:', typeof this);
-        console.log('autoAssignSzafarze:', typeof this.autoAssignSzafarze);
         if (this.autoAssignSzafarze) {
           this.autoAssignSzafarze();
         } else {
           console.error('autoAssignSzafarze nie jest dostępne');
+        }
+      });
+    }
+
+    // Przycisk Adwent
+    const adwentBtn = document.getElementById('adwent-btn');
+    if (adwentBtn) {
+      adwentBtn.addEventListener('click', () => {
+        console.log('Przycisk Adwent kliknięty');
+        // Użyj globalnego adwentManager
+        if (window.adwentManager) {
+          window.adwentManager.showAdwentTab();
+        } else {
+          console.error('adwentManager nie jest dostępne');
         }
       });
     }
@@ -478,11 +465,6 @@ export class KalendarzManager {
     this.utils.showSuccess('Funkcja czyszczenia danych testowych będzie wkrótce dostępna');
   }
 
-
-  resetAssignments() {
-    console.log('Resetowanie przypisań');
-    this.utils.showSuccess('Funkcja resetowania przypisań będzie wkrótce dostępna');
-  }
 
   async markVisited(dateStr) {
     console.log('markVisited wywołane dla daty:', dateStr);
@@ -510,18 +492,11 @@ export class KalendarzManager {
       if (response.ok) {
         let chorzy = await response.json();
         
-        // Domyślnie status: '' jeśli nie ustawiony
-        chorzy.forEach(chory => {
-          if (!('status' in chory)) chory.status = '';
-        });
-
-        // Sortowanie: najpierw TAK, potem puste, potem NIE, każda grupa alfabetycznie
-        // (tak samo jak w zakładce Chorzy)
-        chorzy = [
-          ...chorzy.filter(c => c.status === 'TAK').sort((a, b) => (a.imieNazwisko || '').localeCompare(b.imieNazwisko || '')),
-          ...chorzy.filter(c => c.status === '').sort((a, b) => (a.imieNazwisko || '').localeCompare(b.imieNazwisko || '')),
-          ...chorzy.filter(c => c.status === 'NIE').sort((a, b) => (a.imieNazwisko || '').localeCompare(b.imieNazwisko || ''))
-        ];
+        // Filtruj tylko chorych ze statusem TAK
+        chorzy = chorzy.filter(chory => chory.status === 'TAK');
+        
+        // Sortuj alfabetycznie
+        chorzy.sort((a, b) => (a.imieNazwisko || '').localeCompare(b.imieNazwisko || ''));
         
         return chorzy;
       } else {
@@ -672,166 +647,91 @@ export class KalendarzManager {
   }
 
   setupTooltip(button, odwiedzeniChorzy) {
-    // Usuń poprzedni tooltip jeśli istnieje
-    const existingTooltip = button.querySelector('.visited-tooltip');
-    if (existingTooltip) {
-      existingTooltip.remove();
-    }
+    // Zapisz dane chorych na przycisku
+    button._odwiedzeniChorzy = odwiedzeniChorzy;
     
-    // Stwórz tooltip
-    const tooltip = document.createElement('div');
-    tooltip.className = 'visited-tooltip';
-    tooltip.style.cssText = `
-      position: fixed;
-      background: #fff;
-      color: #6d5c3d;
-      padding: 12px 16px;
-      border-radius: 6px;
-      font-size: 13px;
-      white-space: nowrap;
-      z-index: 9999;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s;
-      box-shadow: 0 4px 12px rgba(109, 92, 61, 0.3);
-      border: 1px solid #bfa16b;
-      max-width: 300px;
-      white-space: normal;
-      word-wrap: break-word;
-      font-family: 'Open Sans', Arial, sans-serif;
-    `;
+    // Sprawdź czy już ma event listenery
+    if (button._hasTooltipListeners) return;
+    button._hasTooltipListeners = true;
     
-    // Dodaj listę odwiedzonych
-    const title = document.createElement('div');
-    title.textContent = 'Odwiedzeni:';
-    title.style.cssText = 'font-weight: bold; margin-bottom: 4px;';
-    tooltip.appendChild(title);
+    let tooltipElement = null;
+    let isHovering = false;
     
-    odwiedzeniChorzy.forEach(chory => {
-      const item = document.createElement('div');
-      item.textContent = `• ${chory}`;
-      item.style.cssText = 'margin: 2px 0;';
-      tooltip.appendChild(item);
-    });
-    
-    // Dodaj tooltip do body (żeby nie był przycięty przez kontener)
-    document.body.appendChild(tooltip);
-    
-    // Funkcja pokazywania tooltipa
-    const showTooltip = (e) => {
+    const createTooltip = () => {
+      // Usuń poprzedni tooltip
+      if (tooltipElement) {
+        tooltipElement.remove();
+      }
+      
+      const chorzy = button._odwiedzeniChorzy || [];
+      if (chorzy.length === 0) return null;
+      
+      tooltipElement = document.createElement('div');
+      tooltipElement.className = 'visited-tooltip-container';
+      
+      // Tytuł
+      const title = document.createElement('div');
+      title.textContent = 'Odwiedzeni:';
+      title.style.fontWeight = 'bold';
+      title.style.marginBottom = '6px';
+      tooltipElement.appendChild(title);
+      
+      // Lista chorych
+      chorzy.forEach(chory => {
+        const item = document.createElement('div');
+        item.textContent = '• ' + chory;
+        item.style.marginBottom = '2px';
+        tooltipElement.appendChild(item);
+      });
+      
+      document.body.appendChild(tooltipElement);
+      
+      // Pozycjonuj tooltip
       const rect = button.getBoundingClientRect();
-      const tooltipWidth = 300; // max-width z CSS
-      const viewportWidth = window.innerWidth;
-      const isMobile = window.innerWidth <= 768;
+      const tooltipHeight = tooltipElement.offsetHeight;
       
-      // Pokaż tooltip tymczasowo, żeby zmierzyć jego rzeczywistą szerokość
-      tooltip.style.opacity = '0';
-      tooltip.style.visibility = 'hidden';
-      tooltip.style.left = '0px';
-      tooltip.style.top = '0px';
-      tooltip.style.transform = 'none';
+      // Pozycja nad przyciskiem
+      let top = rect.top - tooltipHeight - 10;
+      let left = rect.left + (rect.width / 2) - (tooltipElement.offsetWidth / 2);
       
-      // Pozycjonuj tooltip - użyj getBoundingClientRect() bezpośrednio
-      const margin = 10;
-      const centerX = rect.left + rect.width / 2;
-      const leftPos = Math.max(margin, centerX - tooltipWidth / 2);
-      const rightPos = leftPos + tooltipWidth;
-      
-      // Sprawdź czy tooltip mieści się w viewport
-      if (rightPos > viewportWidth - margin) {
-        tooltip.style.left = (viewportWidth - tooltipWidth - margin) + 'px';
-      } else if (leftPos < margin) {
-        tooltip.style.left = margin + 'px';
-      } else {
-        tooltip.style.left = leftPos + 'px';
+      // Jeśli tooltip wychodzi poza górę ekranu, pokaż pod przyciskiem
+      if (top < 10) {
+        top = rect.bottom + 10;
       }
       
-      // Pozycjonuj tooltip - responsywne pozycjonowanie
-      if (isMobile) {
-        // Na urządzeniach mobilnych - tooltip obok przycisku (górna krawędź na tym samym poziomie)
-        tooltip.style.top = rect.top + 'px';
-        tooltip.style.transform = 'none';
-      } else {
-        // Na większych ekranach - tooltip nad przyciskiem
-        tooltip.style.top = (rect.top - 10) + 'px';
-        tooltip.style.transform = 'translateY(-100%)';
-      }
+      // Ogranicz do ekranu
+      left = Math.max(10, Math.min(left, window.innerWidth - tooltipElement.offsetWidth - 10));
       
-      tooltip.style.visibility = 'visible';
-      tooltip.style.opacity = '1';
+      tooltipElement.style.top = top + 'px';
+      tooltipElement.style.left = left + 'px';
+      
+      return tooltipElement;
+    };
+    
+    const showTooltip = () => {
+      isHovering = true;
+      // Opóźnienie żeby odróżnić hover od kliknięcia
+      setTimeout(() => {
+        if (isHovering) {
+          createTooltip();
+        }
+      }, 200);
     };
     
     const hideTooltip = () => {
-      tooltip.style.opacity = '0';
+      isHovering = false;
+      if (tooltipElement) {
+        tooltipElement.remove();
+        tooltipElement = null;
+      }
     };
     
-    // Obsługa hover (desktop)
+    // Event listenery dla hover
     button.addEventListener('mouseenter', showTooltip);
     button.addEventListener('mouseleave', hideTooltip);
     
-    // Obsługa touch (mobile) - long press dla tooltipa
-    let touchStartTime;
-    let longPressTimeout;
-    let isLongPress = false;
-    
-    button.addEventListener('touchstart', (e) => {
-      touchStartTime = Date.now();
-      isLongPress = false;
-      
-      // Rozpocznij timer dla long press (500ms)
-      longPressTimeout = setTimeout(() => {
-        isLongPress = true;
-        showTooltip(e);
-      }, 500);
-    }, { passive: true });
-    
-    button.addEventListener('touchend', (e) => {
-      const touchDuration = Date.now() - touchStartTime;
-      clearTimeout(longPressTimeout);
-      
-      if (isLongPress) {
-        // To był long press - ukryj tooltip po 3 sekundach
-        e.preventDefault();
-        setTimeout(hideTooltip, 3000);
-      } else if (touchDuration < 500) {
-        // To było krótkie dotknięcie - pozwól na normalne kliknięcie
-        // Nie wywołuj preventDefault() - pozwól na otwarcie modala
-      }
-    }, { passive: false });
-    
-    button.addEventListener('touchmove', () => {
-      // Anuluj long press jeśli użytkownik przesuwa palec
-      clearTimeout(longPressTimeout);
-    }, { passive: true });
-    
-    
-    // Globalny event listener dla ukrywania tooltipa (tylko jeden)
-    if (!window.tooltipGlobalListener) {
-      window.tooltipGlobalListener = true;
-      document.addEventListener("touchstart", (e) => {
-        // Sprawdź czy to nie jest przewijanie
-        if (e.touches.length > 1) return;
-        
-        // Ukryj wszystkie tooltips
-        const tooltips = document.querySelectorAll(".visited-tooltip");
-        tooltips.forEach(tooltip => {
-          if (tooltip.style.opacity === "1") {
-            tooltip.style.opacity = "0";
-          }
-        });
-      }, { passive: true });
-    }    // Aktualizuj pozycję tooltipa przy przewijaniu lub zmianie orientacji
-    const updateTooltipPosition = () => {
-      if (tooltip.style.opacity === '1') {
-        showTooltip();
-      }
-    };
-    
-    window.addEventListener('scroll', updateTooltipPosition, true);
-    window.addEventListener('resize', updateTooltipPosition);
-    window.addEventListener('orientationchange', () => {
-      setTimeout(updateTooltipPosition, 100);
-    });
+    // Ukryj tooltip przy kliknięciu (bo otworzy się modal)
+    button.addEventListener('click', hideTooltip);
   }
 
   async checkVisitedDates() {
@@ -1027,31 +927,6 @@ export class KalendarzManager {
     return newYearData;
   }
 
-  async resetAssignments() {
-    const confirmed = await this.utils.confirm('Czy na pewno chcesz zresetować wszystkie przypisania dyżurów?');
-    if (!confirmed) return;
-
-    try {
-      const response = await this.authManager.fetchWithAuth('/historia', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'resetuj_statusy_odwiedzin' })
-      });
-
-      if (response.ok) {
-        this.utils.showSuccess('Przypisania dyżurów zostały zresetowane!');
-        await this.loadKalendarz();
-        await this.generateKalendarz();
-      } else {
-        throw new Error('Błąd resetowania przypisań');
-      }
-    } catch (error) {
-      console.error('Błąd resetowania przypisań:', error);
-      this.utils.showError('Błąd resetowania przypisań');
-    }
-  }
 
   async autoAssignSzafarze() {
     console.log('autoAssignSzafarze wywołane');
@@ -1101,6 +976,11 @@ export class KalendarzManager {
     // Załaduj pełne dane szafarzy z tabeli
     const szafarzeData = await this.loadSzafarzeData();
     const szafarzeNames = szafarzeData.map(s => {
+      // Nowa struktura z osobnymi polami imie i nazwisko
+      if (s.imie) {
+        return s.imie.trim();
+      }
+      // Stara struktura z imieNazwisko (kompatybilność wsteczna)
       if (s.imieNazwisko) {
         const parts = s.imieNazwisko.trim().split(' ');
         return parts[0]; // Tylko imię

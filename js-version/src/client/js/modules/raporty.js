@@ -84,8 +84,9 @@ export class RaportyManager {
         <div class="raport-stats">
           <h3>Statystyki</h3>
           <ul>
-            <li>Łączna liczba odwiedzin: <strong>${statystyki.lacznaLiczbaOdwiedzin || 0}</strong></li>
-            <li>Odwiedzeni chorzy: <strong>${statystyki.odwiedzeniChorzy || 0}</strong></li>
+            <li>Liczba odwiedzin w miesiącu: <strong>${statystyki.lacznaLiczbaOdwiedzin || 0}</strong></li>
+            <li>Odwiedzeni chorzy w miesiącu: <strong>${statystyki.odwiedzeniChorzyMiesiac || 0}</strong></li>
+            <li>Łączna liczba chorych (od początku roku): <strong>${statystyki.odwiedzeniChorzy || 0}</strong></li>
             <li>Szafarze: <strong>${statystyki.szafarze ? statystyki.szafarze.join(', ') : 'Brak'}</strong></li>
           </ul>
         </div>
@@ -226,9 +227,11 @@ export class RaportyManager {
     let y = 40;
     doc.text('Statystyki:', 20, y);
     y += 10;
-    doc.text(`Łączna liczba odwiedzin: ${this.currentRaport.statystyki.lacznaLiczbaOdwiedzin || 0}`, 20, y);
+    doc.text(`Liczba odwiedzin w miesiacu: ${this.currentRaport.statystyki.lacznaLiczbaOdwiedzin || 0}`, 20, y);
     y += 10;
-    doc.text(`Odwiedzeni chorzy: ${this.currentRaport.statystyki.odwiedzeniChorzy || 0}`, 20, y);
+    doc.text(`Odwiedzeni chorzy w miesiacu: ${this.currentRaport.statystyki.odwiedzeniChorzyMiesiac || 0}`, 20, y);
+    y += 10;
+    doc.text(`Laczna liczba chorych (od poczatku roku): ${this.currentRaport.statystyki.odwiedzeniChorzy || 0}`, 20, y);
     y += 10;
     doc.text(`Szafarze: ${this.currentRaport.statystyki.szafarze ? this.currentRaport.statystyki.szafarze.join(', ') : 'Brak'}`, 20, y);
 
