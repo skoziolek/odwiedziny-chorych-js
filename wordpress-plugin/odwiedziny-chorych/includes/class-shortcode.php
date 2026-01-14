@@ -159,22 +159,59 @@ class OC_Shortcode {
      * Weryfikuj sesję
      */
     public static function verify_session($request) {
+        // Debug - loguj wszystkie nagłówki (tylko dla debugowania, usuń w produkcji)
+        $all_headers = $request->get_headers();
+        
+        // Sprawdź nagłówek Authorization
         $auth_header = $request->get_header('Authorization');
+        
+        // Jeśli nie ma w Authorization, sprawdź alternatywne sposoby
+        if (!$auth_header) {
+            // Sprawdź czy może być w innych miejscach (dla debugowania)
+            $auth_header = $request->get_header('authorization'); // lowercase
+        }
+        
         if (!$auth_header || strpos($auth_header, 'Bearer ') !== 0) {
-            return new WP_Error('no_token', 'Brak tokenu', array('status' => 401));
+            // Loguj dla debugowania (usuń w produkcji)
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('OC Auth Verify: Brak tokenu. Headers: ' . print_r($all_headers, true));
+            }
+            return new WP_Error('no_token', 'Brak tokenu autoryzacji', array('status' => 401));
         }
         
         $token = substr($auth_header, 7);
         
+        if (empty($token)) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('OC Auth Verify: Pusty token');
+            }
+            return new WP_Error('empty_token', 'Token jest pusty', array('status' => 401));
+        }
+        
         global $wpdb;
         $table = OC_Database::get_table_name('sesje');
         
+        // Sprawdź czy sesja istnieje i nie wygasła
         $session = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $table WHERE token = %s AND data_wygasniecia > NOW()",
             $token
         ));
         
         if (!$session) {
+            // Sprawdź czy token istnieje ale wygasł
+            $expired_session = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $table WHERE token = %s",
+                $token
+            ));
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                if ($expired_session) {
+                    error_log('OC Auth Verify: Token wygasł. Data wygaśnięcia: ' . $expired_session->data_wygasniecia);
+                } else {
+                    error_log('OC Auth Verify: Token nie istnieje w bazie');
+                }
+            }
+            
             return new WP_Error('invalid_token', 'Nieprawidłowy lub wygasły token', array('status' => 401));
         }
         

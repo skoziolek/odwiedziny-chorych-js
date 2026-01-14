@@ -19,18 +19,53 @@ body:not(.wp-admin) #wpadminbar {
 
 /* Ukryj tytuł strony WordPress i header przed aplikacją */
 .oc-container {
-    margin-top: -40px; /* Kompensuj miejsce po ukrytym tytule */
+    margin-top: 0 !important; /* Nie potrzebujemy ujemnego marginesu, jeśli header jest ukryty */
 }
 
-body:not(.wp-admin) .entry-title,
-body:not(.wp-admin) .entry-header h1,
-body:not(.wp-admin) .page-title {
+/* Ukryj tytuł strony i entry header */
+body .entry-title,
+body .entry-header h1,
+body .page-title,
+body .entry-header {
     display: none !important;
 }
 
-/* Ukryj cały header strony WordPress przed aplikacją */
-body:not(.wp-admin) .site-header:not(.oc-header),
-body:not(.wp-admin) .entry-header:has(+ .oc-container) {
+/* BARDZO AGRESYWNE ukrywanie WordPress header - wszystkie możliwe selektory */
+body header:not(.oc-header),
+body .site-header:not(.oc-header),
+body .main-header:not(.oc-header),
+body .site-header,
+body .wp-site-blocks > header:not(.oc-header),
+body .wp-block-template-part[data-area="header"]:not(.oc-header),
+body .site-branding,
+body .site-title,
+body .site-description,
+body .main-navigation,
+body nav[role="navigation"]:not(.oc-header),
+body header[role="banner"]:not(.oc-header),
+body .site-header-wrapper,
+body #masthead:not(.oc-header),
+body #header:not(.oc-header),
+body .header:not(.oc-header) {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 0 !important;
+}
+
+/* Ukryj również header jeśli jest przed .oc-container */
+body .oc-container ~ header,
+body header + .oc-container,
+body .site-header + .oc-container {
+    /* Zastosuj style do headera przed kontenerem */
+}
+
+/* Alternatywnie - ukryj wszystko przed .oc-container */
+body:has(.oc-container) > header:first-of-type,
+body:has(.oc-container) .site-header:first-of-type {
     display: none !important;
 }
 
@@ -112,9 +147,9 @@ body:not(.wp-admin) .entry-header:has(+ .oc-container) {
     display: none !important;
 }
 
-/* Nagłówek */
+/* Nagłówek aplikacji - musi być widoczny */
 .oc-header {
-    display: flex;
+    display: flex !important;
     justify-content: center;
     align-items: center;
     position: relative;
@@ -132,10 +167,9 @@ body:not(.wp-admin) .entry-header:has(+ .oc-container) {
     text-align: center;
 }
 
-/* Przycisk wylogowania w prawym rogu */
-.oc-header #oc-logoutBtn {
-    position: absolute;
-    right: 20px;
+/* Przycisk wylogowania - teraz w menu przycisków */
+#oc-logoutBtn {
+    /* Style już zdefiniowane przez .oc-btn i .oc-btn-secondary */
 }
 
 /* Przyciski */
@@ -211,10 +245,18 @@ body:not(.wp-admin) .entry-header:has(+ .oc-container) {
     padding: 10px;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(109, 92, 61, 0.1);
-    justify-content: center;
+    justify-content: center; /* Wyśrodkuj wszystkie przyciski razem */
+    align-items: center;
 }
 
-.oc-tab-button {
+/* Wszystkie przyciski w wierszu zakładek - jednakowe traktowanie */
+.oc-tabs .oc-tab-button,
+.oc-tabs .oc-logout-btn {
+    flex: 0 0 auto;
+}
+
+.oc-tab-button,
+.oc-tabs .oc-logout-btn {
     background: transparent;
     border: none;
     padding: 12px 20px;
@@ -226,9 +268,19 @@ body:not(.wp-admin) .entry-header:has(+ .oc-container) {
     transition: all 0.2s;
 }
 
-.oc-tab-button:hover {
+/* Przycisk Wyloguj ma dodatkowy border */
+.oc-tabs .oc-logout-btn {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.oc-tab-button:hover,
+.oc-tabs .oc-logout-btn:hover {
     background: #f5e9d4;
     color: #6d5c3d;
+}
+
+.oc-tabs .oc-logout-btn:hover {
+    border-color: rgba(109, 92, 61, 0.3);
 }
 
 .oc-tab-button.active {
@@ -255,12 +307,23 @@ body:not(.wp-admin) .entry-header:has(+ .oc-container) {
     gap: 10px;
     margin-bottom: 20px;
     justify-content: center;
+    align-items: center;
 }
 
 .oc-buttons .oc-btn {
     min-width: 180px;
     flex: 0 0 auto;
 }
+
+/* Przycisk wylogowania - style już zdefiniowane wyżej, tylko hover */
+
+.oc-tabs .oc-logout-btn:hover {
+    background: #f5e9d4;
+    color: #6d5c3d;
+    border-color: rgba(109, 92, 61, 0.3);
+}
+
+/* Na mobile przycisk będzie pod Adwent dzięki flex-wrap */
 
 /* Wybór roku/miesiąca */
 .oc-year-select,
@@ -491,45 +554,242 @@ body:not(.wp-admin) .entry-header:has(+ .oc-container) {
         padding: 10px;
     }
     
-    .oc-header {
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
-        padding: 15px 60px 15px 15px; /* Zostaw miejsce na przycisk wylogowania */
+    .oc-login-container {
+        padding: 30px 20px;
     }
     
-    .oc-header #oc-logoutBtn {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        padding: 6px 12px;
-        font-size: 0.85rem;
+    .oc-login-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    /* Ukryj WordPress header również na mobile */
+    body:not(.wp-admin) .site-header:not(.oc-header),
+    body:not(.wp-admin) header:not(.oc-header) {
+        display: none !important;
+    }
+    
+    .oc-header {
+        padding: 12px !important;
+    }
+    
+    .oc-header h1 {
+        font-size: 1.2rem !important;
     }
     
     .oc-tabs {
         flex-direction: column;
+        padding: 8px;
+        justify-content: center; /* Wyśrodkuj również na mobile */
     }
     
-    .oc-tab-button {
+    .oc-tab-button,
+    .oc-tabs .oc-logout-btn {
         width: 100%;
         text-align: center;
+        padding: 10px 15px;
+        font-size: 0.9rem;
     }
     
     .oc-buttons {
         flex-direction: column;
+        gap: 10px;
     }
     
     .oc-btn {
         width: 100%;
     }
     
+    .oc-tab-content {
+        padding: 15px;
+    }
+    
+    /* Tabela kalendarza na mobile - kompaktowy widok */
     .oc-table {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
+        min-width: 600px; /* Minimalna szerokość dla lepszej czytelności */
     }
     
     .oc-table th,
     .oc-table td {
-        padding: 8px;
+        padding: 6px 4px;
+        white-space: nowrap; /* Zapobiega zawijaniu tekstu */
+    }
+    
+    /* Sticky kolumna Data - zawsze widoczna przy scrollowaniu */
+    #oc-tabelaKalendarz th:first-child {
+        position: sticky;
+        left: 0;
+        background: linear-gradient(135deg, #6d5c3d 0%, #8b7355 100%);
+        z-index: 10;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    #oc-tabelaKalendarz td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 9;
+        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+        /* Domyślne tło - zostanie nadpisane przez bardziej specyficzne selektory */
+        background: #faf7f2;
+    }
+    
+    /* Tło sticky kolumny dla parzystych wierszy */
+    #oc-tabelaKalendarz tbody tr:nth-child(even) td:first-child {
+        background: #faf7f2;
+    }
+    
+    /* Tło sticky kolumny dla nieparzystych wierszy */
+    #oc-tabelaKalendarz tbody tr:nth-child(odd) td:first-child {
+        background: #fff;
+    }
+    
+    /* Tło sticky kolumny dla wierszy ze świętami */
+    #oc-tabelaKalendarz tbody tr.swieto-row td:first-child {
+        background: #e3f2fd !important;
+    }
+    
+    /* Tło sticky kolumny dla odwiedzonych */
+    #oc-tabelaKalendarz tbody tr.status-tak td:first-child {
+        background: #e8f5e9 !important;
+    }
+    
+    /* Tło sticky kolumny dla nieodwiedzonych */
+    #oc-tabelaKalendarz tbody tr.status-nie td:first-child {
+        background: #ffebee !important;
+    }
+    
+    /* Tło sticky kolumny dla najbliższego dyżuru */
+    #oc-tabelaKalendarz tbody tr.next-duty-row td:first-child {
+        background: #fff9c4 !important;
+    }
+    
+    /* Tło sticky kolumny przy hover */
+    #oc-tabelaKalendarz tbody tr:hover td:first-child {
+        background: #f5e9d4 !important;
+    }
+    
+    /* Wyjątki dla hover - jeśli wiersz ma specjalne tło, zachowaj je */
+    #oc-tabelaKalendarz tbody tr.swieto-row:hover td:first-child {
+        background: #bbdefb !important;
+    }
+    
+    #oc-tabelaKalendarz tbody tr.status-tak:hover td:first-child {
+        background: #c8e6c9 !important;
+    }
+    
+    #oc-tabelaKalendarz tbody tr.status-nie:hover td:first-child {
+        background: #ffcdd2 !important;
+    }
+    
+    #oc-tabelaKalendarz tbody tr.next-duty-row:hover td:first-child {
+        background: #fff59d !important;
+    }
+    
+    .oc-modal-content {
+        width: 95%;
+        max-width: none;
+        margin: 10px;
+    }
+    
+    .oc-modal-header h2 {
+        font-size: 1.1rem;
+    }
+    
+    .oc-modal-body {
+        padding: 15px;
+    }
+}
+
+/* Bardzo małe ekrany (telefony) */
+@media (max-width: 480px) {
+    .oc-container {
+        padding: 5px;
+    }
+    
+    .oc-login-container {
+        padding: 20px 15px;
+    }
+    
+    .oc-login-header h1 {
+        font-size: 1.3rem;
+    }
+    
+    /* Ukryj WordPress header również na bardzo małych ekranach */
+    body:not(.wp-admin) .site-header:not(.oc-header),
+    body:not(.wp-admin) header:not(.oc-header) {
+        display: none !important;
+    }
+    
+    .oc-header {
+        padding: 10px !important;
+    }
+    
+    .oc-header h1 {
+        font-size: 1.1rem !important;
+    }
+    
+    .oc-buttons {
+        flex-direction: column;
+    }
+    
+    /* Na mobile przycisk Wyloguj już jest w .oc-tabs, więc będzie pod Raporty */
+}
+
+/* Bardzo małe ekrany - iPhone SE i podobne (max 375px) */
+@media (max-width: 375px) {
+    .oc-header {
+        padding: 8px !important;
+    }
+    
+    .oc-header h1 {
+        font-size: 1rem !important;
+    }
+    
+    .oc-tab-button {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+    
+    /* Tabela kalendarza na bardzo małych ekranach - jeszcze bardziej kompaktowa */
+    .oc-table {
+        font-size: 0.7rem;
+        min-width: 550px;
+    }
+    
+    .oc-table th,
+    .oc-table td {
+        padding: 5px 3px;
+    }
+    
+    /* Ukryj kolumnę Uwagi na bardzo małych ekranach (można dodać ikonę info później) */
+    #oc-tabelaKalendarz th:nth-child(5),
+    #oc-tabelaKalendarz td:nth-child(5) {
+        display: none;
+    }
+    
+    /* Wybierz w selectach - mniejszy font */
+    .oc-table select {
+        font-size: 0.7rem;
+        padding: 4px 6px;
+    }
+    
+    .oc-modal-content {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+        margin: 0;
+    }
+    
+    .oc-year-select,
+    .oc-raport-select {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .oc-year-select select,
+    .oc-raport-select select {
+        width: 100%;
     }
 }
 

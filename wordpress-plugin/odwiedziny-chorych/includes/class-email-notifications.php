@@ -225,12 +225,11 @@ class OC_Email_Notifications {
                     background-color: #ffffff;
                     padding: 30px 20px 20px 20px;
                     text-align: left;
-                    border-bottom: 1px solid #e0e0e0;
                 }
                 .header h1 { 
                     font-size: 24px; 
                     font-weight: bold;
-                    color: #6d5c3d;
+                    color: #5a4a2d;
                     margin: 0 0 15px 0;
                 }
                 .date-info {
@@ -270,8 +269,11 @@ class OC_Email_Notifications {
                     margin: 20px 0;
                     background-color: #ffffff;
                 }
+                .chorzy-table thead {
+                    display: table-header-group;
+                }
                 .chorzy-table th {
-                    background-color: #f5f5f5;
+                    background-color: #f5f0e8;
                     color: #333;
                     font-weight: bold;
                     padding: 12px;
@@ -284,15 +286,17 @@ class OC_Email_Notifications {
                     border: 1px solid #e0e0e0;
                     font-size: 14px;
                 }
-                .chorzy-table tr:nth-child(even) {
-                    background-color: #fafafa;
+                .chorzy-table tbody tr:nth-child(even) {
+                    background-color: #faf9f7;
+                }
+                .chorzy-table tbody tr:nth-child(odd) {
+                    background-color: #ffffff;
                 }
                 .footer {
                     padding: 20px;
                     text-align: center;
                     color: #999;
                     font-size: 12px;
-                    border-top: 1px solid #e0e0e0;
                     background-color: #fafafa;
                 }
             </style>
@@ -302,7 +306,7 @@ class OC_Email_Notifications {
                 <div class="header">
                     <h1>Przypomnienie o dyżurze</h1>
                     <div class="date-info">
-                        <strong>Data:</strong> <?php echo esc_html($date_formatted); ?> — <?php echo esc_html($liturgical_name); ?>
+                        Data: <?php echo esc_html($date_formatted); ?> — <?php echo esc_html($liturgical_name); ?>
                     </div>
                     <div class="duty-info">
                         Masz zaplanowany dyżur: <strong>Odwiedziny - Parafia (<?php echo esc_html($role_text); ?>)</strong>
@@ -317,7 +321,7 @@ class OC_Email_Notifications {
                     <?php endif; ?>
                     
                     <?php if (!empty($chorzy)): ?>
-                    <h3 style="margin-top: 30px; margin-bottom: 15px; color: #333; font-size: 18px;">Aktualna lista chorych do odwiedzenia</h3>
+                    <h3 style="margin-top: 30px; margin-bottom: 15px; color: #5a4a2d; font-size: 18px; font-weight: bold;">Aktualna lista chorych do odwiedzenia</h3>
                     <table class="chorzy-table">
                         <thead>
                             <tr>
@@ -355,12 +359,23 @@ class OC_Email_Notifications {
     
     /**
      * Zaplanuj cron job
+     * 
+     * Planuje codzienne uruchomienie o 18:00.
+     * Jeśli dzisiejsze 18:00 już minęło, planuje na jutrzejsze 18:00.
      */
     public static function schedule_cron() {
         if (!wp_next_scheduled('oc_daily_email_reminders')) {
+            // Oblicz następne 18:00
+            $next_18_00 = strtotime('today 18:00');
+            
+            // Jeśli dzisiejsze 18:00 już minęło, planuj na jutrzejsze 18:00
+            if ($next_18_00 < time()) {
+                $next_18_00 = strtotime('tomorrow 18:00');
+            }
+            
             // Zaplanuj codziennie o 18:00
             wp_schedule_event(
-                strtotime('today 18:00'), // Dzisiaj o 18:00
+                $next_18_00, // Następne 18:00
                 'daily', // Codziennie
                 'oc_daily_email_reminders' // Hook name
             );

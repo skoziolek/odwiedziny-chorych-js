@@ -5,9 +5,25 @@
 (function() {
     'use strict';
 
+    // Debug mode - ustaw na false w produkcji, true do debugowania
+    const DEBUG = false; // Zmień na true aby włączyć console.log
+
     // Konfiguracja API
     const API_URL = ocData.apiUrl;
     const NONCE = ocData.nonce;
+    
+    // Helper function dla debug logging
+    function debugLog(...args) {
+        if (DEBUG) console.log(...args);
+    }
+    
+    function debugError(...args) {
+        if (DEBUG) console.error(...args);
+    }
+    
+    function debugWarn(...args) {
+        if (DEBUG) console.warn(...args);
+    }
 
     // Stan aplikacji
     let authToken = sessionStorage.getItem('oc_authToken') || null;
@@ -85,6 +101,12 @@
             headers['Authorization'] = `Bearer ${authToken}`;
         }
 
+        // Debug - loguj request dla /auth/verify
+        if (endpoint === '/auth/verify') {
+            debugLog('apiCall: Wysyłam request do', `${API_URL}${endpoint}`);
+            debugLog('apiCall: Token w nagłówku:', authToken ? `Bearer ${authToken.substring(0, 10)}...` : 'BRAK');
+        }
+
         const response = await fetch(`${API_URL}${endpoint}`, {
             ...options,
             headers: {
@@ -93,7 +115,17 @@
             },
         });
 
+        // Debug - loguj response dla /auth/verify
+        if (endpoint === '/auth/verify') {
+            debugLog('apiCall: Response status:', response.status);
+            if (!response.ok) {
+                const errorText = await response.text().catch(() => '');
+                debugError('apiCall: Response error:', errorText);
+            }
+        }
+
         if (response.status === 401) {
+            debugWarn('apiCall: 401 Unauthorized - czyszczę token');
             authToken = null;
             sessionStorage.removeItem('oc_authToken');
             showLoginScreen();
@@ -107,6 +139,7 @@
 
     async function login(password) {
         try {
+            debugLog('login: Rozpoczynam logowanie');
             const response = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: {
@@ -117,27 +150,53 @@
             });
 
             const data = await response.json();
+            debugLog('login: Response:', response.status, data);
 
             if (response.ok && data.success) {
                 authToken = data.token;
                 sessionStorage.setItem('oc_authToken', authToken);
+                debugLog('login: Token zapisany:', authToken ? authToken.substring(0, 10) + '...' : 'BRAK');
+                
+                // Natychmiast zweryfikuj token po logowaniu
+                const verifyResult = await checkAuth();
+                debugLog('login: Weryfikacja po logowaniu:', verifyResult);
+                
                 return true;
             } else {
                 throw new Error(data.message || 'Nieprawidłowe hasło');
             }
         } catch (error) {
-            console.error('Błąd logowania:', error);
+            debugError('Błąd logowania:', error);
             throw error;
         }
     }
 
     async function checkAuth() {
-        if (!authToken) return false;
+        if (!authToken) {
+            debugLog('checkAuth: Brak tokenu');
+            return false;
+        }
 
         try {
+            debugLog('checkAuth: Weryfikuję token:', authToken.substring(0, 10) + '...');
             const response = await apiCall('/auth/verify');
-            return response.ok;
-        } catch {
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                debugError('checkAuth: Błąd weryfikacji:', response.status, errorData);
+                // Jeśli 401, wyczyść token i pokaż ekran logowania
+                if (response.status === 401) {
+                    authToken = null;
+                    sessionStorage.removeItem('oc_authToken');
+                    showLoginScreen();
+                }
+                return false;
+            }
+            
+            debugLog('checkAuth: Token poprawny');
+            return true;
+        } catch (error) {
+            debugError('checkAuth: Wyjątek:', error);
             return false;
         }
     }
@@ -146,7 +205,7 @@
         try {
             await apiCall('/auth/logout', { method: 'POST' });
         } catch (e) {
-            console.error('Błąd wylogowania:', e);
+            debugError('Błąd wylogowania:', e);
         } finally {
             authToken = null;
             sessionStorage.removeItem('oc_authToken');
@@ -163,7 +222,7 @@
                 szafarze = await response.json();
             }
         } catch (e) {
-            console.error('Błąd ładowania szafarzy:', e);
+            debugError('Błąd ładowania szafarzy:', e);
         }
     }
 
@@ -178,7 +237,7 @@
                 showMessage('Szafarze zapisani');
             }
         } catch (e) {
-            console.error('Błąd zapisu szafarzy:', e);
+            debugError('Błąd zapisu szafarzy:', e);
             showMessage('Błąd zapisu szafarzy', 'error');
         }
     }
@@ -253,7 +312,7 @@
                 chorzy = await response.json();
             }
         } catch (e) {
-            console.error('Błąd ładowania chorych:', e);
+            debugError('Błąd ładowania chorych:', e);
         }
     }
 
@@ -268,7 +327,7 @@
                 showMessage('Chorzy zapisani');
             }
         } catch (e) {
-            console.error('Błąd zapisu chorych:', e);
+            debugError('Błąd zapisu chorych:', e);
             showMessage('Błąd zapisu chorych', 'error');
         }
     }
@@ -367,7 +426,7 @@
                 kalendarzData = await response.json();
             }
         } catch (e) {
-            console.error('Błąd ładowania kalendarza:', e);
+            debugError('Błąd ładowania kalendarza:', e);
         }
     }
 
@@ -382,7 +441,7 @@
                 showMessage('Kalendarz zapisany');
             }
         } catch (e) {
-            console.error('Błąd zapisu kalendarza:', e);
+            debugError('Błąd zapisu kalendarza:', e);
             showMessage('Błąd zapisu kalendarza', 'error');
         }
     }
@@ -563,7 +622,7 @@
             showMessage(`Nowy rok ${nextYear} został utworzony i załadowany!`, 'success');
             
         } catch (error) {
-            console.error('Błąd podczas tworzenia nowego roku:', error);
+            debugError('Błąd podczas tworzenia nowego roku:', error);
             showMessage('Wystąpił błąd podczas tworzenia nowego roku: ' + error.message, 'error');
         }
     }
@@ -640,7 +699,7 @@
             showMessage('Szafarze zostali automatycznie przypisani!', 'success');
             
         } catch (error) {
-            console.error('Błąd automatycznego przypisywania:', error);
+            debugError('Błąd automatycznego przypisywania:', error);
             showMessage('Błąd automatycznego przypisywania szafarzy', 'error');
         }
     }
@@ -676,7 +735,7 @@
                 }
             }
         } catch (error) {
-            console.log('Nie można załadować danych z poprzedniego roku, rozpoczynam od początku listy');
+            debugLog('Nie można załadować danych z poprzedniego roku, rozpoczynam od początku listy');
         }
 
         // Przypisz szafarzy do wszystkich niedziel i świąt
@@ -744,7 +803,7 @@
             showMessage(result.message || `Rok ${year} został usunięty`, 'success');
             
         } catch (error) {
-            console.error('Błąd usuwania roku:', error);
+            debugError('Błąd usuwania roku:', error);
             showMessage('Błąd usuwania roku: ' + error.message, 'error');
         }
     }
@@ -1078,7 +1137,7 @@
                 adwentData = await response.json();
             }
         } catch (e) {
-            console.error('Błąd ładowania adwentu:', e);
+            debugError('Błąd ładowania adwentu:', e);
         }
     }
 
@@ -1093,7 +1152,7 @@
                 showMessage('Adwent zapisany');
             }
         } catch (e) {
-            console.error('Błąd zapisu adwentu:', e);
+            debugError('Błąd zapisu adwentu:', e);
         }
     }
 
@@ -1171,7 +1230,7 @@
         const adwentContent = document.getElementById('oc-adwent');
 
         if (!adwentTabBtn || !adwentContent) {
-            console.error('Nie znaleziono elementów Adwent');
+            debugError('Nie znaleziono elementów Adwent');
             return;
         }
 
@@ -1213,7 +1272,7 @@
 
             // Załaduj i wyrenderuj dane Adwentu
             loadAdwent().then(() => renderAdwent()).catch(err => {
-                console.error('Błąd ładowania Adwentu:', err);
+                debugError('Błąd ładowania Adwentu:', err);
             });
         }
     }
@@ -1415,7 +1474,7 @@
                 });
             }
         } catch (e) {
-            console.error('Błąd ładowania historii:', e);
+            debugError('Błąd ładowania historii:', e);
         }
     }
 
@@ -1429,7 +1488,7 @@
                 renderRaport(data, miesiac);
             }
         } catch (e) {
-            console.error('Błąd ładowania raportu:', e);
+            debugError('Błąd ładowania raportu:', e);
         }
     }
 
@@ -1640,6 +1699,8 @@
             miesiacSelect.value = currentMonth;
             loadRaport(currentMonth);
         }
+        
+        // Przycisk wylogowania jest teraz w menu przycisków
     }
 
     async function init() {
@@ -1660,11 +1721,102 @@
         openVisitModal,
     };
 
+    // Funkcja do ukrycia WordPress header
+    function hideWordPressHeader() {
+        // Lista możliwych selektorów WordPress header
+        const headerSelectors = [
+            'header:not(.oc-header)',
+            '.site-header:not(.oc-header)',
+            '.main-header:not(.oc-header)',
+            '.wp-site-blocks > header:not(.oc-header)',
+            '.wp-block-template-part[data-area="header"]:not(.oc-header)',
+            '#masthead:not(.oc-header)',
+            '#header:not(.oc-header)',
+            '.header:not(.oc-header)',
+            '.site-header-wrapper',
+            'header[role="banner"]:not(.oc-header)',
+            'nav[role="navigation"]:not(.oc-header)'
+        ];
+        
+        headerSelectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+                el.style.display = 'none';
+                el.style.visibility = 'hidden';
+                el.style.height = '0';
+                el.style.overflow = 'hidden';
+                el.style.margin = '0';
+                el.style.padding = '0';
+                el.style.opacity = '0';
+            });
+        });
+        
+        // Usuń duplikaty przycisku wylogowania (jeśli są w WordPress headerze)
+        const logoutButtons = document.querySelectorAll('#oc-logoutBtn');
+        if (logoutButtons.length > 1) {
+            // Zostaw tylko ten w .oc-tabs
+            logoutButtons.forEach((btn, index) => {
+                const ocTabs = btn.closest('.oc-tabs');
+                if (!ocTabs) {
+                    // To nie jest w naszym menu zakładek, usuń
+                    btn.remove();
+                }
+            });
+        }
+        
+        // Przycisk wylogowania jest teraz w menu zakładek (.oc-tabs), nie w headerze
+        
+        // Ukryj też header, który jest przed .oc-container
+        const ocContainer = document.querySelector('.oc-container');
+        if (ocContainer) {
+            let prevSibling = ocContainer.previousElementSibling;
+            while (prevSibling) {
+                if (prevSibling.tagName === 'HEADER' || prevSibling.classList.contains('site-header') || prevSibling.classList.contains('header')) {
+                    prevSibling.style.display = 'none';
+                    prevSibling.style.visibility = 'hidden';
+                    prevSibling.style.height = '0';
+                    prevSibling.style.overflow = 'hidden';
+                }
+                prevSibling = prevSibling.previousElementSibling;
+            }
+        }
+    }
+    
+    // Funkcja do naprawy pozycjonowania przycisku - już nie potrzebna, przycisk jest w menu
+    function fixLogoutButtonPosition() {
+        // Przycisk wylogowania jest teraz w menu przycisków, nie potrzeba naprawy
+    }
+
     // Start
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+            // Ukryj WordPress header po załadowaniu DOM
+            setTimeout(() => {
+                hideWordPressHeader();
+            }, 100);
+            // Ukryj też po pełnym załadowaniu strony
+            window.addEventListener('load', () => {
+                hideWordPressHeader();
+            });
+        });
     } else {
         init();
+        setTimeout(() => {
+            hideWordPressHeader();
+        }, 100);
+        window.addEventListener('load', () => {
+            hideWordPressHeader();
+        });
     }
+    
+    // Ukryj header również po zmianach w DOM (jeśli WordPress dynamicznie dodaje elementy)
+    const observer = new MutationObserver(() => {
+        hideWordPressHeader();
+    });
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
 
 })();

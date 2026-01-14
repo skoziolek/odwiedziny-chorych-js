@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Stałe pluginu
-define('OC_PLUGIN_VERSION', '1.0.0');
+define('OC_PLUGIN_VERSION', filemtime(__FILE__)); // Użyj czasu modyfikacji pliku jako wersji
 define('OC_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('OC_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('OC_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -89,6 +89,12 @@ class OdwiedzinyChorych {
         
         // Ukryj WordPress admin bar dla użytkowników końcowych (pokazuj tylko administratorom WordPress)
         add_filter('show_admin_bar', array($this, 'hide_admin_bar_for_guests'));
+        
+        // Dodaj inline style do ukrycia WordPress header
+        add_action('wp_head', array($this, 'hide_wordpress_header_styles'), 999);
+        
+        // Dodaj viewport meta tag dla responsywności
+        add_action('wp_head', array($this, 'add_viewport_meta'), 1);
         
         // Cron job dla emaili
         add_action('oc_daily_email_reminders', array('OC_Email_Notifications', 'check_and_send_reminders'));
@@ -281,6 +287,87 @@ class OdwiedzinyChorych {
         }
         // Ukryj dla wszystkich innych
         return false;
+    }
+    
+    /**
+     * Dodaj inline style do ukrycia WordPress header i naprawy pozycjonowania
+     */
+    public function hide_wordpress_header_styles() {
+        global $post;
+        // Sprawdź czy jesteśmy na stronie z shortcode
+        if (!is_a($post, 'WP_Post') || !has_shortcode($post->post_content, 'odwiedziny_chorych')) {
+            return;
+        }
+        ?>
+        <style id="oc-hide-wordpress-header">
+            /* Agresywne ukrywanie WordPress header */
+            body header:not(.oc-header),
+            body .site-header:not(.oc-header),
+            body .main-header:not(.oc-header),
+            body .site-header,
+            body .wp-site-blocks > header:not(.oc-header),
+            body .wp-block-template-part[data-area="header"]:not(.oc-header),
+            body .site-branding,
+            body .site-title,
+            body .site-description,
+            body .main-navigation,
+            body nav[role="navigation"]:not(.oc-header),
+            body header[role="banner"]:not(.oc-header),
+            body .site-header-wrapper,
+            body #masthead:not(.oc-header),
+            body #header:not(.oc-header),
+            body .header:not(.oc-header) {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                overflow: hidden !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                opacity: 0 !important;
+                position: absolute !important;
+                left: -9999px !important;
+            }
+            .oc-container {
+                margin-top: 0 !important;
+            }
+            
+            /* WYMUSZENIE układu kolumnowego na mobile - bardzo agresywne */
+            @media (max-width: 768px) {
+                .oc-header {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    justify-content: center !important;
+                    align-items: stretch !important;
+                    padding: 10px !important;
+                    gap: 10px !important;
+                }
+                
+                .oc-header h1 {
+                    order: 1 !important;
+                    width: 100% !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    text-align: center !important;
+                }
+                
+                /* Przycisk Wyloguj jest teraz w .oc-tabs, nie w .oc-header */
+            }
+        </style>
+        <?php
+    }
+    
+    /**
+     * Dodaj viewport meta tag dla responsywności
+     */
+    public function add_viewport_meta() {
+        global $post;
+        // Sprawdź czy jesteśmy na stronie z shortcode
+        if (!is_a($post, 'WP_Post') || !has_shortcode($post->post_content, 'odwiedziny_chorych')) {
+            return;
+        }
+        ?>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+        <?php
     }
     
     /**

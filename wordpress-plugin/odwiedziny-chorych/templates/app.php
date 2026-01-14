@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
     <div id="oc-loginScreen" class="oc-login-screen">
         <div class="oc-login-container">
             <div class="oc-login-header">
-                <h1>🙏 Odwiedziny Chorych</h1>
+                <h1><span aria-label="Modlitwa">🙏</span> Odwiedziny Chorych</h1>
                 <p>System zarządzania odwiedzinami</p>
             </div>
             <form id="oc-loginForm" class="oc-login-form">
@@ -29,27 +29,27 @@ if (!defined('ABSPATH')) {
 
     <!-- Główna aplikacja -->
     <div id="oc-mainApp" style="display: none;">
-        <header class="oc-header">
-            <h1>🙏 Odwiedziny Chorych</h1>
-            <button id="oc-logoutBtn" class="oc-btn oc-btn-secondary">Wyloguj</button>
+        <header class="oc-header" id="oc-app-header">
+            <h1 id="oc-app-title"><span aria-label="Modlitwa">🙏</span> Odwiedziny Chorych</h1>
         </header>
 
         <!-- Zakładki -->
         <div class="oc-tabs">
-            <button class="oc-tab-button active" data-tab="kalendarz">📅 Kalendarz</button>
-            <button class="oc-tab-button" data-tab="adwent" id="oc-adwentTabBtn" style="display: none;">🕯️ Adwent</button>
-            <button class="oc-tab-button" data-tab="chorzy">🧑‍⚕️ Dane chorych</button>
-            <button class="oc-tab-button" data-tab="szafarze">🙋‍♂️ Dane szafarzy</button>
-            <button class="oc-tab-button" data-tab="raporty">📊 Raporty</button>
+            <button class="oc-tab-button active" data-tab="kalendarz" aria-label="Kalendarz">📅 Kalendarz</button>
+            <button class="oc-tab-button" data-tab="adwent" id="oc-adwentTabBtn" style="display: none;" aria-label="Adwent">🕯️ Adwent</button>
+            <button class="oc-tab-button" data-tab="chorzy" aria-label="Dane chorych">🧑‍⚕️ Dane chorych</button>
+            <button class="oc-tab-button" data-tab="szafarze" aria-label="Dane szafarzy">🙋‍♂️ Dane szafarzy</button>
+            <button class="oc-tab-button" data-tab="raporty" aria-label="Raporty">📊 Raporty</button>
+            <button id="oc-logoutBtn" class="oc-btn oc-btn-secondary oc-logout-btn" aria-label="Wyloguj się z systemu">Wyloguj</button>
         </div>
 
         <!-- Zakładka Kalendarz -->
         <div id="oc-kalendarz" class="oc-tab-content active">
             <div class="oc-buttons" id="oc-kalendarz-buttons">
-                <button class="oc-btn" id="oc-print-btn">Drukuj</button>
-                <button class="oc-btn" id="oc-create-year-btn">Utwórz nowy rok</button>
-                <button class="oc-btn" id="oc-auto-assign-btn">Auto-przypisz szafarzy</button>
-                <button class="oc-btn" id="oc-adwent-btn">🕯️ Adwent</button>
+                <button class="oc-btn" id="oc-print-btn" aria-label="Drukuj kalendarz">Drukuj</button>
+                <button class="oc-btn" id="oc-create-year-btn" aria-label="Utwórz nowy rok kalendarzowy">Utwórz nowy rok</button>
+                <button class="oc-btn" id="oc-auto-assign-btn" aria-label="Automatycznie przypisz szafarzy do dyżurów">Auto-przypisz szafarzy</button>
+                <button class="oc-btn" id="oc-adwent-btn" aria-label="Pokaż lub ukryj zakładkę Adwent">🕯️ Adwent</button>
             </div>
             <div class="oc-year-select">
                 <label for="oc-wybierzRok">Wybierz rok:</label>
@@ -81,7 +81,7 @@ if (!defined('ABSPATH')) {
         <!-- Zakładka Adwent -->
         <div id="oc-adwent" class="oc-tab-content">
             <div class="oc-buttons" id="oc-adwent-buttons">
-                <button class="oc-btn" id="oc-drukujAdwentBtn">Drukuj</button>
+                <button class="oc-btn" id="oc-drukujAdwentBtn" aria-label="Drukuj kalendarz adwentowy">Drukuj</button>
             </div>
             <div class="oc-year-select">
                 <label for="oc-wybierzRokAdwent">Wybierz rok:</label>
@@ -112,8 +112,8 @@ if (!defined('ABSPATH')) {
         <!-- Zakładka Chorzy -->
         <div id="oc-chorzy" class="oc-tab-content">
             <div class="oc-buttons" id="oc-chorzy-buttons">
-                <button class="oc-btn" id="oc-drukujChorzyBtn">Drukuj</button>
-                <button class="oc-btn oc-btn-success" id="oc-dodajChoregoBtn">+ Dodaj chorego</button>
+                <button class="oc-btn" id="oc-drukujChorzyBtn" aria-label="Drukuj listę chorych">Drukuj</button>
+                <button class="oc-btn oc-btn-success" id="oc-dodajChoregoBtn" aria-label="Dodaj nowego chorego do listy">+ Dodaj chorego</button>
             </div>
             <div class="oc-table-container">
                 <table id="oc-tabelaChorzy" class="oc-table">
@@ -136,8 +136,8 @@ if (!defined('ABSPATH')) {
         <!-- Zakładka Szafarze -->
         <div id="oc-szafarze" class="oc-tab-content">
             <div class="oc-buttons" id="oc-szafarze-buttons">
-                <button class="oc-btn" id="oc-drukujSzafarzeBtn">Drukuj</button>
-                <button class="oc-btn oc-btn-success" id="oc-dodajSzafarzaBtn">+ Dodaj szafarza</button>
+                <button class="oc-btn" id="oc-drukujSzafarzeBtn" aria-label="Drukuj listę szafarzy">Drukuj</button>
+                <button class="oc-btn oc-btn-success" id="oc-dodajSzafarzaBtn" aria-label="Dodaj nowego szafarza do listy">+ Dodaj szafarza</button>
             </div>
             <div class="oc-table-container">
                 <table id="oc-tabelaSzafarze" class="oc-table">
@@ -160,9 +160,9 @@ if (!defined('ABSPATH')) {
         <!-- Zakładka Raporty -->
         <div id="oc-raporty" class="oc-tab-content">
             <div class="oc-buttons" id="oc-raporty-buttons">
-                <button class="oc-btn" id="oc-drukujRaportBtn">Drukuj raport</button>
-                <button class="oc-btn" id="oc-eksportujPDFBtn">Eksportuj do PDF</button>
-                <button class="oc-btn" id="oc-backupBtn">Wykonaj kopię zapasową</button>
+                <button class="oc-btn" id="oc-drukujRaportBtn" aria-label="Drukuj raport miesięczny">Drukuj raport</button>
+                <button class="oc-btn" id="oc-eksportujPDFBtn" aria-label="Eksportuj raport do pliku PDF">Eksportuj do PDF</button>
+                <button class="oc-btn" id="oc-backupBtn" aria-label="Wykonaj kopię zapasową danych">Wykonaj kopię zapasową</button>
             </div>
             <div class="oc-raport-select">
                 <label for="oc-wybierzMiesiac">Wybierz miesiąc:</label>
@@ -192,7 +192,7 @@ if (!defined('ABSPATH')) {
         <div class="oc-modal-content">
             <div class="oc-modal-header">
                 <h2>Zaplanuj odwiedziny</h2>
-                <button class="oc-modal-close">&times;</button>
+                <button class="oc-modal-close" aria-label="Zamknij okno">&times;</button>
             </div>
             <div class="oc-modal-body">
                 <p>Data: <strong id="oc-modalData"></strong></p>
@@ -201,8 +201,8 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
             <div class="oc-modal-footer">
-                <button class="oc-btn oc-btn-secondary oc-modal-cancel">Anuluj</button>
-                <button class="oc-btn oc-btn-primary" id="oc-modalZapiszBtn">Zapisz</button>
+                <button class="oc-btn oc-btn-secondary oc-modal-cancel" aria-label="Anuluj i zamknij okno">Anuluj</button>
+                <button class="oc-btn oc-btn-primary" id="oc-modalZapiszBtn" aria-label="Zapisz plan odwiedzin">Zapisz</button>
             </div>
         </div>
     </div>

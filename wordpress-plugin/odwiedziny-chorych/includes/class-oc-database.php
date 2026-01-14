@@ -159,17 +159,23 @@ class OC_Database {
         if (!empty($args['where'])) {
             $where_clauses = array();
             foreach ($args['where'] as $key => $value) {
-                $where_clauses[] = $wpdb->prepare("$key = %s", $value);
+                // Sanityzuj nazwę kolumny (tylko alphanumeric i underscore)
+                $key_sanitized = preg_replace('/[^a-zA-Z0-9_]/', '', $key);
+                $where_clauses[] = $wpdb->prepare("`$key_sanitized` = %s", $value);
             }
             $sql .= " WHERE " . implode(' AND ', $where_clauses);
         }
         
-        // ORDER BY
-        $sql .= $wpdb->prepare(" ORDER BY {$args['orderby']} {$args['order']}");
+        // ORDER BY - sanityzuj nazwę kolumny i kierunek sortowania
+        $orderby_sanitized = preg_replace('/[^a-zA-Z0-9_]/', '', $args['orderby']);
+        $order_sanitized = strtoupper($args['order']) === 'DESC' ? 'DESC' : 'ASC';
+        $sql .= " ORDER BY `$orderby_sanitized` $order_sanitized";
         
         // LIMIT
         if ($args['limit'] > 0) {
-            $sql .= $wpdb->prepare(" LIMIT %d OFFSET %d", $args['limit'], $args['offset']);
+            $limit = absint($args['limit']);
+            $offset = absint($args['offset']);
+            $sql .= $wpdb->prepare(" LIMIT %d OFFSET %d", $limit, $offset);
         }
         
         return $wpdb->get_results($sql, ARRAY_A);
@@ -262,8 +268,11 @@ class OC_Database {
         
         $table_name = self::get_table_name($table);
         
+        // Sanityzuj nazwę kolumny (tylko alphanumeric i underscore)
+        $field_sanitized = preg_replace('/[^a-zA-Z0-9_]/', '', $field);
+        
         $count = $wpdb->get_var(
-            $wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE $field = %s", $value)
+            $wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE `$field_sanitized` = %s", $value)
         );
         
         return $count > 0;
