@@ -54,8 +54,7 @@ if (!defined('ABSPATH')) {
             <div class="oc-year-select">
                 <label for="oc-wybierzRok">Wybierz rok:</label>
                 <select id="oc-wybierzRok">
-                    <option value="2025" selected>2025</option>
-                    <option value="2026">2026</option>
+                    <option value="2026" selected>2026</option>
                     <option value="2027">2027</option>
                     <option value="2028">2028</option>
                 </select>
@@ -86,8 +85,7 @@ if (!defined('ABSPATH')) {
             <div class="oc-year-select">
                 <label for="oc-wybierzRokAdwent">Wybierz rok:</label>
                 <select id="oc-wybierzRokAdwent">
-                    <option value="2025" selected>2025</option>
-                    <option value="2026">2026</option>
+                    <option value="2026" selected>2026</option>
                     <option value="2027">2027</option>
                     <option value="2028">2028</option>
                 </select>
