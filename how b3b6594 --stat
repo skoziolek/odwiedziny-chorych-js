@@ -1,0 +1,20 @@
+[33mb3b6594[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/js-migration[m[33m, [m[1;31morigin/feature/js-migration[m[33m, [m[1;31morigin/HEAD[m[33m)[m v1.0.0 - Final production version
+[33mebe2d65[m Dodanie pluginu WordPress oraz aktualizacje funkcjonalności
+[33m1bf96c3[m[33m ([m[1;31morigin/feature/email-notifications-mvp[m[33m)[m Email UI: improved reminder template (card layout, CTA button, patients table)
+[33mb707a3b[m Fix(kalendarz): persist selections using data-date (YYYY-MM-DD) and save correctly
+[33md8217f8[m Fix(chorzy): sync DOM before save so notes (uwagi) persist
+[33m871642d[m Notifications: include phone and notes for patients in reminder emails and preview
+[33mddf66db[m Notifications: rename patients section to 'Aktualna lista chorych do odwiedzenia'
+[33m1b9fd72[m Notifications: include patients with status TAK in reminder emails and preview
+[33m7b435bc[m Notifications: implement tomorrow reminders (mapping calendar->emails), manual endpoint and cron hook
+[33m04076cb[m Notifications MVP skeleton: SMTP env, mailer, templates, /notifications routes, scheduler
+[33m5a0a53e[m[33m ([m[1;31morigin/main[m[33m)[m Merge branch 'feature/mobile-h1-18px' - reduce mobile h1 to 18px
+[33m3fb51f4[m Mobile: reduce h1 font-size to 18px at <=480px
+[33m4f0bc6a[m Napraw problemy bezpieczenstwa - przenies haslo do zmiennych srodowiskowych
+[33ma276dd4[m Dodaj kalendarz adwentowy z pełną funkcjonalnością
+[33mdf984c0[m 🔒 Security & Features: Major improvements
+[33m69fe695[m Merge feature/js-migration into main - Node.js v2.0.0
+[33m89a11ff[m 🚀 Migracja do Node.js v2.0.0 - pełna refaktoryzacja z PHP na Node.js + Express
+[33m33e787b[m Merge feature: kalendarz filtruje w modalu tylko chorych z TAK
+[33med2564a[m Modal: pokazuj tylko chorych z TAK (frontend + backend w root)
+[33m60c9e4f[m Filtr chorych: uwzględnij trim/uppercase statusu (TAK)
