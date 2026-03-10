@@ -286,7 +286,7 @@ export class RaportyManager {
       // Utwórz obiekt kopii zapasowej
       const backup = {
         timestamp: new Date().toISOString(),
-        version: '2.0.0',
+        version: '1.2.0',
         data: {
           chorzy,
           szafarze,

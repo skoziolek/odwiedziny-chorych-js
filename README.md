@@ -93,6 +93,8 @@ W razie problemów:
 
 ---
 
-**Wersja:** 2.0.0  
+**Wersja:** 1.2.0  
 **Data:** 15 stycznia 2025  
-**Autor:** Sebastian Koziolek 
+**Autor:** Sebastian Koziolek  
+
+Numeracja wersji: 1.x.x (np. 1.2, 1.3, 1.4). Kolejne wydania oznaczane w `package.json`, w pliku `js-version/src/client/js/modules/raporty.js` (pole `version` w kopii zapasowej) oraz jako tag Git (np. `v1.2.0`).
