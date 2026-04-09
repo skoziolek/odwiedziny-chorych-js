@@ -1,122 +1,78 @@
-# 📋 Status wdrożenia aplikacji na serwer parafii
+# Status wdrożenia — WordPress (parafia)
 
-**Data sprawdzenia:** 2025-01-15  
-**Status:** ✅ **GOTOWE DO WDROŻENIA**
-
----
-
-## ✅ Weryfikacja repozytorium GitHub
-
-### 1. Pliki kluczowe
-- ✅ `odwiedziny-chorych.php` - główny plik pluginu
-- ✅ `assets/js/app.js` - JavaScript aplikacji (zaktualizowany)
-- ✅ `assets/css/style.css` - Style CSS (zaktualizowany)
-- ✅ `templates/app.php` - Szablon aplikacji (rok 2026 jako domyślny)
-- ✅ Wszystkie klasy PHP w `includes/`
-- ✅ Wszystkie pliki konfiguracyjne
-
-### 2. Najnowsze zmiany w repozytorium
-- ✅ Usunięto nieużywane klasy (7 plików)
-- ✅ Usunięto zbędne dokumenty (8 plików)
-- ✅ Naprawiono ramki w podglądzie wydruku (0.5px)
-- ✅ Naprawiono rok domyślny w zakładce Adwent (2026)
-- ✅ DEBUG = false w app.js
-- ✅ Przywrócono pliki assets (app.js, style.css)
-
-### 3. Branch gotowy do wdrożenia
-- **Branch:** `cleanup/remove-unused-files`
-- **Ostatni commit:** `0c3a401` - "Fix: Restore missing assets files"
-- **Status:** Wypchnięty na GitHub ✅
+**Ostatnia weryfikacja:** 2026-04-09  
+**Wersja do wdrożenia:** **1.2.0** (tag Git: **`v1.2.0`**)  
+**Gałąź źródłowa:** `feature/js-migration` (domyślna w repozytorium)
 
 ---
 
-## 🚀 Instrukcja wdrożenia
+## Dla administratora WordPress — co dokładnie pobrać?
 
-### Krok 1: Pobierz najnowszą wersję z GitHub
+Repozytorium zawiera też aplikację Node.js (`js-version/`) i dokumentację. **Do WordPressa trafia wyłącznie wtyczka:**
 
-**Opcja A: Przez Git (zalecane)**
-```bash
-git clone https://github.com/skoziolek/odwiedziny-chorych-js.git
-cd odwiedziny-chorych-js
-git checkout cleanup/remove-unused-files
-```
+| Co wgrywasz | Gdzie to jest w repozytorium |
+|-------------|------------------------------|
+| **Jeden folder:** `odwiedziny-chorych` | `wordpress-plugin/odwiedziny-chorych/` |
 
-**Opcja B: Pobierz ZIP**
-1. Przejdź do: https://github.com/skoziolek/odwiedziny-chorych-js
-2. Przełącz na branch: `cleanup/remove-unused-files`
-3. Kliknij "Code" → "Download ZIP"
-4. Rozpakuj archiwum
+W środku musi być m.in. plik **`odwiedziny-chorych.php`** (nagłówek wtyczki z **Version: 1.2.0**).
 
-### Krok 2: Skopiuj plugin na serwer
+**Nie** wgrywaj całego ZIP repozytorium do `wp-content/plugins/` — powstanie zła struktura katalogów.
 
-**Przez FTP/SFTP:**
-1. Połącz się z serwerem przez klienta FTP (FileZilla, WinSCP)
-2. Przejdź do: `/wp-content/plugins/`
-3. Wgraj folder `wordpress-plugin/odwiedziny-chorych/` (zawartość, nie sam folder)
+### Najprostsza ścieżka (tag v1.2.0)
 
-**Przez Panel Hostingu (File Manager):**
-1. Zaloguj się do panelu hostingu (cPanel, Plesk)
-2. Otwórz **File Manager**
-3. Przejdź do: `public_html/wp-content/plugins/`
-4. Wgraj folder `odwiedziny-chorych`
+1. Wejdź na stronę tagu:  
+   https://github.com/skoziolek/odwiedziny-chorych-js/releases/tag/v1.2.0  
+   (jeśli nie ma karty Release, użyj: **Releases** / **Tags** w repozytorium i wybierz **`v1.2.0`**.)
 
-### Krok 3: Aktywuj plugin w WordPress
+2. Pobierz archiwum kodu (np. **Source code (zip)**).
 
-1. Zaloguj się do panelu WordPress: `https://twoja-strona.pl/wp-admin`
-2. Przejdź do: **Wtyczki** → **Zainstalowane wtyczki**
-3. Znajdź **"Odwiedziny Chorych"** i kliknij **"Włącz"**
+3. Rozpakuj i przejdź do:  
+   `wordpress-plugin/odwiedziny-chorych/`  
+   Ten folder kopiujesz przez FTP/SFTP do `wp-content/plugins/`, albo pakujesz go do ZIP i wgrywasz przez **Wtyczki → Dodaj nową → Wyślij**.
 
-### Krok 4: Dodaj shortcode na stronę
-
-1. W panelu WordPress: **Strony** → **Dodaj nową** (lub edytuj istniejącą)
-2. Dodaj shortcode: `[odwiedziny_chorych]`
-3. Opublikuj stronę
-
-### Krok 5: Skonfiguruj SMTP (dla emaili)
-
-1. Zainstaluj plugin **"WP Mail SMTP"**
-2. Skonfiguruj serwer SMTP (Gmail, Outlook, itp.)
-3. Przetestuj wysyłkę emaili
-
-### Krok 6: Zmień hasło
-
-1. Przejdź do: **Odwiedziny Chorych** → **Ustawienia**
-2. Zmień domyślne hasło: `PomocDlaChorych!`
+Szczegółowa mini-instrukcja jest też w folderze wtyczki:  
+`wordpress-plugin/odwiedziny-chorych/INSTRUKCJA_WGRANIA_WORDPRESS.md`.
 
 ---
 
-## ✅ Checklist przed wdrożeniem
+## Weryfikacja plików wtyczki (skrót)
 
-- [x] Wszystkie pliki są w repozytorium
-- [x] Pliki assets (app.js, style.css) są aktualne
-- [x] DEBUG = false w app.js
-- [x] Brak błędów w kodzie
-- [x] Wszystkie funkcjonalności działają
-- [x] Responsywność działa
-- [x] Podgląd wydruku działa
-- [ ] **Przed wdrożeniem:** Zrób kopię zapasową bazy danych
-- [ ] **Przed wdrożeniem:** Zrób kopię zapasową folderu pluginu (jeśli aktualizujesz)
+- `odwiedziny-chorych.php` — główny plik wtyczki  
+- `assets/js/app.js`, `assets/css/style.css`  
+- `templates/app.php`  
+- Katalogi: `includes/`, itd. (zgodnie z drzewem w repozytorium)
 
 ---
 
-## 📊 Wersja aplikacji
+## Instrukcja wdrożenia (FTP / panel hostingu)
 
-- **Branch:** `cleanup/remove-unused-files`
-- **Commit:** `0c3a401`
-- **Data:** 2025-01-15
-- **Status:** Gotowe do produkcji ✅
-
----
-
-## ⚠️ Ważne uwagi
-
-1. **Kopia zapasowa:** Zawsze rób kopię zapasową przed wdrożeniem!
-2. **Testowanie:** Przetestuj aplikację po wdrożeniu na serwerze
-3. **SMTP:** Upewnij się, że SMTP jest skonfigurowany dla emaili
-4. **Hasło:** Zmień domyślne hasło po wdrożeniu
+1. Przygotuj folder `odwiedziny-chorych` jak wyżej (z tagu **v1.2.0**).  
+2. Wgraj do `wp-content/plugins/` (nadpisz pliki przy aktualizacji).  
+3. W panelu WordPress: **Wtyczki** — upewnij się, że widać wersję **1.2.0**, w razie potrzeby włącz wtyczkę ponownie.  
+4. Shortcode na stronie: `[odwiedziny_chorych]`  
+5. SMTP: skonfiguruj wysyłkę e-maili (np. wtyczka WP Mail SMTP).  
+6. Zmień domyślne hasło w ustawieniach wtyczki.
 
 ---
 
-**Aplikacja jest gotowa do wdrożenia na serwer parafii!** 🚀
+## Checklist przed wdrożeniem
 
+- [ ] Pobrano kod z tagu **v1.2.0** (albo z gałęzi `feature/js-migration` w stanie zgodnym z tym tagiem).  
+- [ ] Na serwer trafił wyłącznie folder **`wordpress-plugin/odwiedziny-chorych`**, nie całe repo.  
+- [ ] Kopia zapasowa bazy i (przy aktualizacji) folderu wtyczki.  
+- [ ] Po wdrożeniu: wersja w panelu WP = **1.2.0**.
 
+---
+
+## Wersja (źródło prawdy)
+
+- **Nazwa wersji / tag:** `v1.2.0`  
+- **Numer w panelu WordPress:** **1.2.0** (pole Version w `odwiedziny-chorych.php`)
+
+---
+
+## Ważne uwagi
+
+1. Zawsze kopia zapasowa przed nadpisaniem plików na produkcji.  
+2. Repozytorium zawiera też projekt **Node.js** — do hostingu WordPress nie jest potrzebny do działania wtyczki.  
+3. Szczegóły pod LocalWP: `wordpress-plugin/odwiedziny-chorych/AKTUALIZACJA_LOCALWP.md`.
