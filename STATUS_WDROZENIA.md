@@ -18,17 +18,21 @@ W środku musi być m.in. plik **`odwiedziny-chorych.php`** (nagłówek wtyczki 
 
 **Nie** wgrywaj całego ZIP repozytorium do `wp-content/plugins/` — powstanie zła struktura katalogów.
 
-### Najprostsza ścieżka (tag v1.2.0)
+### Zalecane: gotowy ZIP z GitHub Release
 
-1. Wejdź na stronę tagu:  
-   https://github.com/skoziolek/odwiedziny-chorych-js/releases/tag/v1.2.0  
-   (jeśli nie ma karty Release, użyj: **Releases** / **Tags** w repozytorium i wybierz **`v1.2.0`**.)
+1. Otwórz listę wydań: https://github.com/skoziolek/odwiedziny-chorych-js/releases  
+2. Przy **v1.2.0** pobierz załącznik **`odwiedziny-chorych-v1.2.0.zip`** (to jest sama wtyczka — nie wybieraj „Source code”, jeśli chcesz tylko paczkę do WordPressa).  
+3. W WordPress: **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer** — wgraj ten ZIP.
 
-2. Pobierz archiwum kodu (np. **Source code (zip)**).
+**Jeśli przy v1.2.0 nie ma jeszcze załącznika:** osoba z uprawnieniami do repozytorium może go wygenerować: [Actions → Release WordPress plugin → Run workflow](https://github.com/skoziolek/odwiedziny-chorych-js/actions/workflows/release-wordpress.yml).
 
-3. Rozpakuj i przejdź do:  
-   `wordpress-plugin/odwiedziny-chorych/`  
-   Ten folder kopiujesz przez FTP/SFTP do `wp-content/plugins/`, albo pakujesz go do ZIP i wgrywasz przez **Wtyczki → Dodaj nową → Wyślij**.
+### Alternatywa: pobranie z tagu (ręczne wycinanie folderu)
+
+1. Strona tagu: https://github.com/skoziolek/odwiedziny-chorych-js/releases/tag/v1.2.0 (lub zakładka **Tags** przy **`v1.2.0`**).
+
+2. Pobierz archiwum kodu (np. **Source code (zip)**), rozpakuj.
+
+3. Wejdź w: `wordpress-plugin/odwiedziny-chorych/` — ten folder kopiujesz do `wp-content/plugins/` lub pakujesz do własnego ZIP pod **Wyślij**.
 
 Szczegółowa mini-instrukcja jest też w folderze wtyczki:  
 `wordpress-plugin/odwiedziny-chorych/INSTRUKCJA_WGRANIA_WORDPRESS.md`.
