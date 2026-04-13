@@ -1,4 +1,4 @@
-# Tworzy lub aktualizuje GitHub Release dla wtyczki WordPress (tag v1.2.0) z załączonym ZIP-em.
+# Tworzy lub aktualizuje GitHub Release dla wtyczki WordPress (tag v1.2.1) z załączonym ZIP-em.
 # Uruchomienie: GitHub → Actions → „Release WordPress plugin” → Run workflow
 name: Release WordPress plugin
 
@@ -17,7 +17,7 @@ jobs:
 
       - name: Build plugin ZIP
         run: |
-          VERSION="1.2.0"
+          VERSION="1.2.1"
           cd wordpress-plugin
           zip -r "../odwiedziny-chorych-v${VERSION}.zip" odwiedziny-chorych
           ls -la "../odwiedziny-chorych-v${VERSION}.zip"
@@ -25,18 +25,18 @@ jobs:
       - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.2.0
-          name: Odwiedziny Chorych v1.2.0 (WordPress)
+          tag_name: v1.2.1
+          name: Odwiedziny Chorych v1.2.1 (WordPress)
           body: |
             ### Wtyczka WordPress — paczka do wgrania
 
-            Pobierz załącznik **`odwiedziny-chorych-v1.2.0.zip`**. W panelu WordPress: **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer**.
+            Pobierz załącznik **`odwiedziny-chorych-v1.2.1.zip`**. W panelu WordPress: **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer**.
 
-            Po instalacji przy wtyczce powinna być widoczna wersja **1.2.0**.
+            Po instalacji przy wtyczce powinna być widoczna wersja **1.2.1**.
 
-            **Instrukcja krok po kroku:** [INSTRUKCJA_WGRANIA_WORDPRESS.md](https://github.com/skoziolek/odwiedziny-chorych-js/blob/v1.2.0/wordpress-plugin/odwiedziny-chorych/INSTRUKCJA_WGRANIA_WORDPRESS.md)
+            **Instrukcja krok po kroku:** [INSTRUKCJA_WGRANIA_WORDPRESS.md](https://github.com/skoziolek/odwiedziny-chorych-js/blob/v1.2.1/wordpress-plugin/odwiedziny-chorych/INSTRUKCJA_WGRANIA_WORDPRESS.md)
 
-            Pełny opis repozytorium: [STATUS_WDROZENIA.md](https://github.com/skoziolek/odwiedziny-chorych-js/blob/v1.2.0/STATUS_WDROZENIA.md)
-          files: odwiedziny-chorych-v1.2.0.zip
+            Pełny opis repozytorium: [STATUS_WDROZENIA.md](https://github.com/skoziolek/odwiedziny-chorych-js/blob/v1.2.1/STATUS_WDROZENIA.md)
+          files: odwiedziny-chorych-v1.2.1.zip
           fail_on_unmatched_files: true
           generate_release_notes: false

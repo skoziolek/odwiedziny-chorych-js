@@ -1274,55 +1274,74 @@
         });
     }
 
-    function showAdwentTab() {
-        const adwentTabBtn = document.getElementById('oc-adwentTabBtn');
-        const adwentContent = document.getElementById('oc-adwent');
+    /** Przełącza główne menu na wybraną zakładkę (Kalendarz, Adwent, …). Adwent nigdy nie wyłącza się stąd — tylko otwiera widok. */
+    function activateTab(tab) {
+        if (!tab) return;
 
-        if (!adwentTabBtn || !adwentContent) {
-            debugError('Nie znaleziono elementów Adwent');
-            return;
+        const buttons = document.querySelectorAll('.oc-tab-button');
+        const contents = document.querySelectorAll('.oc-tab-content');
+        const adwentTabBtn = document.getElementById('oc-adwentTabBtn');
+
+        buttons.forEach(btn => btn.classList.remove('active'));
+        contents.forEach(content => content.classList.remove('active'));
+
+        const tabButton = document.querySelector(`.oc-tab-button[data-tab="${tab}"]`);
+        if (tabButton) {
+            tabButton.classList.add('active');
         }
 
-        const isVisible = adwentTabBtn.style.display !== 'none';
+        const panel = document.getElementById('oc-' + tab);
+        if (panel) {
+            panel.classList.add('active');
+        }
 
-        if (isVisible) {
-            // Ukryj Adwent - zakładka jest widoczna, więc ją ukryj
-            adwentTabBtn.style.display = 'none';
-            adwentTabBtn.classList.remove('active');
-            adwentContent.classList.remove('active');
-
-            // Jeśli Adwent był aktywny, pokaż Kalendarz
-            if (adwentContent.classList.contains('active')) {
-                const kalendarzBtn = document.querySelector('.oc-tab-button[data-tab="kalendarz"]');
-                const kalendarzContent = document.getElementById('oc-kalendarz');
-                if (kalendarzBtn && kalendarzContent) {
-                    kalendarzBtn.classList.add('active');
-                    kalendarzContent.classList.add('active');
-                }
-            }
-        } else {
-            // Pokaż Adwent - zakładka nie jest widoczna, więc ją pokaż
+        if (tab === 'adwent' && adwentTabBtn) {
             adwentTabBtn.style.display = 'inline-block';
-            adwentTabBtn.classList.add('active');
-            adwentContent.classList.add('active');
-
-            // Ukryj inne zakładki (ale nie usuwaj ich z menu)
-            document.querySelectorAll('.oc-tab-button').forEach(btn => {
-                if (btn.id !== 'oc-adwentTabBtn') {
-                    btn.classList.remove('active');
-                }
-            });
-            
-            document.querySelectorAll('.oc-tab-content').forEach(content => {
-                if (content.id !== 'oc-adwent') {
-                    content.classList.remove('active');
-                }
-            });
-
-            // Załaduj i wyrenderuj dane Adwentu
             loadAdwent().then(() => renderAdwent()).catch(err => {
                 debugError('Błąd ładowania Adwentu:', err);
             });
+        }
+    }
+
+    function navigateToAdwent() {
+        activateTab('adwent');
+    }
+
+    function isAdwentTabInMainNav() {
+        const adwentTabBtn = document.getElementById('oc-adwentTabBtn');
+        if (!adwentTabBtn) return false;
+        return window.getComputedStyle(adwentTabBtn).display !== 'none';
+    }
+
+    /**
+     * Wyłącznik Adwentu wyłącznie z paska Kalendarza: gdy zakładki nie ma w menu — włącza widok;
+     * gdy jest w menu — ukrywa ją (jedyna dezaktywacja; główne menu „Adwent” tylko otwiera widok).
+     */
+    function onToolbarAdwentClick() {
+        if (isAdwentTabInMainNav()) {
+            hideAdwentFromMenu();
+        } else {
+            navigateToAdwent();
+        }
+    }
+
+    /** Usuwa „Adwent” z głównego menu i wraca do widoku Kalendarza. */
+    function hideAdwentFromMenu() {
+        const adwentTabBtn = document.getElementById('oc-adwentTabBtn');
+        const adwentContent = document.getElementById('oc-adwent');
+        if (!adwentTabBtn || !adwentContent) return;
+
+        adwentTabBtn.style.display = 'none';
+        adwentTabBtn.classList.remove('active');
+        adwentContent.classList.remove('active');
+
+        const kalendarzBtn = document.querySelector('.oc-tab-button[data-tab="kalendarz"]');
+        const kalendarzContent = document.getElementById('oc-kalendarz');
+        if (kalendarzBtn && kalendarzContent) {
+            document.querySelectorAll('.oc-tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.oc-tab-content').forEach(c => c.classList.remove('active'));
+            kalendarzBtn.classList.add('active');
+            kalendarzContent.classList.add('active');
         }
     }
 
@@ -1468,7 +1487,7 @@
         const selectedChorzy = Array.from(checkboxes).map(cb => cb.value);
 
         try {
-            await apiCall('/historia', {
+            const response = await apiCall('/historia', {
                 method: 'POST',
                 body: JSON.stringify({
                     action: 'dodaj_odwiedziny',
@@ -1477,7 +1496,13 @@
                     typ: 'niedziela',
                 }),
             });
-            
+
+            if (!response.ok) {
+                debugError('saveVisit: odpowiedź API:', response.status);
+                showMessage('Błąd zapisu odwiedzin', 'error');
+                return;
+            }
+
             // Zaktualizuj lokalne dane historii
             historiaData[dateStr] = selectedChorzy;
             
@@ -1578,42 +1603,18 @@
     }
 
     function setupTabs() {
-        const buttons = document.querySelectorAll('.oc-tab-button');
-        const contents = document.querySelectorAll('.oc-tab-content');
+        if (setupTabs._bound) {
+            return;
+        }
+        setupTabs._bound = true;
 
-        buttons.forEach(button => {
+        document.querySelectorAll('.oc-tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 const tab = button.dataset.tab;
-
-                // Jeśli kliknięto przycisk zakładki Adwent, użyj funkcji toggle
-                if (tab === 'adwent' && button.id === 'oc-adwentTabBtn') {
-                    showAdwentTab();
+                if (!tab) {
                     return;
                 }
-
-                // Ukryj wszystkie zakładki oprócz Adwent (jeśli jest widoczny)
-                const adwentContent = document.getElementById('oc-adwent');
-                const adwentTabBtn = document.getElementById('oc-adwentTabBtn');
-                const isAdwentVisible = adwentTabBtn && adwentTabBtn.style.display !== 'none';
-
-                buttons.forEach(btn => {
-                    if (btn.id !== 'oc-adwentTabBtn') {
-                        btn.classList.remove('active');
-                    }
-                });
-                
-                contents.forEach(content => {
-                    if (content.id !== 'oc-adwent') {
-                        content.classList.remove('active');
-                    }
-                });
-
-                // Aktywuj klikniętą zakładkę
-                button.classList.add('active');
-                document.getElementById('oc-' + tab).classList.add('active');
-
-                // Zakładka Adwent pozostaje widoczna jeśli była widoczna
-                // (nie ukrywamy jej automatycznie)
+                activateTab(tab);
             });
         });
     }
@@ -1687,10 +1688,10 @@
             dodajChoregoBtn.addEventListener('click', addChory);
         }
 
-        // Adwent button
+        // Adwent w pasku Kalendarza: jedyna dezaktywacja (ukrycie zakładki w menu); włączenie gdy zakładki jeszcze nie ma
         const adwentBtn = document.getElementById('oc-adwent-btn');
         if (adwentBtn) {
-            adwentBtn.addEventListener('click', showAdwentTab);
+            adwentBtn.addEventListener('click', onToolbarAdwentClick);
         }
 
         // Modal
