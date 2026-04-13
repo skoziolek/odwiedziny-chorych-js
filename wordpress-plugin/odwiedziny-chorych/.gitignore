@@ -1,0 +1,51 @@
+# WordPress Plugin - Odwiedziny Chorych
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Logs
+*.log
+debug.log
+
+# Cache
+.cache/
+
+# Environment files
+.env
+.env.local
+
+# Pliki pomocnicze - tylko do lokalnego użytku (nie w repozytorium)
+clear-cache-now.php
+KOPIUJ_PLIKI*.bat
+KOPIUJ_PLIKI.ps1
+KOPIUJ_PLIKI_DO_LOCALWP.md
+ROZWIAZYWANIE_PROBLEMOW_LOCALWP.md
+
+# Node modules (jeśli będą używane)
+node_modules/
+package-lock.json
+
+# Build files (jeśli będą używane)
+dist/
+build/
+
+# Dokumentacja deweloperska/testowa (opcjonalna - można zostawić lub usunąć)
+# Jeśli chcesz je zostawić, usuń z .gitignore:
+# RAPORT_TESTOWANIA.md
+# ROZWIAZANIA_MOBILE.md
+# TESTOWANIE_EMAILI.md
+
