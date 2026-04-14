@@ -177,6 +177,13 @@ class OC_API_Kalendarz {
                         'pomocnik_id' => $pomocnik_id,
                         'uwagi' => sanitize_textarea_field($values['uwagi'] ?? ''),
                     ), array('id' => $existing->id));
+                    // wpdb->update często pomija NULL — wymuś wyczyszczenie pomocnika, gdy nie przesłano osoby
+                    if ($pomocnik_id === null) {
+                        $wpdb->query($wpdb->prepare(
+                            "UPDATE $table_kalendarz SET pomocnik_id = NULL WHERE id = %d",
+                            $existing->id
+                        ));
+                    }
                 } else {
                     // Dodaj nowy
                     $wpdb->insert($table_kalendarz, array(

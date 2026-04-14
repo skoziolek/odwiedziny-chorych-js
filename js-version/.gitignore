@@ -1,0 +1,23 @@
+# Zmienne środowiskowe - NIGDY NIE COMMITUJ!
+.env
+.env.local
+.env.production
+
+# Logi
+*.log
+npm-debug.log*
+
+# Zależności
+node_modules/
+
+# Pliki systemowe
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Tymczasowe pliki
+*.tmp
+*.temp

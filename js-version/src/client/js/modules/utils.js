@@ -1,5 +1,7 @@
 // Moduł narzędzi pomocniczych
 // Updated: 2025-01-15 15:30
+import { pobierzNazweSwieta, czySwietoNakazane } from './swieta.js';
+
 export class Utils {
   // Statyczne dane świąt
   static swietaNakazane = {
@@ -375,26 +377,25 @@ export class Utils {
   // Pobieranie nazwy święta
   getSwietoName(date) {
     const dateStr = this.formatDateForAPI(date);
+    const year = date.getFullYear();
     
-    
-    // Sprawdź czy to święto nakazane
-    if (Utils.swietaNakazane && Utils.swietaNakazane[dateStr]) {
-      return Utils.swietaNakazane[dateStr];
-    }
-    
-    // Sprawdź czy to niedziela liturgiczna
-    if (Utils.niedzieleLiturgiczne && Utils.niedzieleLiturgiczne[dateStr]) {
-      return Utils.niedzieleLiturgiczne[dateStr];
-    }
-    
-    // Dla zwykłych niedziel
-    return 'Niedziela';
+    // Użyj funkcji z modułu swieta.js dla dynamicznego roku
+    return this.getSwietoNameForYear(dateStr, year);
+  }
+  
+  // Pobieranie nazwy święta dla konkretnego roku
+  getSwietoNameForYear(dateStr, year) {
+    // Użyj funkcji z modułu swieta.js
+    return pobierzNazweSwieta(dateStr, year);
   }
 
   // Sprawdzanie czy to święto nakazane
   isSwietoNakazane(date) {
     const dateStr = this.formatDateForAPI(date);
-    return Utils.swietaNakazane && Utils.swietaNakazane[dateStr];
+    const year = date.getFullYear();
+    
+    // Użyj funkcji z modułu swieta.js
+    return czySwietoNakazane(dateStr, year);
   }
 
   // Drukowanie zawartości
@@ -517,8 +518,52 @@ export class Utils {
 
   // --- FUNKCJE SZYFROWANIA DANYCH (RODO) ---
   
-  // Klucz szyfrowania - w produkcji powinien być w zmiennej środowiskowej
-  static ENCRYPTION_KEY = 'OdwiedzinyChorych2024!@#$%^&*()_+';
+  // Klucz szyfrowania - pobierany z serwera
+  static ENCRYPTION_KEY = null;
+  
+  // Inicjalizacja klucza szyfrowania z serwera
+  static async initializeEncryptionKey() {
+    if (Utils.ENCRYPTION_KEY) {
+      return Utils.ENCRYPTION_KEY;
+    }
+    
+    try {
+      let response;
+      
+      // Użyj globalnego authManager jeśli dostępny
+      if (window.authManager && window.authManager.getAuthHeaders) {
+        const headers = window.authManager.getAuthHeaders();
+        response = await fetch('/api/encryption-key', {
+          method: 'GET',
+          headers: headers
+        });
+      } else {
+        // Fallback - użyj prostego tokenu (tylko dla rozwoju)
+        response = await fetch('/api/encryption-key', {
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer simple-login-token',
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      Utils.ENCRYPTION_KEY = data.encryptionKey;
+      console.log('✅ Klucz szyfrowania został pobrany z serwera');
+      return Utils.ENCRYPTION_KEY;
+    } catch (error) {
+      console.error('❌ Błąd pobierania klucza szyfrowania:', error);
+      // Fallback do domyślnego klucza (tylko dla rozwoju)
+      Utils.ENCRYPTION_KEY = 'OdwiedzinyChorych2024!@#$%^&*()_+';
+      console.warn('⚠️ Używany jest domyślny klucz szyfrowania');
+      return Utils.ENCRYPTION_KEY;
+    }
+  }
 
   // Generuje losowy IV (Initialization Vector) dla każdego szyfrowania
   static generateIV() {
@@ -530,6 +575,9 @@ export class Utils {
   // Szyfruje dane używając AES-256-CBC
   static async encryptData(data) {
     try {
+      // Upewnij się, że klucz jest zainicjalizowany
+      await Utils.initializeEncryptionKey();
+      
       const textEncoder = new TextEncoder();
       const dataBuffer = textEncoder.encode(JSON.stringify(data));
       
@@ -569,6 +617,9 @@ export class Utils {
       if (!encryptedData || !encryptedData.encrypted || !encryptedData.iv) {
         return null; // Brak zaszyfrowanych danych
       }
+      
+      // Upewnij się, że klucz jest zainicjalizowany
+      await Utils.initializeEncryptionKey();
       
       const textEncoder = new TextEncoder();
       const textDecoder = new TextDecoder();

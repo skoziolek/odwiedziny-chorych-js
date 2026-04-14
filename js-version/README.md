@@ -8,6 +8,14 @@ To jest migracja aplikacji "Odwiedziny Chorych" z PHP na JavaScript (Node.js + F
 
 **Aplikacja JavaScript jest w pełni funkcjonalna i gotowa do użycia!**
 
+## ⚠️ BEZPIECZEŃSTWO - WAŻNE!
+
+**PRZED URUCHOMIENIEM W PRODUKCJI:**
+1. **Zmień domyślne hasło** - ustaw `LOGIN_PASSWORD` w pliku `.env`
+2. **Wygeneruj silne klucze** - ustaw `ENCRYPTION_KEY` i `JWT_SECRET`
+3. **Nigdy nie commituj pliku `.env`** - dodaj go do `.gitignore`
+4. **Używaj HTTPS** w produkcji dla bezpiecznej komunikacji
+
 ### ✅ Co zostało zakończone:
 - **Backend**: Node.js + Express z pełnym API
 - **Frontend**: Modułowa architektura ES6

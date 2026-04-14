@@ -46,9 +46,9 @@ if (!defined('ABSPATH')) {
         <!-- Zakładka Kalendarz -->
         <div id="oc-kalendarz" class="oc-tab-content active">
             <div class="oc-buttons" id="oc-kalendarz-buttons">
-                <button class="oc-btn" id="oc-print-btn" aria-label="Drukuj kalendarz">Drukuj</button>
-                <button class="oc-btn" id="oc-create-year-btn" aria-label="Utwórz nowy rok kalendarzowy">Utwórz nowy rok</button>
-                <button class="oc-btn" id="oc-auto-assign-btn" aria-label="Automatycznie przypisz szafarzy do dyżurów">Auto-przypisz szafarzy</button>
+                <button type="button" class="oc-btn" id="oc-print-btn" aria-label="Drukuj kalendarz">Drukuj</button>
+                <button type="button" class="oc-btn" id="oc-create-year-btn" aria-label="Utwórz nowy rok kalendarzowy">Utwórz nowy rok</button>
+                <button type="button" class="oc-btn" id="oc-auto-assign-btn" aria-label="Automatycznie przypisz szafarzy do dyżurów">Auto-przypisz szafarzy</button>
                 <button type="button" class="oc-btn" id="oc-adwent-btn" title="Gdy Adwent jest w górnym menu: klik ukrywa zakładkę. Gdy jej nie ma: włącza Adwent." aria-label="Włącz lub wyłącz zakładkę Adwent w menu. Widok Adwentu otwierasz przyciskiem Adwent w górnym menu.">🕯️ Adwent</button>
             </div>
             <div class="oc-year-select">
