@@ -315,6 +315,23 @@ body:has(.oc-container) .site-header:first-of-type {
     flex: 0 0 auto;
 }
 
+/* Pasek przycisków Kalendarza: jeden styl (motywy WP często nadpisują button[type=button]) */
+#oc-kalendarz-buttons .oc-btn {
+    background: #f5e9d4;
+    color: #6b4c1b;
+    border: 1px solid #bfa76a;
+    border-radius: 6px;
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+#oc-kalendarz-buttons .oc-btn:hover {
+    background: #e6d3b3;
+    color: #4d3200;
+    border-color: #bfa76a;
+}
+
 /* Przycisk wylogowania - style już zdefiniowane wyżej, tylko hover */
 
 .oc-tabs .oc-logout-btn:hover {

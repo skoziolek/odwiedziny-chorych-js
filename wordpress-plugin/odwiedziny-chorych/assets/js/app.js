@@ -552,9 +552,12 @@
                 row.classList.add('next-duty-row');
             }
 
-            // Generuj opcje dla selectów
-            const szafarzeOptions = szafarze.map(s => 
+            // Osobne listy opcji — selected musi być od osoby głównej vs pomocnika (wspólny szablon zawsze podświetlał główną w obu)
+            const szafarzeOptionsOsoba = szafarze.map(s =>
                 `<option value="${s.imie}" ${data.osobaGlowna === s.imie ? 'selected' : ''}>${s.imie}</option>`
+            ).join('');
+            const szafarzeOptionsPomocnik = szafarze.map(s =>
+                `<option value="${s.imie}" ${data.pomocnik === s.imie ? 'selected' : ''}>${s.imie}</option>`
             ).join('');
 
             // Jeśli to najbliższy dyżur, dodaj style inline do wszystkich komórek
@@ -567,13 +570,13 @@
                 <td ${borderStyle}>
                     <select class="osoba-glowna-select">
                         <option value="" ${!data.osobaGlowna ? 'selected' : ''}>-- Wybierz --</option>
-                        ${szafarzeOptions}
+                        ${szafarzeOptionsOsoba}
                     </select>
                 </td>
                 <td ${borderStyle}>
                     <select class="pomocnik-select">
                         <option value="" ${!data.pomocnik ? 'selected' : ''}>-- Wybierz --</option>
-                        ${szafarzeOptions}
+                        ${szafarzeOptionsPomocnik}
                     </select>
                 </td>
                 <td contenteditable="true" ${borderStyle}>${data.uwagi || ''}</td>
@@ -802,8 +805,8 @@
                     }
                     
                     newData[dateStr].osobaGlowna = assignedSzafarz;
-                    // Usuń pomocnika z istniejących danych i nie przypisuj automatycznie
-                    delete newData[dateStr].pomocnik;
+                    // Tylko osoba główna — pusty pomocnik (klucz musi być w JSON, żeby API wyczyściło bazę)
+                    newData[dateStr].pomocnik = '';
                     
                     szafarzIndex++;
                 }
@@ -1243,8 +1246,11 @@
             const dateStr = formatDateForAPI(day.date);
             const data = adwentData[dateStr] || {};
 
-            const szafarzeOptions = szafarze.map(s => 
+            const szafarzeOptionsOsoba = szafarze.map(s =>
                 `<option value="${s.imie}" ${data.osobaGlowna === s.imie ? 'selected' : ''}>${s.imie}</option>`
+            ).join('');
+            const szafarzeOptionsPomocnik = szafarze.map(s =>
+                `<option value="${s.imie}" ${data.pomocnik === s.imie ? 'selected' : ''}>${s.imie}</option>`
             ).join('');
 
             const row = document.createElement('tr');
@@ -1255,13 +1261,13 @@
                 <td>
                     <select>
                         <option value="" ${!data.osobaGlowna ? 'selected' : ''}>-- Wybierz --</option>
-                        ${szafarzeOptions}
+                        ${szafarzeOptionsOsoba}
                     </select>
                 </td>
                 <td>
                     <select>
                         <option value="" ${!data.pomocnik ? 'selected' : ''}>-- Wybierz --</option>
-                        ${szafarzeOptions}
+                        ${szafarzeOptionsPomocnik}
                     </select>
                 </td>
             `;
