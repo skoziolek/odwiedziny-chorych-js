@@ -44,33 +44,43 @@ class OC_API_Szafarze {
      * Sprawdź uprawnienia
      */
     public function check_permission($request) {
+        $method = $request->get_method();
+        $write = in_array($method, array('POST', 'PUT', 'DELETE', 'PATCH'), true);
+
         $nonce = $request->get_header('X-WP-Nonce');
-        if ($nonce && wp_verify_nonce($nonce, 'wp_rest')) {
+        $nonce_ok = $nonce && wp_verify_nonce($nonce, 'wp_rest');
+
+        if ($nonce_ok && !$write) {
             return true;
         }
-        
+
         $auth_header = $request->get_header('Authorization');
         if ($auth_header && strpos($auth_header, 'Bearer ') === 0) {
             $token = substr($auth_header, 7);
-            return $this->verify_token($token);
+            $session = $this->get_session($token);
+            if (!$session) {
+                return false;
+            }
+            if ($write) {
+                return OC_Auth::is_app_admin_session($session);
+            }
+            return true;
         }
-        
+
         return false;
     }
-    
+
     /**
-     * Weryfikuj token
+     * @param string $token
+     * @return object|null
      */
-    private function verify_token($token) {
+    private function get_session($token) {
         global $wpdb;
         $table = OC_Database::get_table_name('sesje');
-        
-        $session = $wpdb->get_row($wpdb->prepare(
+        return $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $table WHERE token = %s AND data_wygasniecia > NOW()",
             $token
         ));
-        
-        return $session !== null;
     }
     
     /**
@@ -94,6 +104,7 @@ class OC_API_Szafarze {
                 'adres' => $row['adres'],
                 'email' => $row['email'],
                 'telefon' => $row['telefon'],
+                'maHaslo' => !empty($row['haslo_hash']),
             );
         }
         
@@ -124,40 +135,70 @@ class OC_API_Szafarze {
             foreach ($data as $szafarz) {
                 $imie = sanitize_text_field($szafarz['imie'] ?? '');
                 $nazwisko = sanitize_text_field($szafarz['nazwisko'] ?? '');
-                
+                $id = isset($szafarz['id']) ? absint($szafarz['id']) : 0;
+                $nowe_haslo = isset($szafarz['noweHaslo']) ? (string) $szafarz['noweHaslo'] : '';
+
                 if (empty($imie) && empty($nazwisko)) {
                     continue;
                 }
-                
-                // Sprawdź czy istnieje
-                $existing = $wpdb->get_row($wpdb->prepare(
-                    "SELECT id FROM $table WHERE imie = %s AND nazwisko = %s",
-                    $imie,
-                    $nazwisko
-                ));
-                
-                if ($existing) {
-                    // Aktualizuj
-                    $wpdb->update($table, array(
-                        'adres' => sanitize_text_field($szafarz['adres'] ?? ''),
-                        'email' => sanitize_email($szafarz['email'] ?? ''),
-                        'telefon' => sanitize_text_field($szafarz['telefon'] ?? ''),
-                        'kolejnosc' => $kolejnosc,
-                        'aktywny' => 1,
-                    ), array('id' => $existing->id));
-                } else {
-                    // Dodaj nowego
-                    $wpdb->insert($table, array(
-                        'imie' => $imie,
-                        'nazwisko' => $nazwisko,
-                        'adres' => sanitize_text_field($szafarz['adres'] ?? ''),
-                        'email' => sanitize_email($szafarz['email'] ?? ''),
-                        'telefon' => sanitize_text_field($szafarz['telefon'] ?? ''),
-                        'kolejnosc' => $kolejnosc,
-                        'aktywny' => 1,
-                    ));
+
+                $done = false;
+                if ($id > 0) {
+                    $exists_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE id = %d", $id));
+                    if ($exists_id) {
+                        $update = array(
+                            'imie' => $imie,
+                            'nazwisko' => $nazwisko,
+                            'adres' => sanitize_text_field($szafarz['adres'] ?? ''),
+                            'email' => sanitize_email($szafarz['email'] ?? ''),
+                            'telefon' => sanitize_text_field($szafarz['telefon'] ?? ''),
+                            'kolejnosc' => $kolejnosc,
+                            'aktywny' => 1,
+                        );
+                        if ($nowe_haslo !== '') {
+                            $update['haslo_hash'] = password_hash($nowe_haslo, PASSWORD_DEFAULT);
+                        }
+                        $wpdb->update($table, $update, array('id' => $id));
+                        $done = true;
+                    }
                 }
-                
+
+                if (!$done) {
+                    $existing = $wpdb->get_row($wpdb->prepare(
+                        "SELECT id FROM $table WHERE imie = %s AND nazwisko = %s",
+                        $imie,
+                        $nazwisko
+                    ));
+
+                    if ($existing) {
+                        $update = array(
+                            'adres' => sanitize_text_field($szafarz['adres'] ?? ''),
+                            'email' => sanitize_email($szafarz['email'] ?? ''),
+                            'telefon' => sanitize_text_field($szafarz['telefon'] ?? ''),
+                            'kolejnosc' => $kolejnosc,
+                            'aktywny' => 1,
+                        );
+                        if ($nowe_haslo !== '') {
+                            $update['haslo_hash'] = password_hash($nowe_haslo, PASSWORD_DEFAULT);
+                        }
+                        $wpdb->update($table, $update, array('id' => $existing->id));
+                    } else {
+                        $insert = array(
+                            'imie' => $imie,
+                            'nazwisko' => $nazwisko,
+                            'adres' => sanitize_text_field($szafarz['adres'] ?? ''),
+                            'email' => sanitize_email($szafarz['email'] ?? ''),
+                            'telefon' => sanitize_text_field($szafarz['telefon'] ?? ''),
+                            'kolejnosc' => $kolejnosc,
+                            'aktywny' => 1,
+                        );
+                        if ($nowe_haslo !== '') {
+                            $insert['haslo_hash'] = password_hash($nowe_haslo, PASSWORD_DEFAULT);
+                        }
+                        $wpdb->insert($table, $insert);
+                    }
+                }
+
                 $kolejnosc++;
             }
             

@@ -91,6 +91,38 @@ class OC_API_Chorzy {
         
         return $session !== null;
     }
+
+    /**
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
+    private function format_chory_api_row(array $row) {
+        $uwagi_data = $row['uwagi_ostatnio_data'] ?? null;
+        $sz_id = isset($row['uwagi_ostatnio_szafarz_id']) ? $row['uwagi_ostatnio_szafarz_id'] : null;
+        $przez = null;
+        if (!empty($uwagi_data)) {
+            if (!empty($sz_id)) {
+                $si = $row['oc_sz_imie'] ?? '';
+                $sn = $row['oc_sz_nazwisko'] ?? '';
+                $przez = trim($si . ' ' . $sn);
+                if ($przez === '') {
+                    $przez = 'Szafarz #' . (int) $sz_id;
+                }
+            } else {
+                $przez = 'Administrator';
+            }
+        }
+        return array(
+            'id' => (int) $row['id'],
+            'imieNazwisko' => $row['imie_nazwisko'],
+            'adres' => $row['adres'],
+            'telefon' => $row['telefon'],
+            'uwagi' => $row['uwagi'],
+            'status' => $row['status'],
+            'uwagiOstatnioPrzez' => $przez,
+            'uwagiOstatnioData' => $uwagi_data,
+        );
+    }
     
     /**
      * Pobierz wszystkich chorych
@@ -98,28 +130,22 @@ class OC_API_Chorzy {
     public function get_items($request) {
         global $wpdb;
         $table = OC_Database::get_table_name('chorzy');
+        $table_sz = OC_Database::get_table_name('szafarze');
         
         $status = $request->get_param('status');
         
-        $sql = "SELECT * FROM $table";
+        $sql = "SELECT c.*, s.imie AS oc_sz_imie, s.nazwisko AS oc_sz_nazwisko FROM $table c"
+            . " LEFT JOIN $table_sz s ON c.uwagi_ostatnio_szafarz_id = s.id";
         if ($status) {
-            $sql .= $wpdb->prepare(" WHERE status = %s", $status);
+            $sql .= $wpdb->prepare(' WHERE c.status = %s', $status);
         }
-        $sql .= " ORDER BY status DESC, imie_nazwisko ASC";
+        $sql .= ' ORDER BY c.status DESC, c.imie_nazwisko ASC';
         
         $results = $wpdb->get_results($sql, ARRAY_A);
         
-        // Konwertuj do formatu zgodnego z frontendem
         $chorzy = array();
         foreach ($results as $row) {
-            $chorzy[] = array(
-                'id' => (int) $row['id'],
-                'imieNazwisko' => $row['imie_nazwisko'],
-                'adres' => $row['adres'],
-                'telefon' => $row['telefon'],
-                'uwagi' => $row['uwagi'],
-                'status' => $row['status'],
-            );
+            $chorzy[] = $this->format_chory_api_row($row);
         }
         
         return rest_ensure_response($chorzy);
@@ -131,11 +157,13 @@ class OC_API_Chorzy {
     public function get_item($request) {
         global $wpdb;
         $table = OC_Database::get_table_name('chorzy');
+        $table_sz = OC_Database::get_table_name('szafarze');
         
         $id = $request->get_param('id');
         
         $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table WHERE id = %d",
+            "SELECT c.*, s.imie AS oc_sz_imie, s.nazwisko AS oc_sz_nazwisko FROM $table c"
+            . " LEFT JOIN $table_sz s ON c.uwagi_ostatnio_szafarz_id = s.id WHERE c.id = %d",
             $id
         ), ARRAY_A);
         
@@ -143,14 +171,7 @@ class OC_API_Chorzy {
             return new WP_Error('not_found', 'Chory nie znaleziony', array('status' => 404));
         }
         
-        return rest_ensure_response(array(
-            'id' => (int) $row['id'],
-            'imieNazwisko' => $row['imie_nazwisko'],
-            'adres' => $row['adres'],
-            'telefon' => $row['telefon'],
-            'uwagi' => $row['uwagi'],
-            'status' => $row['status'],
-        ));
+        return rest_ensure_response($this->format_chory_api_row($row));
     }
     
     /**
@@ -161,14 +182,21 @@ class OC_API_Chorzy {
         $table = OC_Database::get_table_name('chorzy');
         
         $data = $request->get_json_params();
-        
-        $result = $wpdb->insert($table, array(
+
+        $uwagi = sanitize_textarea_field($data['uwagi'] ?? '');
+        $insert = array(
             'imie_nazwisko' => sanitize_text_field($data['imieNazwisko'] ?? ''),
             'adres' => sanitize_text_field($data['adres'] ?? ''),
             'telefon' => sanitize_text_field($data['telefon'] ?? ''),
-            'uwagi' => sanitize_textarea_field($data['uwagi'] ?? ''),
+            'uwagi' => $uwagi,
             'status' => in_array($data['status'] ?? 'TAK', array('TAK', 'NIE')) ? $data['status'] : 'TAK',
-        ));
+        );
+        if ($uwagi !== '') {
+            $insert['uwagi_ostatnio_szafarz_id'] = OC_Auth::get_actor_szafarz_id_for_audit($request);
+            $insert['uwagi_ostatnio_data'] = current_time('mysql');
+        }
+
+        $result = $wpdb->insert($table, $insert);
         
         if ($result === false) {
             return new WP_Error('db_error', 'Błąd zapisu do bazy danych', array('status' => 500));
@@ -252,24 +280,68 @@ class OC_API_Chorzy {
             return new WP_Error('invalid_data', 'Nieprawidłowe dane', array('status' => 400));
         }
         
-        // Rozpocznij transakcję
         $wpdb->query('START TRANSACTION');
         
         try {
-            // Usuń wszystkich chorych
-            $wpdb->query("DELETE FROM $table");
-            
-            // Dodaj nowych
+            $existing_ids = array_map('intval', (array) $wpdb->get_col("SELECT id FROM $table"));
+            $payload_ids = array();
             foreach ($data as $chory) {
-                $wpdb->insert($table, array(
-                    'imie_nazwisko' => sanitize_text_field($chory['imieNazwisko'] ?? ''),
-                    'adres' => sanitize_text_field($chory['adres'] ?? ''),
-                    'telefon' => sanitize_text_field($chory['telefon'] ?? ''),
-                    'uwagi' => sanitize_textarea_field($chory['uwagi'] ?? ''),
-                    'status' => in_array($chory['status'] ?? 'TAK', array('TAK', 'NIE')) ? $chory['status'] : 'TAK',
-                ));
+                if (!empty($chory['id'])) {
+                    $payload_ids[] = (int) $chory['id'];
+                }
             }
-            
+            $to_delete = array_diff($existing_ids, $payload_ids);
+            foreach ($to_delete as $del_id) {
+                $wpdb->delete($table, array('id' => $del_id));
+            }
+
+            foreach ($data as $chory) {
+                $id = !empty($chory['id']) ? (int) $chory['id'] : 0;
+                $imie = sanitize_text_field($chory['imieNazwisko'] ?? '');
+                $adres = sanitize_text_field($chory['adres'] ?? '');
+                $telefon = sanitize_text_field($chory['telefon'] ?? '');
+                $uwagi = sanitize_textarea_field($chory['uwagi'] ?? '');
+                $status = in_array($chory['status'] ?? 'TAK', array('TAK', 'NIE')) ? $chory['status'] : 'TAK';
+
+                $old_uwagi = null;
+                if ($id > 0) {
+                    $old_row = $wpdb->get_row($wpdb->prepare("SELECT uwagi FROM $table WHERE id = %d", $id), ARRAY_A);
+                    if ($old_row) {
+                        $old_uwagi = $old_row['uwagi'];
+                    } else {
+                        $id = 0;
+                    }
+                }
+
+                if ($id > 0) {
+                    $update = array(
+                        'imie_nazwisko' => $imie,
+                        'adres' => $adres,
+                        'telefon' => $telefon,
+                        'uwagi' => $uwagi,
+                        'status' => $status,
+                    );
+                    if ((string) $old_uwagi !== (string) $uwagi) {
+                        $update['uwagi_ostatnio_szafarz_id'] = OC_Auth::get_actor_szafarz_id_for_audit($request);
+                        $update['uwagi_ostatnio_data'] = current_time('mysql');
+                    }
+                    $wpdb->update($table, $update, array('id' => $id));
+                } else {
+                    $insert = array(
+                        'imie_nazwisko' => $imie,
+                        'adres' => $adres,
+                        'telefon' => $telefon,
+                        'uwagi' => $uwagi,
+                        'status' => $status,
+                    );
+                    if ($uwagi !== '') {
+                        $insert['uwagi_ostatnio_szafarz_id'] = OC_Auth::get_actor_szafarz_id_for_audit($request);
+                        $insert['uwagi_ostatnio_data'] = current_time('mysql');
+                    }
+                    $wpdb->insert($table, $insert);
+                }
+            }
+
             $wpdb->query('COMMIT');
             
             return rest_ensure_response(array('success' => true));
