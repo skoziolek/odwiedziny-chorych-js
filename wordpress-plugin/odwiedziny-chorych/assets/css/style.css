@@ -132,6 +132,41 @@ body:has(.oc-container) .site-header:first-of-type {
     border-color: #bfa16b;
 }
 
+/* Listy rozwijane — ten sam układ co pole hasła */
+.oc-login-form select {
+    width: 100%;
+    max-width: 100%;
+    padding: 12px 40px 12px 16px;
+    border: 2px solid #d4c4a8;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: #6d5c3d;
+    background-color: #fff;
+    cursor: pointer;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236d5c3d' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 14px;
+    line-height: 1.35;
+    min-height: 48px;
+    box-sizing: border-box;
+}
+
+.oc-login-form select:hover {
+    border-color: #c4b498;
+}
+
+.oc-login-form select:focus {
+    outline: none;
+    border-color: #bfa16b;
+    box-shadow: 0 0 0 3px rgba(191, 161, 107, 0.25);
+}
+
 .oc-error {
     background: #fee;
     color: #c00;
@@ -150,8 +185,10 @@ body:has(.oc-container) .site-header:first-of-type {
 /* Nagłówek aplikacji - musi być widoczny */
 .oc-header {
     display: flex !important;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 6px;
     position: relative;
     padding: 15px 20px;
     background: linear-gradient(135deg, #6d5c3d 0%, #8b7355 100%);
@@ -165,6 +202,31 @@ body:has(.oc-container) .site-header:first-of-type {
     margin: 0;
     font-size: 1.5rem;
     text-align: center;
+}
+
+.oc-session-info {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-align: center;
+    opacity: 0.95;
+}
+
+.oc-szafarz-haslo-input {
+    width: 100%;
+    max-width: 220px;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #bfa76a;
+}
+
+.oc-muted {
+    font-size: 0.8rem;
+    color: #5c4a3a;
+    opacity: 0.9;
+    display: block;
+    margin-top: 4px;
 }
 
 /* Przycisk wylogowania - teraz w menu przycisków */
@@ -637,6 +699,64 @@ body:has(.oc-container) .site-header:first-of-type {
     .oc-table td {
         padding: 6px 4px;
         white-space: nowrap; /* Zapobiega zawijaniu tekstu */
+    }
+
+    /* Dane chorych: „NIEAKTYWNY” / select statusu musi mieć minimalną szerokość */
+    #oc-tabelaChorzy th:nth-child(5),
+    #oc-tabelaChorzy td:nth-child(5) {
+        min-width: 10rem;
+        white-space: normal;
+    }
+
+    #oc-tabelaChorzy .oc-status-select {
+        display: block;
+        width: 100%;
+        min-width: 9rem;
+        box-sizing: border-box;
+    }
+
+    /* Kalendarz: „Osoba Główna” i „Pomocnik” — nagłówki w jednej linii, selecty bez ucinania tekstu */
+    #oc-tabelaKalendarz th:nth-child(3),
+    #oc-tabelaKalendarz th:nth-child(4) {
+        min-width: 10.5rem;
+        white-space: nowrap;
+    }
+
+    #oc-tabelaKalendarz td:nth-child(3),
+    #oc-tabelaKalendarz td:nth-child(4) {
+        min-width: 9.5rem;
+        white-space: normal;
+    }
+
+    #oc-tabelaKalendarz td:nth-child(3) select,
+    #oc-tabelaKalendarz td:nth-child(4) select {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 8.5rem;
+        box-sizing: border-box;
+    }
+
+    /* Adwent: te same nagłówki w innych kolumnach (4 = Osoba Główna, 5 = Pomocnik) */
+    #oc-tabelaAdwent th:nth-child(4),
+    #oc-tabelaAdwent th:nth-child(5) {
+        min-width: 10.5rem;
+        white-space: nowrap;
+    }
+
+    #oc-tabelaAdwent td:nth-child(4),
+    #oc-tabelaAdwent td:nth-child(5) {
+        min-width: 9.5rem;
+        white-space: normal;
+    }
+
+    #oc-tabelaAdwent td:nth-child(4) select,
+    #oc-tabelaAdwent td:nth-child(5) select {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 8.5rem;
+        box-sizing: border-box;
     }
     
     /* Sticky kolumna Data - zawsze widoczna przy scrollowaniu */

@@ -3,7 +3,7 @@
  * Plugin Name: Odwiedziny Chorych
  * Plugin URI: https://example.com/odwiedziny-chorych
  * Description: System zarządzania odwiedzinami chorych - kalendarz, szafarze, raporty
- * Version: 1.2.2
+ * Version: 1.2.3
  * Author: Administrator
  * Author URI: https://example.com
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Stałe pluginu
-define('OC_PLUGIN_VERSION', '1.2.2');
+define('OC_PLUGIN_VERSION', '1.2.3');
 define('OC_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('OC_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('OC_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -58,6 +58,7 @@ class OdwiedzinyChorych {
      */
     private function load_dependencies() {
         require_once OC_PLUGIN_DIR . 'includes/class-database.php';
+        require_once OC_PLUGIN_DIR . 'includes/class-oc-auth.php';
         require_once OC_PLUGIN_DIR . 'includes/class-api-chorzy.php';
         require_once OC_PLUGIN_DIR . 'includes/class-api-szafarze.php';
         require_once OC_PLUGIN_DIR . 'includes/class-api-kalendarz.php';
@@ -156,6 +157,8 @@ class OdwiedzinyChorych {
      * Inicjalizacja
      */
     public function init() {
+        OC_Database::maybe_upgrade();
+
         // Załaduj tłumaczenia
         load_plugin_textdomain('odwiedziny-chorych', false, dirname(OC_PLUGIN_BASENAME) . '/languages');
         

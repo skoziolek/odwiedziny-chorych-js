@@ -70,37 +70,80 @@ class OC_Shortcode {
             );
         }
         
-        // Sprawdź dane logowania
+        $szafarz_id_param = isset($params['szafarzId']) ? absint($params['szafarzId']) : 0;
+
+        // Logowanie szafarza (osobne hasło ustawiane przez administratora)
+        if ($szafarz_id_param > 0) {
+            if ($password === '') {
+                self::record_failed_attempt($ip);
+                return new WP_Error('invalid_credentials', 'Nieprawidłowe dane logowania', array('status' => 401));
+            }
+            $table_sz = OC_Database::get_table_name('szafarze');
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, imie, nazwisko, haslo_hash FROM $table_sz WHERE id = %d AND aktywny = 1",
+                $szafarz_id_param
+            ));
+            if (!$row || empty($row->haslo_hash) || !password_verify($password, $row->haslo_hash)) {
+                self::record_failed_attempt($ip);
+                $msg = (!$row || empty($row->haslo_hash))
+                    ? 'Dla tego szafarza nie ustawiono hasła logowania. Administrator może je ustawić w zakładce Dane szafarzy.'
+                    : 'Nieprawidłowe dane logowania';
+                return new WP_Error('invalid_credentials', $msg, array('status' => 401));
+            }
+            $wpdb->delete($table_proby, array('ip' => $ip));
+            $token = wp_generate_password(64, false);
+            $table_sesje = OC_Database::get_table_name('sesje');
+            $wpdb->insert($table_sesje, array(
+                'token' => $token,
+                'szafarz_id' => $szafarz_id_param,
+                'user_ip' => $ip,
+                'user_agent' => sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? ''),
+                'data_wygasniecia' => date('Y-m-d H:i:s', time() + 8 * 3600),
+            ));
+            $label = trim($row->imie . ' ' . $row->nazwisko);
+            return rest_ensure_response(array(
+                'success' => true,
+                'token' => $token,
+                'user' => array(
+                    'role' => 'szafarz',
+                    'szafarzId' => $szafarz_id_param,
+                    'label' => $label,
+                    'loggedin' => true,
+                ),
+            ));
+        }
+
+        // Administrator aplikacji (hasło z ustawień wtyczki)
         if ($username !== 'admin') {
             self::record_failed_attempt($ip);
             return new WP_Error('invalid_credentials', 'Nieprawidłowe dane logowania', array('status' => 401));
         }
-        
+
         $password_hash = get_option('oc_admin_password_hash');
         if (!$password_hash || !password_verify($password, $password_hash)) {
             self::record_failed_attempt($ip);
             return new WP_Error('invalid_credentials', 'Nieprawidłowe dane logowania', array('status' => 401));
         }
-        
-        // Usuń nieudane próby
+
         $wpdb->delete($table_proby, array('ip' => $ip));
-        
-        // Utwórz sesję
+
         $token = wp_generate_password(64, false);
         $table_sesje = OC_Database::get_table_name('sesje');
-        
+
         $wpdb->insert($table_sesje, array(
             'token' => $token,
             'user_ip' => $ip,
             'user_agent' => sanitize_text_field($_SERVER['HTTP_USER_AGENT'] ?? ''),
-            'data_wygasniecia' => date('Y-m-d H:i:s', time() + 8 * 3600), // 8 godzin
+            'data_wygasniecia' => date('Y-m-d H:i:s', time() + 8 * 3600),
         ));
-        
+
         return rest_ensure_response(array(
             'success' => true,
             'token' => $token,
             'user' => array(
-                'username' => 'admin',
+                'role' => 'admin',
+                'szafarzId' => null,
+                'label' => 'Administrator',
                 'loggedin' => true,
             ),
         ));
@@ -215,10 +258,35 @@ class OC_Shortcode {
             return new WP_Error('invalid_token', 'Nieprawidłowy lub wygasły token', array('status' => 401));
         }
         
+        $szafarz_id = null;
+        if (isset($session->szafarz_id) && $session->szafarz_id !== '' && $session->szafarz_id !== null) {
+            $szafarz_id = (int) $session->szafarz_id;
+        }
+
+        if ($szafarz_id) {
+            $table_sz = OC_Database::get_table_name('szafarze');
+            $sz = $wpdb->get_row($wpdb->prepare(
+                "SELECT imie, nazwisko FROM $table_sz WHERE id = %d AND aktywny = 1",
+                $szafarz_id
+            ));
+            $label = $sz ? trim($sz->imie . ' ' . $sz->nazwisko) : ('Szafarz #' . $szafarz_id);
+            return rest_ensure_response(array(
+                'success' => true,
+                'user' => array(
+                    'role' => 'szafarz',
+                    'szafarzId' => $szafarz_id,
+                    'label' => $label,
+                    'loggedin' => true,
+                ),
+            ));
+        }
+
         return rest_ensure_response(array(
             'success' => true,
             'user' => array(
-                'username' => 'admin',
+                'role' => 'admin',
+                'szafarzId' => null,
+                'label' => 'Administrator',
                 'loggedin' => true,
             ),
         ));

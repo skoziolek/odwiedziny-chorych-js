@@ -30,6 +30,7 @@
     let currentYear = new Date().getFullYear().toString();
     let szafarze = [];
     let chorzy = [];
+    let currentUser = null;
     let kalendarzData = {};
     let adwentData = {};
     let historiaData = {}; // Przechowuje odwiedzonych chorych dla każdej daty
@@ -58,6 +59,14 @@
         const month = (d.getMonth() + 1).toString().padStart(2, '0');
         const day = d.getDate().toString().padStart(2, '0');
         return `${year}-${month}-${day}`;
+    }
+
+    function formatDateTime(mysqlOrIso) {
+        if (!mysqlOrIso) return '';
+        const normalized = String(mysqlOrIso).replace(' ', 'T');
+        const d = new Date(normalized);
+        if (isNaN(d.getTime())) return mysqlOrIso;
+        return d.toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' });
     }
 
     function showMessage(message, type = 'success') {
@@ -137,7 +146,7 @@
 
     // ==================== AUTH ====================
 
-    async function login(password) {
+    async function login(payload) {
         try {
             debugLog('login: Rozpoczynam logowanie');
             const response = await fetch(`${API_URL}/auth/login`, {
@@ -146,7 +155,7 @@
                     'Content-Type': 'application/json',
                     'X-WP-Nonce': NONCE,
                 },
-                body: JSON.stringify({ username: 'admin', password }),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
@@ -155,9 +164,11 @@
             if (response.ok && data.success) {
                 authToken = data.token;
                 sessionStorage.setItem('oc_authToken', authToken);
+                if (data.user) {
+                    currentUser = data.user;
+                }
                 debugLog('login: Token zapisany:', authToken ? authToken.substring(0, 10) + '...' : 'BRAK');
                 
-                // Natychmiast zweryfikuj token po logowaniu
                 const verifyResult = await checkAuth();
                 debugLog('login: Weryfikacja po logowaniu:', verifyResult);
                 
@@ -184,13 +195,18 @@
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 debugError('checkAuth: Błąd weryfikacji:', response.status, errorData);
-                // Jeśli 401, wyczyść token i pokaż ekran logowania
                 if (response.status === 401) {
                     authToken = null;
                     sessionStorage.removeItem('oc_authToken');
+                    currentUser = null;
                     showLoginScreen();
                 }
                 return false;
+            }
+
+            const verifyData = await response.json().catch(() => ({}));
+            if (verifyData.user) {
+                currentUser = verifyData.user;
             }
             
             debugLog('checkAuth: Token poprawny');
@@ -198,6 +214,45 @@
         } catch (error) {
             debugError('checkAuth: Wyjątek:', error);
             return false;
+        }
+    }
+
+    async function fillLoginSzafarzeSelect() {
+        const sel = document.getElementById('oc-loginSzafarzSelect');
+        if (!sel) return;
+        try {
+            const response = await fetch(`${API_URL}/szafarze`, {
+                headers: { 'X-WP-Nonce': NONCE },
+            });
+            if (!response.ok) return;
+            const list = await response.json();
+            sel.innerHTML = '<option value="">— wybierz —</option>';
+            list.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = String(s.id);
+                const label = [s.imie, s.nazwisko].filter(Boolean).join(' ').trim();
+                opt.textContent = label || (`Szafarz #${s.id}`);
+                sel.appendChild(opt);
+            });
+        } catch (e) {
+            debugError('Lista szafarzy (logowanie):', e);
+        }
+    }
+
+    function applyRoleUI() {
+        const isSzafarz = currentUser && currentUser.role === 'szafarz';
+        document.querySelectorAll('.oc-tab-button[data-tab="szafarze"], .oc-tab-button[data-tab="raporty"]').forEach(btn => {
+            btn.style.display = isSzafarz ? 'none' : '';
+        });
+        const info = document.getElementById('oc-sessionInfo');
+        if (info) {
+            info.textContent = currentUser && currentUser.label ? `Zalogowano jako: ${currentUser.label}` : '';
+        }
+        if (isSzafarz) {
+            const active = document.querySelector('.oc-tab-button.active');
+            if (active && (active.dataset.tab === 'szafarze' || active.dataset.tab === 'raporty')) {
+                activateTab('kalendarz');
+            }
         }
     }
 
@@ -209,6 +264,7 @@
         } finally {
             authToken = null;
             sessionStorage.removeItem('oc_authToken');
+            currentUser = null;
             showLoginScreen();
         }
     }
@@ -235,6 +291,11 @@
             });
             if (response.ok) {
                 showMessage('Szafarze zapisani');
+                document.querySelectorAll('.oc-szafarz-haslo-input').forEach(inp => {
+                    inp.value = '';
+                });
+                await loadSzafarze();
+                renderSzafarze();
             }
         } catch (e) {
             debugError('Błąd zapisu szafarzy:', e);
@@ -251,15 +312,25 @@
 
         rows.forEach(row => {
             const cells = row.querySelectorAll('td');
-            if (cells.length >= 5) {
-                szafarze.push({
-                    imie: cells[0].textContent.trim(),
-                    nazwisko: cells[1].textContent.trim(),
-                    adres: cells[2].textContent.trim(),
-                    email: cells[3].textContent.trim(),
-                    telefon: cells[4].textContent.trim(),
-                });
+            if (cells.length < 7) return;
+            const idRaw = row.dataset.ocId;
+            const id = idRaw ? parseInt(idRaw, 10) : undefined;
+            const hasloInput = row.querySelector('.oc-szafarz-haslo-input');
+            const noweHaslo = hasloInput ? hasloInput.value.trim() : '';
+            const entry = {
+                imie: cells[0].textContent.trim(),
+                nazwisko: cells[1].textContent.trim(),
+                adres: cells[2].textContent.trim(),
+                email: cells[3].textContent.trim(),
+                telefon: cells[4].textContent.trim(),
+            };
+            if (id) {
+                entry.id = id;
             }
+            if (noweHaslo) {
+                entry.noweHaslo = noweHaslo;
+            }
+            szafarze.push(entry);
         });
     }
 
@@ -271,18 +342,23 @@
 
         szafarze.forEach((szafarz, index) => {
             const row = document.createElement('tr');
+            row.dataset.ocId = szafarz.id != null ? String(szafarz.id) : '';
+            const hasloHint = szafarz.maHaslo ? '(hasło ustawione)' : '(brak hasła)';
             row.innerHTML = `
                 <td contenteditable="true">${szafarz.imie || ''}</td>
                 <td contenteditable="true">${szafarz.nazwisko || ''}</td>
                 <td contenteditable="true">${szafarz.adres || ''}</td>
                 <td contenteditable="true">${szafarz.email || ''}</td>
                 <td contenteditable="true">${szafarz.telefon || ''}</td>
+                <td class="oc-szafarz-haslo-cell">
+                    <input type="password" class="oc-szafarz-haslo-input" autocomplete="new-password" placeholder="Nowe hasło" aria-label="Nowe hasło logowania szafarza">
+                    <span class="oc-szafarz-haslo-status oc-muted">${hasloHint}</span>
+                </td>
                 <td>
                     <button class="oc-btn oc-btn-danger oc-btn-small" onclick="ocApp.deleteSzafarz(${index})">Usuń</button>
                 </td>
             `;
 
-            // Zapisz przy zmianie
             row.querySelectorAll('[contenteditable]').forEach(cell => {
                 cell.addEventListener('blur', debounce(saveSzafarze, 1000));
             });
@@ -325,6 +401,8 @@
             });
             if (response.ok) {
                 showMessage('Chorzy zapisani');
+                await loadChorzy();
+                renderChorzy();
             }
         } catch (e) {
             debugError('Błąd zapisu chorych:', e);
@@ -337,21 +415,27 @@
         if (!tbody) return;
 
         const rows = tbody.querySelectorAll('tr');
-        chorzy = [];
+        const newChorzy = [];
 
         rows.forEach(row => {
             const cells = row.querySelectorAll('td');
             const select = row.querySelector('select');
-            if (cells.length >= 4) {
-                chorzy.push({
-                    imieNazwisko: cells[0].textContent.trim(),
-                    adres: cells[1].textContent.trim(),
-                    telefon: cells[2].textContent.trim(),
-                    uwagi: cells[3].textContent.trim(),
-                    status: select ? select.value : 'TAK',
-                });
-            }
+            if (cells.length < 4) return;
+            const idRaw = row.dataset.ocId;
+            const id = idRaw ? parseInt(idRaw, 10) : null;
+            const prev = id ? chorzy.find(c => c.id === id) : null;
+            newChorzy.push({
+                id: id || undefined,
+                imieNazwisko: cells[0].textContent.trim(),
+                adres: cells[1].textContent.trim(),
+                telefon: cells[2].textContent.trim(),
+                uwagi: cells[3].textContent.trim(),
+                status: select ? select.value : 'TAK',
+                uwagiOstatnioPrzez: prev ? prev.uwagiOstatnioPrzez : undefined,
+                uwagiOstatnioData: prev ? prev.uwagiOstatnioData : undefined,
+            });
         });
+        chorzy = newChorzy;
     }
 
     function renderChorzy() {
@@ -372,16 +456,17 @@
             const originalIndex = chorzy.indexOf(chory);
             const row = document.createElement('tr');
             row.className = chory.status === 'TAK' ? 'status-tak' : 'status-nie';
-            
+            row.dataset.ocId = chory.id != null ? String(chory.id) : '';
+
             row.innerHTML = `
                 <td contenteditable="true">${chory.imieNazwisko || ''}</td>
                 <td contenteditable="true">${chory.adres || ''}</td>
                 <td contenteditable="true">${chory.telefon || ''}</td>
-                <td contenteditable="true">${chory.uwagi || ''}</td>
+                <td contenteditable="true" class="oc-chorzy-uwagi">${chory.uwagi || ''}</td>
                 <td>
-                    <select class="oc-status-select ${chory.status === 'TAK' ? 'status-tak' : 'status-nie'}">
-                        <option value="TAK" ${chory.status === 'TAK' ? 'selected' : ''}>TAK</option>
-                        <option value="NIE" ${chory.status === 'NIE' ? 'selected' : ''}>NIE</option>
+                    <select class="oc-status-select ${chory.status === 'TAK' ? 'status-tak' : 'status-nie'}" aria-label="Status chorego: aktywny lub nieaktywny">
+                        <option value="TAK" ${chory.status === 'TAK' ? 'selected' : ''}>AKTYWNY</option>
+                        <option value="NIE" ${chory.status === 'NIE' ? 'selected' : ''}>NIEAKTYWNY</option>
                     </select>
                 </td>
                 <td>
@@ -400,6 +485,11 @@
                 saveChorzy();
                 renderChorzy();
             });
+
+            const uwagiCell = row.querySelector('.oc-chorzy-uwagi');
+            if (uwagiCell && chory.uwagiOstatnioPrzez && chory.uwagiOstatnioData) {
+                attachChorzyUwagiAuditTooltip(uwagiCell, chory);
+            }
 
             tbody.appendChild(row);
         });
@@ -1388,84 +1478,64 @@
         if (modal) modal.style.display = 'none';
     }
     
-    function setupTooltip(button, odwiedzeniChorzy) {
-        // Zapisz dane chorych na przycisku
-        button._odwiedzeniChorzy = odwiedzeniChorzy;
-        
-        // Sprawdź czy już ma event listenery
-        if (button._hasTooltipListeners) {
-            // Zaktualizuj dane
-            button._odwiedzeniChorzy = odwiedzeniChorzy;
+    /**
+     * Wspólny panel jak przy „Odwiedzone” (.oc-visited-tooltip) — ten sam wygląd co w kalendarzu.
+     * renderContent(panel) zwraca true, gdy panel ma być pokazany.
+     */
+    function bindOcStyleTooltip(anchor, renderContent, options = {}) {
+        const hideOnClick = options.hideOnClick !== false;
+
+        if (anchor._ocStyleTooltipBound) {
+            anchor._ocStyleTooltipRender = renderContent;
             return;
         }
-        button._hasTooltipListeners = true;
-        
+        anchor._ocStyleTooltipBound = true;
+        anchor._ocStyleTooltipRender = renderContent;
+
         let tooltipElement = null;
         let isHovering = false;
         let tooltipTimeout = null;
-        
+
         const createTooltip = () => {
-            // Usuń poprzedni tooltip
             if (tooltipElement) {
                 tooltipElement.remove();
+                tooltipElement = null;
             }
-            
-            const chorzy = button._odwiedzeniChorzy || [];
-            if (chorzy.length === 0) return null;
-            
-            tooltipElement = document.createElement('div');
-            tooltipElement.className = 'oc-visited-tooltip';
-            
-            // Tytuł
-            const title = document.createElement('div');
-            title.textContent = 'Odwiedzeni:';
-            title.style.fontWeight = 'bold';
-            title.style.marginBottom = '6px';
-            tooltipElement.appendChild(title);
-            
-            // Lista chorych
-            chorzy.forEach(chory => {
-                const item = document.createElement('div');
-                item.textContent = '• ' + chory;
-                item.style.marginBottom = '2px';
-                tooltipElement.appendChild(item);
-            });
-            
+
+            const panel = document.createElement('div');
+            panel.className = 'oc-visited-tooltip';
+            const ok = anchor._ocStyleTooltipRender(panel);
+            if (!ok) {
+                panel.remove();
+                return null;
+            }
+
+            tooltipElement = panel;
             document.body.appendChild(tooltipElement);
-            
-            // Pozycjonuj tooltip
-            const rect = button.getBoundingClientRect();
-            const tooltipHeight = tooltipElement.offsetHeight;
-            
-            // Pozycja nad przyciskiem
-            let top = rect.top - tooltipHeight - 10;
+
+            const rect = anchor.getBoundingClientRect();
+            const th = tooltipElement.offsetHeight;
+            let top = rect.top - th - 10;
             let left = rect.left + (rect.width / 2) - (tooltipElement.offsetWidth / 2);
-            
-            // Jeśli tooltip wychodzi poza górę ekranu, pokaż pod przyciskiem
             if (top < 10) {
                 top = rect.bottom + 10;
             }
-            
-            // Ogranicz do ekranu
             left = Math.max(10, Math.min(left, window.innerWidth - tooltipElement.offsetWidth - 10));
-            
             tooltipElement.style.top = top + 'px';
             tooltipElement.style.left = left + 'px';
-            button._tooltipElement = tooltipElement;
-            
+            anchor._tooltipElement = tooltipElement;
             return tooltipElement;
         };
-        
+
         const showTooltip = () => {
             isHovering = true;
-            // Opóźnienie żeby odróżnić hover od kliknięcia
             tooltipTimeout = setTimeout(() => {
                 if (isHovering) {
                     createTooltip();
                 }
             }, 300);
         };
-        
+
         const hideTooltip = () => {
             isHovering = false;
             if (tooltipTimeout) {
@@ -1475,16 +1545,65 @@
             if (tooltipElement) {
                 tooltipElement.remove();
                 tooltipElement = null;
-                button._tooltipElement = null;
+                anchor._tooltipElement = null;
             }
         };
-        
-        // Event listenery dla hover
-        button.addEventListener('mouseenter', showTooltip);
-        button.addEventListener('mouseleave', hideTooltip);
-        
-        // Ukryj tooltip przy kliknięciu (bo otworzy się modal)
-        button.addEventListener('click', hideTooltip);
+
+        anchor.addEventListener('mouseenter', showTooltip);
+        anchor.addEventListener('mouseleave', hideTooltip);
+        if (hideOnClick) {
+            anchor.addEventListener('click', hideTooltip);
+        }
+    }
+
+    function attachChorzyUwagiAuditTooltip(cell, chory) {
+        bindOcStyleTooltip(cell, (panel) => {
+            if (!chory.uwagiOstatnioPrzez || !chory.uwagiOstatnioData) {
+                return false;
+            }
+            const title = document.createElement('div');
+            title.textContent = 'Ostatnia zmiana uwag';
+            title.style.fontWeight = 'bold';
+            title.style.marginBottom = '6px';
+            panel.appendChild(title);
+            const who = document.createElement('div');
+            who.textContent = '• ' + chory.uwagiOstatnioPrzez;
+            who.style.marginBottom = '2px';
+            panel.appendChild(who);
+            const when = document.createElement('div');
+            when.textContent = '• ' + formatDateTime(chory.uwagiOstatnioData);
+            when.style.marginBottom = '2px';
+            panel.appendChild(when);
+            return true;
+        }, { hideOnClick: false });
+    }
+
+    function setupTooltip(button, odwiedzeniChorzy) {
+        button._odwiedzeniChorzy = odwiedzeniChorzy;
+
+        if (button._hasTooltipListeners) {
+            return;
+        }
+        button._hasTooltipListeners = true;
+
+        bindOcStyleTooltip(button, (panel) => {
+            const chorzyList = button._odwiedzeniChorzy || [];
+            if (chorzyList.length === 0) {
+                return false;
+            }
+            const title = document.createElement('div');
+            title.textContent = 'Odwiedzeni:';
+            title.style.fontWeight = 'bold';
+            title.style.marginBottom = '6px';
+            panel.appendChild(title);
+            chorzyList.forEach(name => {
+                const item = document.createElement('div');
+                item.textContent = '• ' + name;
+                item.style.marginBottom = '2px';
+                panel.appendChild(item);
+            });
+            return true;
+        });
     }
 
     async function saveVisit() {
@@ -1601,6 +1720,9 @@
     function showLoginScreen() {
         document.getElementById('oc-loginScreen').style.display = 'flex';
         document.getElementById('oc-mainApp').style.display = 'none';
+        const info = document.getElementById('oc-sessionInfo');
+        if (info) info.textContent = '';
+        fillLoginSzafarzeSelect();
     }
 
     function showMainApp() {
@@ -1628,14 +1750,31 @@
     function setupEventListeners() {
         // Login form
         const loginForm = document.getElementById('oc-loginForm');
+        const loginRoleSelect = document.getElementById('oc-loginRoleSelect');
+        const loginSzafarzGroup = document.getElementById('oc-loginSzafarzGroup');
+        if (loginRoleSelect && loginSzafarzGroup) {
+            loginRoleSelect.addEventListener('change', () => {
+                const isSzafarz = loginRoleSelect.value === 'szafarz';
+                loginSzafarzGroup.style.display = isSzafarz ? 'block' : 'none';
+            });
+        }
         if (loginForm) {
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const password = document.getElementById('oc-passwordInput').value;
                 const errorEl = document.getElementById('oc-loginError');
+                const role = document.getElementById('oc-loginRoleSelect')?.value || 'admin';
 
                 try {
-                    await login(password);
+                    if (role === 'admin') {
+                        await login({ username: 'admin', password });
+                    } else {
+                        const sid = parseInt(document.getElementById('oc-loginSzafarzSelect')?.value || '', 10);
+                        if (!sid) {
+                            throw new Error('Wybierz szafarza z listy.');
+                        }
+                        await login({ szafarzId: sid, password });
+                    }
                     errorEl.style.display = 'none';
                     await initApp();
                 } catch (error) {
@@ -1749,6 +1888,8 @@
             loadHistoriaForYear(currentYear),
         ]);
 
+        applyRoleUI();
+
         // Renderuj
         renderSzafarze();
         renderChorzy();
@@ -1794,6 +1935,7 @@
 
     async function init() {
         setupEventListeners();
+        await fillLoginSzafarzeSelect();
 
         const isLoggedIn = await checkAuth();
         if (isLoggedIn) {

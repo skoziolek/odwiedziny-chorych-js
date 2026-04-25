@@ -18,6 +18,19 @@ if (!defined('ABSPATH')) {
             </div>
             <form id="oc-loginForm" class="oc-login-form">
                 <div class="oc-form-group">
+                    <label for="oc-loginRoleSelect">Typ konta</label>
+                    <select id="oc-loginRoleSelect" name="loginRole" aria-label="Typ konta">
+                        <option value="admin">Administrator</option>
+                        <option value="szafarz">Szafarz</option>
+                    </select>
+                </div>
+                <div class="oc-form-group" id="oc-loginSzafarzGroup" style="display: none;">
+                    <label for="oc-loginSzafarzSelect">Szafarz</label>
+                    <select id="oc-loginSzafarzSelect" name="szafarzId" aria-label="Wybierz szafarza">
+                        <option value="">— wybierz —</option>
+                    </select>
+                </div>
+                <div class="oc-form-group">
                     <label for="oc-passwordInput">Hasło:</label>
                     <input type="password" id="oc-passwordInput" name="password" required autocomplete="current-password">
                 </div>
@@ -31,6 +44,7 @@ if (!defined('ABSPATH')) {
     <div id="oc-mainApp" style="display: none;">
         <header class="oc-header" id="oc-app-header">
             <h1 id="oc-app-title"><span aria-label="Modlitwa">🙏</span> Odwiedziny Chorych</h1>
+            <p id="oc-sessionInfo" class="oc-session-info" aria-live="polite"></p>
         </header>
 
         <!-- Zakładki -->
@@ -146,6 +160,7 @@ if (!defined('ABSPATH')) {
                             <th>Adres zamieszkania</th>
                             <th>Adres email</th>
                             <th>Numer telefonu</th>
+                            <th>Hasło logowania</th>
                             <th>Akcje</th>
                         </tr>
                     </thead>

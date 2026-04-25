@@ -87,3 +87,7 @@ js-version/src/data/*.json
 
 # But keep the structure
 !js-version/src/data/
+
+# Lokalna ścieżka LocalWP (site-shell)
+site-shell/config.local.ps1
+site-shell/config.local.sh
