@@ -2,6 +2,13 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.4] – 2026-04-13
+
+**Wtyczka WordPress**
+
+- Wyświetlanie numeru wersji w UI (prawy dolny róg); `version` w `ocData`.
+- GitHub Actions: release WordPress — wersja ZIP, tag i opis z `OC_PLUGIN_VERSION` w `odwiedziny-chorych.php` (jedno źródło prawdy).
+
 ## [1.2.3] – 2026-04-13
 
 **Wtyczka WordPress**

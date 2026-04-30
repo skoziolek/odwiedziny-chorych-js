@@ -157,7 +157,7 @@ class OC_Database {
         
         // Zapisz wersję bazy danych
         update_option('oc_db_version', OC_PLUGIN_VERSION);
-        update_option('oc_db_schema_version', '1.2.3');
+        update_option('oc_db_schema_version', OC_PLUGIN_VERSION);
     }
 
     /**
@@ -168,6 +168,10 @@ class OC_Database {
         if (version_compare($schema, '1.2.3', '<')) {
             self::upgrade_to_1_2_3();
             update_option('oc_db_schema_version', '1.2.3');
+        }
+        $schema = get_option('oc_db_schema_version', '');
+        if (version_compare($schema, OC_PLUGIN_VERSION, '<')) {
+            update_option('oc_db_schema_version', OC_PLUGIN_VERSION);
         }
     }
 

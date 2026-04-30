@@ -1,5 +1,7 @@
-# Paczka ZIP jest zawsze budowana z gałęzi main (nie z domyślnej gałęzi repo).
-# Uruchomienie: GitHub → Actions → „Release WordPress plugin” → Run workflow
+# Paczka ZIP jest zawsze budowana z gałęzi main.
+# Numer wersji / tag / nazwa ZIP: z OC_PLUGIN_VERSION w odwiedziny-chorych.php (jedno źródło prawdy).
+# Przed release podnieś wersję w pliku PHP (nagłówek Version: + define), commit na main, potem uruchom workflow.
+# Uruchomienie: GitHub → Actions → „Release WordPress plugin” → Run workflow (najlepiej z gałęzi main).
 name: Release WordPress plugin
 
 on:
@@ -17,9 +19,21 @@ jobs:
         with:
           ref: main
 
+      - name: Read plugin version from PHP
+        id: ver
+        run: |
+          PHP_FILE="wordpress-plugin/odwiedziny-chorych/odwiedziny-chorych.php"
+          VERSION=$(awk -F"'" '/OC_PLUGIN_VERSION/ && /define/ {print $4; exit}' "$PHP_FILE")
+          if [ -z "$VERSION" ]; then
+            echo "::error::Nie znaleziono OC_PLUGIN_VERSION w $PHP_FILE"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Wersja wtyczki: $VERSION"
+
       - name: Build plugin ZIP
         run: |
-          VERSION="1.2.3"
+          VERSION="${{ steps.ver.outputs.version }}"
           cd wordpress-plugin
           zip -r "../odwiedziny-chorych-v${VERSION}.zip" odwiedziny-chorych
           ls -la "../odwiedziny-chorych-v${VERSION}.zip"
@@ -27,20 +41,20 @@ jobs:
       - name: Create or update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.2.3
-          name: Odwiedziny Chorych v1.2.3 (WordPress)
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: Odwiedziny Chorych v${{ steps.ver.outputs.version }} (WordPress)
           body: |
             ### Wtyczka WordPress — paczka do wgrania
 
-            Pobierz załącznik **`odwiedziny-chorych-v1.2.3.zip`**. W panelu WordPress: **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer**.
+            Pobierz załącznik **`odwiedziny-chorych-v${{ steps.ver.outputs.version }}.zip`**. W panelu WordPress: **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer**.
 
-            Po instalacji przy wtyczce powinna być widoczna wersja **1.2.3**.
+            Po instalacji przy wtyczce powinna być widoczna wersja **${{ steps.ver.outputs.version }}**.
 
-            **Instrukcja krok po kroku:** [INSTRUKCJA_WGRANIA_WORDPRESS.md](https://github.com/skoziolek/odwiedziny-chorych-js/blob/v1.2.3/wordpress-plugin/odwiedziny-chorych/INSTRUKCJA_WGRANIA_WORDPRESS.md)
+            **Instrukcja krok po kroku:** [INSTRUKCJA_WGRANIA_WORDPRESS.md](https://github.com/${{ github.repository }}/blob/v${{ steps.ver.outputs.version }}/wordpress-plugin/odwiedziny-chorych/INSTRUKCJA_WGRANIA_WORDPRESS.md)
 
-            Pełny opis repozytorium: [STATUS_WDROZENIA.md](https://github.com/skoziolek/odwiedziny-chorych-js/blob/v1.2.3/STATUS_WDROZENIA.md)
+            Pełny opis repozytorium: [STATUS_WDROZENIA.md](https://github.com/${{ github.repository }}/blob/v${{ steps.ver.outputs.version }}/STATUS_WDROZENIA.md)
 
-            **Zmiany:** zobacz [CHANGELOG.md](https://github.com/skoziolek/odwiedziny-chorych-js/blob/v1.2.3/CHANGELOG.md) (1.2.3).
-          files: odwiedziny-chorych-v1.2.3.zip
+            **Zmiany:** zobacz [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/v${{ steps.ver.outputs.version }}/CHANGELOG.md) (${{ steps.ver.outputs.version }}).
+          files: odwiedziny-chorych-v${{ steps.ver.outputs.version }}.zip
           fail_on_unmatched_files: true
           generate_release_notes: false
