@@ -1,4 +1,4 @@
-# Tworzy lub aktualizuje GitHub Release dla wtyczki WordPress (tag v1.2.3) z załączonym ZIP-em.
+# Paczka ZIP jest zawsze budowana z gałęzi main (nie z domyślnej gałęzi repo).
 # Uruchomienie: GitHub → Actions → „Release WordPress plugin” → Run workflow
 name: Release WordPress plugin
 
@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Build plugin ZIP
         run: |

@@ -235,7 +235,8 @@ class OdwiedzinyChorych {
         wp_localize_script('oc-app', 'ocData', array(
             'apiUrl' => rest_url('odwiedziny-chorych/v1'),
             'nonce' => wp_create_nonce('wp_rest'),
-            'pluginUrl' => OC_PLUGIN_URL
+            'pluginUrl' => OC_PLUGIN_URL,
+            'version' => OC_PLUGIN_VERSION
         ));
     }
     
