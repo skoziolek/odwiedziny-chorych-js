@@ -73,6 +73,25 @@ body:has(.oc-container) .site-header:first-of-type {
     box-sizing: border-box;
 }
 
+/* Wersja wtyczki — dyskretnie w rogu (poniżej modalów) */
+#oc-app .oc-app-version {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    z-index: 100;
+    margin: 0;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    color: rgba(109, 92, 61, 0.78);
+    background: rgba(255, 249, 240, 0.93);
+    border: 1px solid rgba(212, 196, 168, 0.55);
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    pointer-events: none;
+    user-select: none;
+}
+
 /* Ekran logowania */
 .oc-login-screen {
     display: flex;

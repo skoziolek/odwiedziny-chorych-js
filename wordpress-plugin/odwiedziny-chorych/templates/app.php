@@ -219,5 +219,7 @@ if (!defined('ABSPATH')) {
             </div>
         </div>
     </div>
+
+    <p id="oc-appVersion" class="oc-app-version" role="status"><?php echo esc_html( sprintf( /* translators: %s: plugin version */ __( 'Wersja %s', 'odwiedziny-chorych' ), OC_PLUGIN_VERSION ) ); ?></p>
 </div>
 
