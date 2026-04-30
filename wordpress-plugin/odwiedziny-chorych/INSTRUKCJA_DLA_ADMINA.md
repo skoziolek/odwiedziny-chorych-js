@@ -267,6 +267,7 @@ Przetestuj wszystkie funkcjonalności:
 
 ## 📚 Dodatkowa dokumentacja
 
+- **`INSTRUKCJA_EMAIL_PRZED_DYZUREM.md`** — krótka checklista: co po wpisaniu e-maila szafarza i przypisaniu go w kalendarzu (SMTP, cron, jak działają przypomnienia)
 - `README.md` - Ogólna dokumentacja
 - `WDROZENIE_PRODUKCJA.md` - Szczegółowa instrukcja wdrożenia
 - `INSTALACJA_SMTP.md` - Instrukcja konfiguracji SMTP
