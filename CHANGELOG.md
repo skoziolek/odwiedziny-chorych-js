@@ -2,6 +2,13 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.5] – 2026-04-14
+
+**Wtyczka WordPress**
+
+- Zapis hasła szafarza po opuszczeniu pola „Nowe hasło” (wcześniej zapis często nie następował bez edycji innej komórki).
+- Dokumentacja: **`INSTRUKCJA_DLA_SZAFARZA.md`**; w **`INSTRUKCJA_DLA_ADMINA.md`** — rozwiązywanie problemów z hasłem szafarza.
+
 ## [1.2.4] – 2026-04-13
 
 **Wtyczka WordPress**
