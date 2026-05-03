@@ -258,6 +258,10 @@ Przetestuj wszystkie funkcjonalności:
 - Sprawdź czy cron jest skonfigurowany
 - Sprawdź folder SPAM w skrzynce email
 
+### Problem: Hasło szafarza „nie działa” po ustawieniu w *Dane szafarzy*
+- Po wpisaniu hasła w polu **Nowe hasło** dla wiersza szafarza **wyjdź z tego pola** (np. kliknij poza pole lub przejdź kursorem do innej komórki) albo zmień krótko inne pole i kliknij poza — zapis ma się wykonać. Sprawdź też, czy pojawił się komunikat **„Szafarze zapisani”** i czy przy szafarzu jest status **„(hasło ustawione)”**.
+- Szafarz musi wybrać **siebie** na liście przy logowaniu (typ konta: **Szafarz**) i wpisać **to samo** hasło; hasło administratora aplikacji to co innego niż hasło szafarza.
+
 ### Problem: Błędy w konsoli przeglądarki
 - Otwórz DevTools (F12) → Console
 - Sprawdź czy REST API działa: `https://twoja-strona.pl/wp-json/odwiedziny-chorych/v1/`
@@ -267,6 +271,7 @@ Przetestuj wszystkie funkcjonalności:
 
 ## 📚 Dodatkowa dokumentacja
 
+- **`INSTRUKCJA_DLA_SZAFARZA.md`** — jak szafarz loguje się na stronę i z czego korzysta w aplikacji
 - **`INSTRUKCJA_EMAIL_PRZED_DYZUREM.md`** — krótka checklista: co po wpisaniu e-maila szafarza i przypisaniu go w kalendarzu (SMTP, cron, jak działają przypomnienia)
 - `README.md` - Ogólna dokumentacja
 - `WDROZENIE_PRODUKCJA.md` - Szczegółowa instrukcja wdrożenia
