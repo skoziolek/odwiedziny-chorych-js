@@ -363,6 +363,11 @@
                 cell.addEventListener('blur', debounce(saveSzafarze, 1000));
             });
 
+            const hasloInput = row.querySelector('.oc-szafarz-haslo-input');
+            if (hasloInput) {
+                hasloInput.addEventListener('blur', () => saveSzafarze());
+            }
+
             tbody.appendChild(row);
         });
     }
