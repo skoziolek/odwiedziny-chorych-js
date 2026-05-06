@@ -56,7 +56,7 @@ Jeśli masz dostęp do serwera, możesz skonfigurować:
 System używa WordPress Cron (`wp-cron`), który:
 
 - ✅ **Działa automatycznie** gdy strona jest odwiedzana
-- ⚠️ **Wymaga odwiedzin** - jeśli nikt nie odwiedza strony o 18:00, cron się nie uruchomi
+- ⚠️ **Wymaga odwiedzin** - jeśli nikt nie odwiedza strony o 12:00, cron się nie uruchomi
 - ✅ **Rekomendacja:** Skonfiguruj prawdziwy cron przez crontab na serwerze
 
 ### Konfiguracja prawdziwego cron (opcjonalne, ale zalecane)
@@ -68,8 +68,8 @@ System używa WordPress Cron (`wp-cron`), który:
 
 2. **Dodaj cron do crontab serwera:**
    ```bash
-   # Codziennie o 18:00
-   0 18 * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1
+   # Codziennie o 12:00 (zgodnie z godziną crona wtyczki)
+   0 12 * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1
    
    # Lub częściej (co 15 minut), aby mieć pewność
    */15 * * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1

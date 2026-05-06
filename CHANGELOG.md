@@ -2,6 +2,19 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.7] – 2026-04-17
+
+**Wtyczka WordPress**
+
+- Przypomnienia e-mail o dyżurze: cron domyślnie **12:00** (czas wg ustawień WordPressa); stała `OC_EMAIL_REMINDER_HOUR`, filtr `oc_email_reminder_hour`. Po aktualizacji harmonogram jest **automatycznie przeplanowywany** (poprzednio domyślnie 18:00).
+
+## [1.2.6] – 2026-04-17
+
+**Wtyczka WordPress**
+
+- Release z aktualnego `main`: paczka ZIP i tag **`v1.2.6`** odpowiadają temu numerowi w kodzie. Zawiera m.in. zmiany opisane przy **1.2.5** (zapis hasła szafarza po opuszczeniu pola, `INSTRUKCJA_DLA_SZAFARZA.md`, uzupełnienia w `INSTRUKCJA_DLA_ADMINA.md`).
+- Uwaga: wcześniejszy tag **`v1.2.5`** na GitHubie mógł wskazywać na inny commit — do instalacji użyj **`v1.2.6`** lub nowszego.
+
 ## [1.2.5] – 2026-04-14
 
 **Wtyczka WordPress**

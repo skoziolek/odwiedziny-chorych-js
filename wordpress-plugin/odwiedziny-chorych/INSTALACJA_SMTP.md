@@ -279,7 +279,7 @@ Po skonfigurowaniu SMTP, sprawdź:
 
 Po pomyślnej konfiguracji SMTP:
 
-1. ✅ System będzie automatycznie wysyłał emaile codziennie o 18:00
+1. ✅ System będzie automatycznie wysyłał emaile codziennie o 12:00 (godzinę można zmienić w kodzie: `OC_EMAIL_REMINDER_HOUR` lub filtr `oc_email_reminder_hour`)
 2. ✅ Szafarze będą otrzymywać przypomnienia o dyżurach dzień wcześniej
 3. ✅ Wszystkie emaile będą logowane w `view-email-logs.php`
 
