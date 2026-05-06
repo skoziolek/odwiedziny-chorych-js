@@ -89,7 +89,7 @@ Przed wdrożeniem upewnij się, że:
 
 WordPress Cron (`wp-cron`) działa automatycznie, ale ma ograniczenia:
 - Wymaga odwiedzin strony o określonej godzinie
-- Jeśli nikt nie odwiedza strony o 18:00, cron się nie uruchomi
+- Jeśli nikt nie odwiedza strony o 12:00, cron się nie uruchomi
 
 ### Zalecana konfiguracja: Prawdziwy cron przez crontab
 
@@ -100,8 +100,8 @@ WordPress Cron (`wp-cron`) działa automatycznie, ale ma ograniczenia:
 
 2. **Dodaj cron do crontab serwera:**
    ```bash
-   # Codziennie o 18:00
-   0 18 * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1
+   # Codziennie o 12:00
+   0 12 * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1
    
    # Lub częściej (co 15 minut), aby mieć pewność
    */15 * * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1

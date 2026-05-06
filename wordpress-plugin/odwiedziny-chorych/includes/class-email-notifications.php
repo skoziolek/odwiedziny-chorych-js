@@ -359,37 +359,60 @@ class OC_Email_Notifications {
     
     /**
      * Zaplanuj cron job
-     * 
-     * Planuje codzienne uruchomienie o 18:00.
-     * Jeśli dzisiejsze 18:00 już minęło, planuje na jutrzejsze 18:00.
+     *
+     * Codziennie o godzinie z {@see get_reminder_hour()} (domyślnie 12:00, strefa czasowa WordPressa).
      */
     public static function schedule_cron() {
-        if (!wp_next_scheduled('oc_daily_email_reminders')) {
-            // Oblicz następne 18:00
-            $next_18_00 = strtotime('today 18:00');
-            
-            // Jeśli dzisiejsze 18:00 już minęło, planuj na jutrzejsze 18:00
-            if ($next_18_00 < time()) {
-                $next_18_00 = strtotime('tomorrow 18:00');
-            }
-            
-            // Zaplanuj codziennie o 18:00
-            wp_schedule_event(
-                $next_18_00, // Następne 18:00
-                'daily', // Codziennie
-                'oc_daily_email_reminders' // Hook name
-            );
+        if (wp_next_scheduled('oc_daily_email_reminders')) {
+            return;
         }
+
+        $hour = self::get_reminder_hour();
+        $tz = wp_timezone();
+        $now = new DateTimeImmutable('now', $tz);
+        $run = $now->setTime($hour, 0, 0);
+        if ($run <= $now) {
+            $run = $run->modify('+1 day');
+        }
+
+        wp_schedule_event($run->getTimestamp(), 'daily', 'oc_daily_email_reminders');
     }
-    
+
+    /**
+     * Godzina przypomnień (0–23). Stała OC_EMAIL_REMINDER_HOUR lub filtr oc_email_reminder_hour.
+     *
+     * @return int
+     */
+    public static function get_reminder_hour() {
+        $hour = defined('OC_EMAIL_REMINDER_HOUR') ? (int) OC_EMAIL_REMINDER_HOUR : 12;
+        if ($hour < 0 || $hour > 23) {
+            $hour = 12;
+        }
+
+        return (int) apply_filters('oc_email_reminder_hour', $hour);
+    }
+
+    /**
+     * Po zmianie godziny w kodzie / filtrze — usuń stary harmonogram i zaplanuj ponownie.
+     */
+    public static function maybe_reschedule_cron() {
+        $hour = self::get_reminder_hour();
+        $stored = get_option('oc_email_reminder_scheduled_hour', null);
+
+        if ($stored !== null && (int) $stored === $hour && wp_next_scheduled('oc_daily_email_reminders')) {
+            return;
+        }
+
+        self::unschedule_cron();
+        update_option('oc_email_reminder_scheduled_hour', $hour);
+        self::schedule_cron();
+    }
+
     /**
      * Usuń cron job
      */
     public static function unschedule_cron() {
-        $timestamp = wp_next_scheduled('oc_daily_email_reminders');
-        if ($timestamp) {
-            wp_unschedule_event($timestamp, 'oc_daily_email_reminders');
-        }
+        wp_clear_scheduled_hook('oc_daily_email_reminders');
     }
     
     /**

@@ -100,11 +100,11 @@ Aplikacja wysyła emaile o przypomnieniach. Musisz skonfigurować SMTP:
 
 ### KROK 5: Konfiguracja Cron (opcjonalne, ale zalecane)
 
-Emaile są wysyłane codziennie o 18:00 przez WordPress Cron. Aby mieć pewność, że działają:
+Emaile są wysyłane codziennie o 12:00 przez WordPress Cron. Aby mieć pewność, że działają:
 
 1. **Opcja A: Pozostaw WordPress Cron** (najprostsze)
    - WordPress automatycznie uruchomi cron gdy ktoś odwiedzi stronę
-   - Jeśli nikt nie odwiedzi strony o 18:00, cron się nie uruchomi
+   - Jeśli nikt nie odwiedzi strony o 12:00, cron się nie uruchomi
 
 2. **Opcja B: Prawdziwy Cron przez crontab** (zalecane)
 
@@ -115,8 +115,8 @@ Emaile są wysyłane codziennie o 18:00 przez WordPress Cron. Aby mieć pewnoś�
 
    b) Dodaj cron do crontab serwera:
    ```bash
-   # Codziennie o 18:00
-   0 18 * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1
+   # Codziennie o 12:00
+   0 12 * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1
    
    # LUB częściej (co 15 minut) dla większej niezawodności
    */15 * * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1
@@ -163,7 +163,7 @@ Przetestuj wszystkie funkcjonalności:
 - [ ] Auto-przypisanie szafarzy
 - [ ] Raporty
 - [ ] Drukowanie
-- [ ] Wysyłka emaili (poczekaj do 18:00 lub uruchom ręcznie przez WP Mail SMTP)
+- [ ] Wysyłka emaili (poczekaj do 12:00 lub uruchom ręcznie przez WP Mail SMTP)
 
 ---
 

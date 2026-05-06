@@ -25,7 +25,7 @@ Szczegóły: plik **`INSTALACJA_SMTP.md`** oraz **Krok 6** w **`INSTRUKCJA_DLA_A
 
 ### 2. Zaplanowane zadanie (cron)
 
-Przypomnienia uruchamia **WordPress Cron** raz dziennie (wtyczka ustawia to przy aktywacji), domyślnie w **okolicy godz. 18:00** czasu serwera — **wieczorem w dzień poprzedzający dyżur** jest już „jutro” z punktu widzenia skryptu.
+Przypomnienia uruchamia **WordPress Cron** raz dziennie (wtyczka ustawia to przy aktywacji), domyślnie w **okolicy godz. 12:00** czasu ustawionego w WordPressie (**Ustawienia → Ogólne → Strefa czasowa**) — w dzień poprzedzający dyżur skrypt i tak patrzy na **jutro** jako datę dyżuru.
 
 - Na stronie z **małym ruchem** WP-Cron bywa **opóźniony** (uruchamia się przy wejściu na stronę).
 - **Zalecane na produkcji:** prawdziwy **cron** na hostingu (np. co 15–30 min wywołanie `wp-cron.php`) albo codziennie o stałej porze — tak jak w **Krok 8** w **`INSTRUKCJA_DLA_ADMINA.md`**.
@@ -40,7 +40,7 @@ Przy **wyłączeniu** wtyczki harmonogram przypomnień jest usuwany; po ponownym
 
 | Element | Opis |
 |--------|------|
-| **Kiedy** | System patrzy na **jutrzejszą datę** w kalendarzu i wysyła mail **tego dnia**, gdy zadanie cron się wykona (np. ok. 18:00). |
+| **Kiedy** | System patrzy na **jutrzejszą datę** w kalendarzu i wysyła mail **tego dnia**, gdy zadanie cron się wykona (domyślnie ok. **12:00**). |
 | **Do kogo** | Na **e-mail** przypisany szafarzowi w **Dane szafarzy** — osobno **główny** i **pomocnik**, jeśli mają różne adresy. |
 | **Lista chorych** | Tylko osoby ze statusem **AKTYWNY** (technicznie `TAK`). |
 | **Powtórki** | Ten sam szafarz i ta sama data — **jedna** wysyłka (system zapamiętuje wysłanie). |

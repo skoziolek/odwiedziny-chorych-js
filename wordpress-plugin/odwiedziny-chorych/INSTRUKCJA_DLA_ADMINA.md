@@ -167,11 +167,11 @@ Aplikacja wysyła emaile z przypomnieniami o dyżurach. Musisz skonfigurować SM
 
 ### ✅ KROK 8: Skonfiguruj Cron (opcjonalne, ale zalecane)
 
-Emaile są wysyłane codziennie o 18:00 przez WordPress Cron. Aby mieć pewność, że działają:
+Emaile są wysyłane codziennie o 12:00 przez WordPress Cron. Aby mieć pewność, że działają:
 
 #### Opcja A: Pozostaw WordPress Cron (najprostsze)
 - WordPress automatycznie uruchomi cron gdy ktoś odwiedzi stronę
-- ⚠️ Jeśli nikt nie odwiedzi strony o 18:00, cron się nie uruchomi
+- ⚠️ Jeśli nikt nie odwiedzi strony o 12:00, cron się nie uruchomi
 
 #### Opcja B: Prawdziwy Cron przez crontab (zalecane)
 
@@ -186,7 +186,7 @@ Emaile są wysyłane codziennie o 18:00 przez WordPress Cron. Aby mieć pewnoś�
    - Przejdź do: **Cron Jobs**
    - Dodaj nowy cron:
      - Command: `curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1`
-     - Schedule: `0 18 * * *` (codziennie o 18:00)
+     - Schedule: `0 12 * * *` (codziennie o 12:00, zgodnie z godziną crona wtyczki)
      - Lub częściej: `*/15 * * * *` (co 15 minut)
 
    **W Plesk:**
@@ -197,7 +197,7 @@ Emaile są wysyłane codziennie o 18:00 przez WordPress Cron. Aby mieć pewnoś�
    ```bash
    crontab -e
    # Dodaj linię:
-   0 18 * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1
+   0 12 * * * curl -s https://twoja-strona.pl/wp-cron.php?doing_wp_cron > /dev/null 2>&1
    ```
 
 📖 **Szczegółowa instrukcja:** Zobacz `PRZYGOTOWANIE_DO_PRODUKCJI.md`
@@ -236,7 +236,7 @@ Przetestuj wszystkie funkcjonalności:
 - [ ] Auto-przypisanie szafarzy
 - [ ] Raporty
 - [ ] Drukowanie
-- [ ] Wysyłka emaili (poczekaj do 18:00 lub sprawdź w WP Mail SMTP)
+- [ ] Wysyłka emaili (poczekaj do 12:00 lub sprawdź w WP Mail SMTP)
 
 ---
 

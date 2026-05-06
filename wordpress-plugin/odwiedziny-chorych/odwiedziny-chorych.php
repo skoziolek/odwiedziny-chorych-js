@@ -3,7 +3,7 @@
  * Plugin Name: Odwiedziny Chorych
  * Plugin URI: https://example.com/odwiedziny-chorych
  * Description: System zarządzania odwiedzinami chorych - kalendarz, szafarze, raporty
- * Version: 1.2.6
+ * Version: 1.2.7
  * Author: Administrator
  * Author URI: https://example.com
  * License: GPL v2 or later
@@ -20,10 +20,12 @@ if (!defined('ABSPATH')) {
 }
 
 // Stałe pluginu
-define('OC_PLUGIN_VERSION', '1.2.6');
+define('OC_PLUGIN_VERSION', '1.2.7');
 define('OC_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('OC_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('OC_PLUGIN_BASENAME', plugin_basename(__FILE__));
+/** Godzina (0–23) codziennego crona z przypomnieniami e-mail — czas strefy WordPressa (Ustawienia → Ogólne). */
+define('OC_EMAIL_REMINDER_HOUR', 12);
 
 /**
  * Główna klasa pluginu
@@ -158,6 +160,7 @@ class OdwiedzinyChorych {
      */
     public function init() {
         OC_Database::maybe_upgrade();
+        OC_Email_Notifications::maybe_reschedule_cron();
 
         // Załaduj tłumaczenia
         load_plugin_textdomain('odwiedziny-chorych', false, dirname(OC_PLUGIN_BASENAME) . '/languages');

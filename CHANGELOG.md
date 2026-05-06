@@ -2,6 +2,12 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.7] – 2026-04-17
+
+**Wtyczka WordPress**
+
+- Przypomnienia e-mail o dyżurze: cron domyślnie **12:00** (czas wg ustawień WordPressa); stała `OC_EMAIL_REMINDER_HOUR`, filtr `oc_email_reminder_hour`. Po aktualizacji harmonogram jest **automatycznie przeplanowywany** (poprzednio domyślnie 18:00).
+
 ## [1.2.6] – 2026-04-17
 
 **Wtyczka WordPress**

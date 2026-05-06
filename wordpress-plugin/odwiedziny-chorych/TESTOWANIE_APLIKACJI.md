@@ -311,7 +311,7 @@
 - [ ] **Sprawdź czy cron jest aktywny**
   - Zainstaluj plugin "WP Crontrol" (opcjonalnie)
   - Sprawdź czy zadanie `oc_daily_email_reminders` jest zaplanowane
-  - ✅ Powinno być zaplanowane na 18:00 codziennie
+  - ✅ Powinno być zaplanowane na 12:00 codziennie (godzina: `OC_EMAIL_REMINDER_HOUR` / strefa WordPressa)
 
 ---
 
