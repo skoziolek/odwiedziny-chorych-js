@@ -2,6 +2,14 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.8] – 2026-06-11
+
+**Nowy raport odwiedzin (układ pionowy) — WordPress i wersja Node.js**
+
+- Po powrocie od chorych szafarz otwiera w kalendarzu raport w nowej formie: dla każdego chorego ustawia status **Odwiedzona / Nieobecny** oraz wybiera **termin kolejnej wizyty z zamkniętej listy** najbliższych dyżurów (niedziele + święta nakazane). Brak ręcznego wpisywania daty eliminuje pomyłki.
+- Wybrany termin **przypisuje chorego do daty** (pole „następna wizyta”): chory pojawia się na liście danego dyżuru, a zaplanowana data jest widoczna w nowej kolumnie **„Następna wizyta”** w zakładce *Dane chorych*.
+- Wtyczka WordPress: migracja bazy dodaje kolumnę `nastepna_wizyta` w tabeli chorych (bez utraty danych); obsługa pola w REST API chorych.
+
 ## [1.2.7] – 2026-04-17
 
 **Wtyczka WordPress**
