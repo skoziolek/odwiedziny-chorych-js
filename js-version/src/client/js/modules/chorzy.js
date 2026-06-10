@@ -101,11 +101,15 @@ export class ChorzyManager {
     console.log('Tworzenie wiersza chorego:', chory, 'indeks:', index);
     const row = document.createElement('tr');
     
+    const nastepnaWizyta = chory.nastepnaWizyta || '';
+    const nastepnaWizytaText = nastepnaWizyta ? this.utils.formatDate(new Date(nastepnaWizyta)) : '—';
+
     row.innerHTML = `
       <td contenteditable="true" data-field="imieNazwisko">${chory.imieNazwisko || ''}</td>
       <td contenteditable="true" data-field="adres">${chory.adres || ''}</td>
       <td contenteditable="true" data-field="telefon">${chory.telefon || ''}</td>
       <td contenteditable="true" data-field="uwagi">${chory.uwagi || ''}</td>
+      <td class="nastepna-wizyta-cell" data-field="nastepnaWizyta" data-value="${nastepnaWizyta}">${nastepnaWizytaText}</td>
       <td>
         <select class="status-select" data-field="status">
           <option value="" ${!chory.status ? 'selected' : ''}>-</option>
@@ -193,6 +197,12 @@ export class ChorzyManager {
       const statusSelect = row.querySelector('.status-select');
       if (statusSelect) {
         chory.status = statusSelect.value;
+      }
+
+      // Zachowaj termin następnej wizyty (ustawiany w raporcie odwiedzin)
+      const nwCell = row.querySelector('.nastepna-wizyta-cell');
+      if (nwCell) {
+        chory.nastepnaWizyta = nwCell.getAttribute('data-value') || '';
       }
 
       // Dodaj tylko jeśli ma imię i nazwisko

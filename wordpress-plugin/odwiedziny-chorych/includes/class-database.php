@@ -43,6 +43,7 @@ class OC_Database {
             uwagi_ostatnio_szafarz_id bigint(20) unsigned DEFAULT NULL,
             uwagi_ostatnio_data datetime DEFAULT NULL,
             status enum('TAK','NIE') DEFAULT 'TAK',
+            nastepna_wizyta date DEFAULT NULL,
             data_dodania datetime DEFAULT CURRENT_TIMESTAMP,
             data_modyfikacji datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
@@ -170,6 +171,11 @@ class OC_Database {
             update_option('oc_db_schema_version', '1.2.3');
         }
         $schema = get_option('oc_db_schema_version', '');
+        if (version_compare($schema, '1.2.8', '<')) {
+            self::upgrade_to_1_2_8();
+            update_option('oc_db_schema_version', '1.2.8');
+        }
+        $schema = get_option('oc_db_schema_version', '');
         if (version_compare($schema, OC_PLUGIN_VERSION, '<')) {
             update_option('oc_db_schema_version', OC_PLUGIN_VERSION);
         }
@@ -210,6 +216,12 @@ class OC_Database {
             // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
             $wpdb->query("ALTER TABLE `{$t_ch}` ADD KEY uwagi_ostatnio_szafarz_id (uwagi_ostatnio_szafarz_id)");
         }
+    }
+
+    private static function upgrade_to_1_2_8() {
+        $t_ch = self::get_table_name('chorzy');
+        // Termin kolejnej wizyty (przypisanie chorego do daty) — nowy raport odwiedzin
+        self::add_column_if_missing($t_ch, 'nastepna_wizyta', 'date NULL DEFAULT NULL');
     }
     
     /**
