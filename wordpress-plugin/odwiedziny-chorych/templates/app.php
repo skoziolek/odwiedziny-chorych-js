@@ -135,6 +135,7 @@ if (!defined('ABSPATH')) {
                             <th>Adres</th>
                             <th>Telefon</th>
                             <th>Uwagi</th>
+                            <th>Następna wizyta</th>
                             <th>Status</th>
                             <th>Akcje</th>
                         </tr>
@@ -200,22 +201,22 @@ if (!defined('ABSPATH')) {
         </div>
     </div>
 
-    <!-- Modal dla odwiedzin -->
-    <div id="oc-modalOdwiedziny" class="oc-modal" style="display: none;">
-        <div class="oc-modal-content">
+    <!-- Modal: Raport odwiedzin (nowy układ pionowy) -->
+    <div id="oc-modalRaport" class="oc-modal" style="display: none;">
+        <div class="oc-modal-content oc-raport-modal-content">
             <div class="oc-modal-header">
-                <h2>Zaplanuj odwiedziny</h2>
-                <button class="oc-modal-close" aria-label="Zamknij okno">&times;</button>
+                <h2 id="oc-raportTytul">Raport odwiedzin</h2>
+                <button class="oc-modal-close oc-raport-close" aria-label="Zamknij okno">&times;</button>
             </div>
             <div class="oc-modal-body">
-                <p>Data: <strong id="oc-modalData"></strong></p>
-                <div id="oc-modalChorzyList" class="oc-chorzy-list">
-                    <!-- Lista chorych do zaznaczenia -->
+                <p class="oc-raport-hint">Zaznacz, kto został odwiedzony, i wybierz termin kolejnej wizyty z listy.</p>
+                <div id="oc-raportListaChorych" class="oc-raport-lista">
+                    <!-- Karty chorych generowane dynamicznie -->
                 </div>
             </div>
             <div class="oc-modal-footer">
-                <button class="oc-btn oc-btn-secondary oc-modal-cancel" aria-label="Anuluj i zamknij okno">Anuluj</button>
-                <button class="oc-btn oc-btn-primary" id="oc-modalZapiszBtn" aria-label="Zapisz plan odwiedzin">Zapisz</button>
+                <button class="oc-btn oc-btn-secondary oc-raport-cancel" aria-label="Anuluj i zamknij okno">Anuluj</button>
+                <button class="oc-btn oc-btn-primary" id="oc-raportZapiszBtn" aria-label="Zapisz raport odwiedzin">Zapisz raport</button>
             </div>
         </div>
     </div>

@@ -119,9 +119,21 @@ class OC_API_Chorzy {
             'telefon' => $row['telefon'],
             'uwagi' => $row['uwagi'],
             'status' => $row['status'],
+            'nastepnaWizyta' => $row['nastepna_wizyta'] ?? null,
             'uwagiOstatnioPrzez' => $przez,
             'uwagiOstatnioData' => $uwagi_data,
         );
+    }
+
+    /**
+     * Waliduje datę w formacie YYYY-MM-DD; zwraca null dla pustej/nieprawidłowej.
+     */
+    private function sanitize_date($val) {
+        $val = trim((string) $val);
+        if ($val === '') {
+            return null;
+        }
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $val) ? $val : null;
     }
     
     /**
@@ -190,6 +202,7 @@ class OC_API_Chorzy {
             'telefon' => sanitize_text_field($data['telefon'] ?? ''),
             'uwagi' => $uwagi,
             'status' => in_array($data['status'] ?? 'TAK', array('TAK', 'NIE')) ? $data['status'] : 'TAK',
+            'nastepna_wizyta' => $this->sanitize_date($data['nastepnaWizyta'] ?? ''),
         );
         if ($uwagi !== '') {
             $insert['uwagi_ostatnio_szafarz_id'] = OC_Auth::get_actor_szafarz_id_for_audit($request);
@@ -234,6 +247,9 @@ class OC_API_Chorzy {
         }
         if (isset($data['status']) && in_array($data['status'], array('TAK', 'NIE'))) {
             $update_data['status'] = $data['status'];
+        }
+        if (array_key_exists('nastepnaWizyta', $data)) {
+            $update_data['nastepna_wizyta'] = $this->sanitize_date($data['nastepnaWizyta']);
         }
         
         if (empty($update_data)) {
@@ -302,6 +318,7 @@ class OC_API_Chorzy {
                 $telefon = sanitize_text_field($chory['telefon'] ?? '');
                 $uwagi = sanitize_textarea_field($chory['uwagi'] ?? '');
                 $status = in_array($chory['status'] ?? 'TAK', array('TAK', 'NIE')) ? $chory['status'] : 'TAK';
+                $nastepna_wizyta = $this->sanitize_date($chory['nastepnaWizyta'] ?? '');
 
                 $old_uwagi = null;
                 if ($id > 0) {
@@ -320,6 +337,7 @@ class OC_API_Chorzy {
                         'telefon' => $telefon,
                         'uwagi' => $uwagi,
                         'status' => $status,
+                        'nastepna_wizyta' => $nastepna_wizyta,
                     );
                     if ((string) $old_uwagi !== (string) $uwagi) {
                         $update['uwagi_ostatnio_szafarz_id'] = OC_Auth::get_actor_szafarz_id_for_audit($request);
@@ -333,6 +351,7 @@ class OC_API_Chorzy {
                         'telefon' => $telefon,
                         'uwagi' => $uwagi,
                         'status' => $status,
+                        'nastepna_wizyta' => $nastepna_wizyta,
                     );
                     if ($uwagi !== '') {
                         $insert['uwagi_ostatnio_szafarz_id'] = OC_Auth::get_actor_szafarz_id_for_audit($request);

@@ -112,6 +112,7 @@
           <th scope="col">Adres</th>
           <th scope="col">Telefon</th>
           <th scope="col">Uwagi</th>
+          <th scope="col">Następna wizyta</th>
           <th scope="col">Status</th>
           <th scope="col">Akcje</th>
         </tr>
@@ -175,7 +176,7 @@
     </div>
   </div>
 
-  <!-- MODAL: Oznaczanie odwiedzonych chorych -->
+  <!-- MODAL: Oznaczanie odwiedzonych chorych (używany przez Adwent) -->
   <div id="modalOdwiedziny" class="modal" style="display:none;">
     <div class="modal-content">
       <span class="close" id="closeModalBtn">&times;</span>
@@ -187,6 +188,20 @@
           <button type="button" class="uni-btn" id="cancelVisitedBtn" style="background-color: #f44336;">Anuluj</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Raport odwiedzin (nowy układ pionowy) -->
+  <div id="modalRaportOdwiedzin" class="modal" style="display:none;">
+    <div class="modal-content raport-modal-content">
+      <span class="close" id="closeRaportBtn">&times;</span>
+      <h3 id="raportModalTytul">Raport odwiedzin</h3>
+      <p class="raport-modal-hint">Zaznacz, kto został odwiedzony, i wybierz termin kolejnej wizyty z listy.</p>
+      <div id="raportListaChorych" class="raport-lista"></div>
+      <div class="raport-modal-actions">
+        <button type="button" class="uni-btn" id="zapiszRaportBtn">Zapisz raport</button>
+        <button type="button" class="uni-btn raport-cancel-btn" id="cancelRaportBtn">Anuluj</button>
+      </div>
     </div>
   </div>
   </div> <!-- Koniec mainApp -->

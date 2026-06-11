@@ -436,6 +436,7 @@
                 telefon: cells[2].textContent.trim(),
                 uwagi: cells[3].textContent.trim(),
                 status: select ? select.value : 'TAK',
+                nastepnaWizyta: prev ? prev.nastepnaWizyta : undefined,
                 uwagiOstatnioPrzez: prev ? prev.uwagiOstatnioPrzez : undefined,
                 uwagiOstatnioData: prev ? prev.uwagiOstatnioData : undefined,
             });
@@ -463,11 +464,14 @@
             row.className = chory.status === 'TAK' ? 'status-tak' : 'status-nie';
             row.dataset.ocId = chory.id != null ? String(chory.id) : '';
 
+            const nastepnaWizytaText = chory.nastepnaWizyta ? formatDate(chory.nastepnaWizyta) : '—';
+
             row.innerHTML = `
                 <td contenteditable="true">${chory.imieNazwisko || ''}</td>
                 <td contenteditable="true">${chory.adres || ''}</td>
                 <td contenteditable="true">${chory.telefon || ''}</td>
                 <td contenteditable="true" class="oc-chorzy-uwagi">${chory.uwagi || ''}</td>
+                <td class="oc-nastepna-wizyta">${nastepnaWizytaText}</td>
                 <td>
                     <select class="oc-status-select ${chory.status === 'TAK' ? 'status-tak' : 'status-nie'}" aria-label="Status chorego: aktywny lub nieaktywny">
                         <option value="TAK" ${chory.status === 'TAK' ? 'selected' : ''}>AKTYWNY</option>
@@ -1241,6 +1245,63 @@
         return 'Niedziela';
     }
 
+    // ==================== TERMINY KOLEJNYCH WIZYT ====================
+
+    // Kolejne dni dyżurowe (niedziele + święta nakazane) po podanej dacie
+    function getUpcomingDutyDates(dateStr, count = 5) {
+        const result = [];
+        const start = new Date(dateStr);
+        start.setDate(start.getDate() + 1);
+        const limit = new Date(start);
+        limit.setDate(limit.getDate() + 400);
+
+        for (let d = new Date(start); d <= limit && result.length < count; d.setDate(d.getDate() + 1)) {
+            const dayOfWeek = d.getDay();
+            if (dayOfWeek === 0 || isSwietoNakazane(d)) {
+                result.push(formatDateForAPI(d));
+            }
+        }
+        return result;
+    }
+
+    // Polska odmiana liczebnika (1 / 2-4 / 5+)
+    function ocPlural(n, one, few, many) {
+        if (n === 1) return one;
+        const mod10 = n % 10;
+        const mod100 = n % 100;
+        if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return few;
+        return many;
+    }
+
+    // Opis względny terminu liczony od dzisiaj
+    function formatRelativeLabel(dateStr) {
+        const target = new Date(dateStr);
+        target.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.round((target - today) / 86400000);
+
+        if (diffDays <= 3) return 'najbliższy termin';
+        const weeks = Math.round(diffDays / 7);
+        if (weeks === 1) return 'za tydzień';
+        if (weeks < 5) return `za ${weeks} ${ocPlural(weeks, 'tydzień', 'tygodnie', 'tygodni')}`;
+        const months = Math.round(diffDays / 30);
+        if (months <= 1) return 'za miesiąc';
+        return `za ${months} ${ocPlural(months, 'miesiąc', 'miesiące', 'miesięcy')}`;
+    }
+
+    // Czytelna etykieta opcji dla listy "Następna wizyta"
+    function formatNextVisitOption(dateStr) {
+        const date = new Date(dateStr);
+        const weekday = date.toLocaleDateString('pl-PL', { weekday: 'long' });
+        const weekdayCap = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+        const dateFmt = formatDate(date);
+        const isSwieto = isSwietoNakazane(date);
+        const rel = formatRelativeLabel(dateStr);
+        const swietoPrefix = isSwieto ? 'święto — ' : '';
+        return `${weekdayCap}, ${dateFmt} (${swietoPrefix}${rel})`;
+    }
+
     // ==================== ADWENT ====================
 
     function getAdwentStartDate(year) {
@@ -1449,37 +1510,90 @@
     // ==================== VISIT MODAL ====================
 
     function openVisitModal(dateStr) {
-        const modal = document.getElementById('oc-modalOdwiedziny');
-        const dateEl = document.getElementById('oc-modalData');
-        const listEl = document.getElementById('oc-modalChorzyList');
+        const modal = document.getElementById('oc-modalRaport');
+        const listEl = document.getElementById('oc-raportListaChorych');
+        const titleEl = document.getElementById('oc-raportTytul');
 
-        if (!modal || !dateEl || !listEl) return;
+        if (!modal || !listEl) return;
 
-        dateEl.textContent = dateStr;
+        modal.dataset.date = dateStr;
+        if (titleEl) titleEl.textContent = `Raport odwiedzin — ${formatDate(dateStr)}`;
         listEl.innerHTML = '';
 
-        // Tylko chorzy ze statusem TAK
-        const activeChorzy = chorzy.filter(c => c.status === 'TAK');
-        
-        // Pobierz już odwiedzonych chorych dla tej daty
+        // Lista nadchodzących terminów (wspólna dla wszystkich chorych)
+        const upcoming = getUpcomingDutyDates(dateStr, 5);
+
+        // Chorzy do pokazania: zaplanowani na ten termin, zaległi lub jeszcze nieprzypisani.
+        // Jeśli nikt nie pasuje — pokaż wszystkich aktywnych (tryb początkowy bez harmonogramu).
+        const aktywni = chorzy.filter(c => c.status === 'TAK' && (c.imieNazwisko || '').trim());
+        let doPokazania = aktywni.filter(c => {
+            const sched = c.nastepnaWizyta;
+            if (!sched) return true;
+            return sched <= dateStr;
+        });
+        if (doPokazania.length === 0) {
+            doPokazania = aktywni;
+        }
+
         const visitedChorzy = historiaData[dateStr] || [];
 
-        activeChorzy.forEach((chory, index) => {
-            const isChecked = visitedChorzy.includes(chory.imieNazwisko);
-            const div = document.createElement('div');
-            div.className = 'oc-chorzy-item';
-            div.innerHTML = `
-                <label for="oc-chory-${index}">${chory.imieNazwisko}</label>
-                <input type="checkbox" id="oc-chory-${index}" value="${chory.imieNazwisko}" ${isChecked ? 'checked' : ''}>
+        if (doPokazania.length === 0) {
+            listEl.innerHTML = '<div class="oc-raport-empty">Brak aktywnych chorych do wyświetlenia.</div>';
+        }
+
+        doPokazania.forEach((chory, index) => {
+            const name = chory.imieNazwisko;
+            const isVisited = visitedChorzy.length ? visitedChorzy.includes(name) : true;
+
+            let defaultDate = upcoming.length ? upcoming[0] : '';
+            if (chory.nastepnaWizyta && upcoming.includes(chory.nastepnaWizyta)) {
+                defaultDate = chory.nastepnaWizyta;
+            }
+
+            const optionsHtml = upcoming.map(ds => {
+                const selected = ds === defaultDate ? 'selected' : '';
+                return `<option value="${ds}" ${selected}>${formatNextVisitOption(ds)}</option>`;
+            }).join('');
+
+            const card = document.createElement('div');
+            card.className = 'oc-raport-card' + (isVisited ? '' : ' nieobecny');
+            card.dataset.name = name;
+            card.innerHTML = `
+                <div class="oc-raport-top">
+                    <span class="oc-raport-name">${name}</span>
+                    <label class="oc-raport-status">
+                        <input type="checkbox" class="oc-raport-odwiedzona" ${isVisited ? 'checked' : ''}>
+                        <span class="oc-raport-status-label">${isVisited ? 'Odwiedzona' : 'Nieobecny'}</span>
+                    </label>
+                </div>
+                <div class="oc-raport-bottom">
+                    <label class="oc-raport-next-label" for="oc-raportNext-${index}">Następna wizyta:</label>
+                    <select class="oc-raport-next-select" id="oc-raportNext-${index}" ${upcoming.length ? '' : 'disabled'}>
+                        ${optionsHtml || '<option value="">Brak dostępnych terminów</option>'}
+                    </select>
+                </div>
             `;
-            listEl.appendChild(div);
+
+            const checkbox = card.querySelector('.oc-raport-odwiedzona');
+            const statusLabel = card.querySelector('.oc-raport-status-label');
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    statusLabel.textContent = 'Odwiedzona';
+                    card.classList.remove('nieobecny');
+                } else {
+                    statusLabel.textContent = 'Nieobecny';
+                    card.classList.add('nieobecny');
+                }
+            });
+
+            listEl.appendChild(card);
         });
 
         modal.style.display = 'flex';
     }
 
     function closeVisitModal() {
-        const modal = document.getElementById('oc-modalOdwiedziny');
+        const modal = document.getElementById('oc-modalRaport');
         if (modal) modal.style.display = 'none';
     }
     
@@ -1612,9 +1726,26 @@
     }
 
     async function saveVisit() {
-        const dateStr = document.getElementById('oc-modalData').textContent;
-        const checkboxes = document.querySelectorAll('#oc-modalChorzyList input:checked');
-        const selectedChorzy = Array.from(checkboxes).map(cb => cb.value);
+        const modal = document.getElementById('oc-modalRaport');
+        const dateStr = modal ? modal.dataset.date : '';
+        if (!dateStr) return;
+
+        const cards = document.querySelectorAll('#oc-raportListaChorych .oc-raport-card');
+        const selectedChorzy = [];
+        const scheduleMap = {};
+
+        cards.forEach(card => {
+            const name = card.dataset.name;
+            if (!name) return;
+            const checkbox = card.querySelector('.oc-raport-odwiedzona');
+            const select = card.querySelector('.oc-raport-next-select');
+            if (checkbox && checkbox.checked) {
+                selectedChorzy.push(name);
+            }
+            if (select && select.value) {
+                scheduleMap[name] = select.value;
+            }
+        });
 
         try {
             const response = await apiCall('/historia', {
@@ -1635,7 +1766,10 @@
 
             // Zaktualizuj lokalne dane historii
             historiaData[dateStr] = selectedChorzy;
-            
+
+            // Zapisz kolejne terminy wizyt dla poszczególnych chorych
+            await updateChorzySchedules(scheduleMap);
+
             // Zaktualizuj przycisk
             const button = document.querySelector(`button[data-date="${dateStr}"]`);
             if (button) {
@@ -1654,11 +1788,42 @@
                     }
                 }
             }
-            
-            showMessage('Odwiedziny zapisane');
+
+            showMessage('Raport odwiedzin zapisany');
             closeVisitModal();
         } catch (e) {
-            showMessage('Błąd zapisu odwiedzin', 'error');
+            showMessage('Błąd zapisu raportu odwiedzin', 'error');
+        }
+    }
+
+    /**
+     * Zapisuje termin kolejnej wizyty (nastepnaWizyta) dla wskazanych chorych.
+     * Aktualizuje lokalną listę i zapisuje całość przez /chorzy/bulk
+     * (bez odczytu z DOM, by nie nadpisać danych, gdy tabela nie jest wyrenderowana).
+     */
+    async function updateChorzySchedules(scheduleMap) {
+        if (!scheduleMap || Object.keys(scheduleMap).length === 0) return;
+
+        let changed = false;
+        chorzy.forEach(c => {
+            if (Object.prototype.hasOwnProperty.call(scheduleMap, c.imieNazwisko)) {
+                c.nastepnaWizyta = scheduleMap[c.imieNazwisko];
+                changed = true;
+            }
+        });
+        if (!changed) return;
+
+        try {
+            const response = await apiCall('/chorzy/bulk', {
+                method: 'POST',
+                body: JSON.stringify(chorzy),
+            });
+            if (response.ok) {
+                await loadChorzy();
+                renderChorzy();
+            }
+        } catch (e) {
+            debugError('Błąd zapisu terminów wizyt:', e);
         }
     }
     
@@ -1844,10 +2009,10 @@
             adwentBtn.addEventListener('click', onToolbarAdwentClick);
         }
 
-        // Modal
-        const modalClose = document.querySelector('.oc-modal-close');
-        const modalCancel = document.querySelector('.oc-modal-cancel');
-        const modalSave = document.getElementById('oc-modalZapiszBtn');
+        // Modal raportu odwiedzin
+        const modalClose = document.querySelector('.oc-raport-close');
+        const modalCancel = document.querySelector('.oc-raport-cancel');
+        const modalSave = document.getElementById('oc-raportZapiszBtn');
 
         if (modalClose) modalClose.addEventListener('click', closeVisitModal);
         if (modalCancel) modalCancel.addEventListener('click', closeVisitModal);
