@@ -991,6 +991,122 @@
       }
     }
 
+    /* --- Nowy raport odwiedzin (układ pionowy) --- */
+    .raport-modal-content {
+      max-width: 560px;
+    }
+
+    .raport-modal-hint {
+      font-size: 13px;
+      color: #666;
+      margin: -8px 0 16px;
+    }
+
+    .raport-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .raport-chory-card {
+      border: 1px solid #e0d8c5;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #faf8f3;
+    }
+
+    .raport-chory-card.nieobecny {
+      background: #fdf3f2;
+      border-color: #f0c9c4;
+    }
+
+    .raport-chory-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .raport-chory-name {
+      font-weight: 700;
+      font-size: 15px;
+      color: #4a3f29;
+    }
+
+    .raport-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      margin-bottom: 0;
+    }
+
+    .raport-status input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .raport-status-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2e7d32;
+    }
+
+    .raport-chory-card.nieobecny .raport-status-label {
+      color: #c62828;
+    }
+
+    .raport-chory-bottom {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .raport-next-label {
+      font-size: 13px;
+      color: #555;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .raport-next-select {
+      flex: 1;
+      padding: 7px 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fff;
+    }
+
+    .raport-modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    .raport-cancel-btn {
+      background-color: #f44336;
+    }
+
+    .raport-empty {
+      text-align: center;
+      color: #888;
+      padding: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .raport-chory-bottom {
+        flex-wrap: wrap;
+      }
+    }
+
     /* Style dla świąt */
     .swieto-row {
       background-color: #ffe6e6 !important;

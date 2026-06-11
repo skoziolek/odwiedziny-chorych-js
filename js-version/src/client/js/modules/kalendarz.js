@@ -507,8 +507,8 @@ export class KalendarzManager {
       // Pobierz już odwiedzonych chorych dla tej daty
       const odwiedzeniChorzy = await this.getVisitedChorzyForDate(dateStr);
       
-      // Wyświetl modal z listą chorych
-      this.showVisitedModal(dateStr, chorzy, odwiedzeniChorzy);
+      // Wyświetl nowy raport odwiedzin (układ pionowy z wyborem kolejnego terminu)
+      this.showRaportModal(dateStr, chorzy, odwiedzeniChorzy);
     } catch (error) {
       console.error('Błąd w markVisited:', error);
       this.utils.showError('Błąd ładowania danych chorych');
@@ -553,78 +553,188 @@ export class KalendarzManager {
     }
   }
 
-  showVisitedModal(dateStr, chorzy, odwiedzeniChorzy = []) {
-    const modal = document.getElementById('modalOdwiedziny');
-    const listaChorych = document.getElementById('listaChorychModal');
-    
-    // Ustaw tytuł modala
-    const modalTitle = modal.querySelector('h3');
-    modalTitle.textContent = `Oznacz odwiedzonych chorych - ${this.utils.formatDate(new Date(dateStr))}`;
-    
-    // Wyczyść poprzednią zawartość
-    listaChorych.innerHTML = '';
-    
-    // Dodaj chorych do listy
-    chorzy.forEach((chory, index) => {
-      if (chory.imieNazwisko && chory.imieNazwisko.trim()) {
-        const choryDiv = document.createElement('div');
-        choryDiv.className = 'chory-item';
-        choryDiv.style.cssText = `
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 10px;
-          border: 1px solid #ddd;
-          margin: 5px 0;
-          border-radius: 4px;
-          background: #f9f9f9;
-        `;
-        
-        // Sprawdź czy chory był już odwiedzony
-        const isVisited = odwiedzeniChorzy.includes(chory.imieNazwisko);
-        
-        choryDiv.innerHTML = `
-          <label for="chory_${index}" style="flex: 1; cursor: pointer;">
-            <strong>${chory.imieNazwisko}</strong>
-          </label>
-          <input type="checkbox" id="chory_${index}" value="${chory.imieNazwisko}" 
-                 ${isVisited ? 'checked' : ''} style="margin-left: 10px;">
-        `;
-        
-        listaChorych.appendChild(choryDiv);
+  /**
+   * Zwraca kolejne dni dyżurowe (niedziele i święta nakazane) po podanej dacie.
+   * @param {string} dateStr - data bazowa w formacie YYYY-MM-DD
+   * @param {number} count - ile terminów zwrócić
+   * @returns {string[]} - lista dat w formacie YYYY-MM-DD
+   */
+  getUpcomingDutyDates(dateStr, count = 5) {
+    const result = [];
+    const start = new Date(dateStr);
+    // Zaczynamy od dnia PO dacie raportu - chodzi o kolejne wizyty
+    start.setDate(start.getDate() + 1);
+    const limit = new Date(start);
+    limit.setDate(limit.getDate() + 400);
+
+    for (let d = new Date(start); d <= limit && result.length < count; d.setDate(d.getDate() + 1)) {
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek === 0 || this.utils.isSwietoNakazane(d)) {
+        result.push(this.utils.formatDateForAPI(new Date(d)));
       }
-    });
-    
-    // Ustaw obsługę formularza
-    const form = document.getElementById('formOdwiedziny');
-    form.onsubmit = (e) => {
-      e.preventDefault();
-      this.saveVisitedChorzy(dateStr);
-    };
-    
-    // Ustaw obsługę przycisku Anuluj
-    const cancelBtn = document.getElementById('cancelVisitedBtn');
-    cancelBtn.onclick = () => this.closeVisitedModal();
-    
-    // Pokaż modal
-    modal.style.display = 'block';
-    
-    // Obsługa zamykania przez X
-    const closeBtn = document.getElementById('closeModalBtn');
-    closeBtn.onclick = () => this.closeVisitedModal();
+    }
+    return result;
   }
 
-  async saveVisitedChorzy(dateStr) {
+  /**
+   * Polska odmiana liczebnika (1 / 2-4 / 5+).
+   */
+  plural(n, one, few, many) {
+    if (n === 1) return one;
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return few;
+    return many;
+  }
+
+  /**
+   * Opis względny terminu liczony od dzisiaj (np. "za tydzień", "za 3 tygodnie").
+   */
+  formatRelativeLabel(dateStr) {
+    const target = new Date(dateStr);
+    target.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((target - today) / 86400000);
+
+    if (diffDays <= 3) return 'najbliższy termin';
+
+    const weeks = Math.round(diffDays / 7);
+    if (weeks === 1) return 'za tydzień';
+    if (weeks < 5) return `za ${weeks} ${this.plural(weeks, 'tydzień', 'tygodnie', 'tygodni')}`;
+
+    const months = Math.round(diffDays / 30);
+    if (months <= 1) return 'za miesiąc';
+    return `za ${months} ${this.plural(months, 'miesiąc', 'miesiące', 'miesięcy')}`;
+  }
+
+  /**
+   * Buduje czytelną etykietę opcji dla listy "Następna wizyta".
+   */
+  formatNextVisitOption(dateStr) {
+    const date = new Date(dateStr);
+    const weekday = date.toLocaleDateString('pl-PL', { weekday: 'long' });
+    const weekdayCap = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    const dateFmt = this.utils.formatDate(date);
+    const isSwieto = this.utils.isSwietoNakazane(date);
+    const rel = this.formatRelativeLabel(dateStr);
+    const swietoPrefix = isSwieto ? 'święto — ' : '';
+    return `${weekdayCap}, ${dateFmt} (${swietoPrefix}${rel})`;
+  }
+
+  /**
+   * Nowy raport odwiedzin (układ pionowy): dla każdego chorego status
+   * "Odwiedzona / Nieobecny" oraz wybór kolejnego terminu z zamkniętej listy.
+   */
+  showRaportModal(dateStr, chorzy, odwiedzeniChorzy = []) {
+    const modal = document.getElementById('modalRaportOdwiedzin');
+    const lista = document.getElementById('raportListaChorych');
+    const tytul = document.getElementById('raportModalTytul');
+
+    tytul.textContent = `Raport odwiedzin — ${this.utils.formatDate(new Date(dateStr))}`;
+    lista.innerHTML = '';
+
+    // Lista nadchodzących terminów (wspólna dla wszystkich chorych)
+    const upcoming = this.getUpcomingDutyDates(dateStr, 5);
+
+    // Filtr "na dziś": pokaż chorych zaplanowanych na ten termin,
+    // zaległych lub jeszcze nieprzypisanych. Jeśli nikt nie pasuje —
+    // pokaż wszystkich aktywnych (tryb początkowy, bez harmonogramu).
+    const aktywni = chorzy.filter(c => c.imieNazwisko && c.imieNazwisko.trim());
+    let doPokazania = aktywni.filter(c => {
+      const sched = c.nastepnaWizyta;
+      if (!sched) return true;
+      return sched <= dateStr;
+    });
+    if (doPokazania.length === 0) {
+      doPokazania = aktywni;
+    }
+
+    if (doPokazania.length === 0) {
+      lista.innerHTML = '<div class="raport-empty">Brak aktywnych chorych do wyświetlenia.</div>';
+    }
+
+    doPokazania.forEach((chory, index) => {
+      const name = chory.imieNazwisko;
+      const isVisited = odwiedzeniChorzy.length ? odwiedzeniChorzy.includes(name) : true;
+
+      // Domyślny termin kolejnej wizyty: zapisany (jeśli jest w liście) lub najbliższy
+      let defaultDate = upcoming.length ? upcoming[0] : '';
+      if (chory.nastepnaWizyta && upcoming.includes(chory.nastepnaWizyta)) {
+        defaultDate = chory.nastepnaWizyta;
+      }
+
+      const optionsHtml = upcoming.map(ds => {
+        const selected = ds === defaultDate ? 'selected' : '';
+        return `<option value="${ds}" ${selected}>${this.formatNextVisitOption(ds)}</option>`;
+      }).join('');
+
+      const card = document.createElement('div');
+      card.className = 'raport-chory-card' + (isVisited ? '' : ' nieobecny');
+      card.setAttribute('data-name', name);
+      card.innerHTML = `
+        <div class="raport-chory-top">
+          <span class="raport-chory-name">${name}</span>
+          <label class="raport-status">
+            <input type="checkbox" class="raport-odwiedzona" ${isVisited ? 'checked' : ''}>
+            <span class="raport-status-label">${isVisited ? 'Odwiedzona' : 'Nieobecny'}</span>
+          </label>
+        </div>
+        <div class="raport-chory-bottom">
+          <label class="raport-next-label" for="raportNext_${index}">Następna wizyta:</label>
+          <select class="raport-next-select" id="raportNext_${index}" ${upcoming.length ? '' : 'disabled'}>
+            ${optionsHtml || '<option value="">Brak dostępnych terminów</option>'}
+          </select>
+        </div>
+      `;
+
+      // Przełączanie etykiety statusu Odwiedzona <-> Nieobecny
+      const checkbox = card.querySelector('.raport-odwiedzona');
+      const statusLabel = card.querySelector('.raport-status-label');
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+          statusLabel.textContent = 'Odwiedzona';
+          card.classList.remove('nieobecny');
+        } else {
+          statusLabel.textContent = 'Nieobecny';
+          card.classList.add('nieobecny');
+        }
+      });
+
+      lista.appendChild(card);
+    });
+
+    // Obsługa przycisków
+    document.getElementById('zapiszRaportBtn').onclick = () => this.saveRaportOdwiedzin(dateStr);
+    document.getElementById('cancelRaportBtn').onclick = () => this.closeRaportModal();
+    document.getElementById('closeRaportBtn').onclick = () => this.closeRaportModal();
+
+    modal.style.display = 'flex';
+  }
+
+  async saveRaportOdwiedzin(dateStr) {
     try {
-      const checkboxes = document.querySelectorAll('#listaChorychModal input[type="checkbox"]:checked');
-      const odwiedzeniChorzy = Array.from(checkboxes).map(cb => cb.value);
-      
-      // Zapisz odwiedziny do historii
+      const cards = document.querySelectorAll('#raportListaChorych .raport-chory-card');
+      const odwiedzeniChorzy = [];
+      const scheduleMap = {};
+
+      cards.forEach(card => {
+        const name = card.getAttribute('data-name');
+        if (!name) return;
+        const checkbox = card.querySelector('.raport-odwiedzona');
+        const select = card.querySelector('.raport-next-select');
+        if (checkbox && checkbox.checked) {
+          odwiedzeniChorzy.push(name);
+        }
+        if (select && select.value) {
+          scheduleMap[name] = select.value;
+        }
+      });
+
+      // 1) Zapisz odwiedziny do historii (zgodnie z dotychczasowym formatem)
       const response = await this.authManager.fetchWithAuth('/historia', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'dodaj_odwiedziny',
           data: {
@@ -635,25 +745,59 @@ export class KalendarzManager {
         })
       });
 
-      if (response.ok) {
-        this.utils.showSuccess(`Zapisano odwiedziny dla ${odwiedzeniChorzy.length} chorych`);
-        
-        // Zmień przycisk "Zaplanowane" na "Odwiedzone"
-        this.updateVisitedButton(dateStr);
-        
-        this.closeVisitedModal();
-      } else {
+      if (!response.ok) {
         throw new Error('Błąd zapisywania odwiedzin');
       }
+
+      // 2) Zapisz kolejne terminy wizyt dla poszczególnych chorych
+      await this.updateChorzySchedules(scheduleMap);
+
+      this.utils.showSuccess(`Zapisano raport: ${odwiedzeniChorzy.length} odwiedzonych, zaplanowano kolejne wizyty`);
+      this.updateVisitedButton(dateStr);
+      this.closeRaportModal();
     } catch (error) {
-      console.error('Błąd zapisywania odwiedzin:', error);
-      this.utils.showError('Błąd zapisywania odwiedzin');
+      console.error('Błąd zapisywania raportu odwiedzin:', error);
+      this.utils.showError('Błąd zapisywania raportu odwiedzin');
     }
   }
 
-  closeVisitedModal() {
-    const modal = document.getElementById('modalOdwiedziny');
-    modal.style.display = 'none';
+  /**
+   * Aktualizuje pole nastepnaWizyta u wskazanych chorych i zapisuje całość.
+   * @param {Object} scheduleMap - mapa imieNazwisko -> data YYYY-MM-DD
+   */
+  async updateChorzySchedules(scheduleMap) {
+    if (!scheduleMap || Object.keys(scheduleMap).length === 0) return;
+
+    const response = await this.authManager.fetchWithAuth('/api/chorzy');
+    if (!response.ok) return;
+
+    const chorzy = await response.json();
+    chorzy.forEach(c => {
+      if (Object.prototype.hasOwnProperty.call(scheduleMap, c.imieNazwisko)) {
+        c.nastepnaWizyta = scheduleMap[c.imieNazwisko];
+      }
+    });
+
+    await this.authManager.fetchWithAuth('/api/chorzy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(chorzy)
+    });
+
+    // Odśwież zakładkę "Dane chorych", jeśli jest dostępna
+    if (window.chorzyManager) {
+      try {
+        await window.chorzyManager.loadChorzy();
+        window.chorzyManager.renderChorzy();
+      } catch (e) {
+        console.warn('Nie udało się odświeżyć listy chorych:', e);
+      }
+    }
+  }
+
+  closeRaportModal() {
+    const modal = document.getElementById('modalRaportOdwiedzin');
+    if (modal) modal.style.display = 'none';
   }
 
   async updateVisitedButton(dateStr) {
