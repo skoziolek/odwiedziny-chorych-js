@@ -34,6 +34,7 @@
     let kalendarzData = {};
     let adwentData = {};
     let historiaData = {}; // Przechowuje odwiedzonych chorych dla każdej daty
+    const OCCASIONAL_VISIT_MARKER = '9999-12-31';
 
     // ==================== UTILITIES ====================
 
@@ -67,6 +68,16 @@
         const d = new Date(normalized);
         if (isNaN(d.getTime())) return mysqlOrIso;
         return d.toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' });
+    }
+
+    function isOccasionalVisit(dateStr) {
+        return dateStr === OCCASIONAL_VISIT_MARKER;
+    }
+
+    function formatNextVisitDisplay(dateStr) {
+        if (!dateStr) return '—';
+        if (isOccasionalVisit(dateStr)) return 'Okazjonalne odwiedziny';
+        return formatDate(dateStr);
     }
 
     function showMessage(message, type = 'success') {
@@ -464,7 +475,7 @@
             row.className = chory.status === 'TAK' ? 'status-tak' : 'status-nie';
             row.dataset.ocId = chory.id != null ? String(chory.id) : '';
 
-            const nastepnaWizytaText = chory.nastepnaWizyta ? formatDate(chory.nastepnaWizyta) : '—';
+            const nastepnaWizytaText = formatNextVisitDisplay(chory.nastepnaWizyta);
 
             row.innerHTML = `
                 <td contenteditable="true">${chory.imieNazwisko || ''}</td>
@@ -1292,6 +1303,9 @@
 
     // Czytelna etykieta opcji dla listy "Następna wizyta"
     function formatNextVisitOption(dateStr) {
+        if (isOccasionalVisit(dateStr)) {
+            return 'Okazjonalne odwiedziny (dodawane ręcznie)';
+        }
         const date = new Date(dateStr);
         const weekday = date.toLocaleDateString('pl-PL', { weekday: 'long' });
         const weekdayCap = weekday.charAt(0).toUpperCase() + weekday.slice(1);
@@ -1524,29 +1538,34 @@
         const upcoming = getUpcomingDutyDates(dateStr, 5);
 
         // Chorzy do pokazania: zaplanowani na ten termin, zaległi lub jeszcze nieprzypisani.
-        // Jeśli nikt nie pasuje — pokaż wszystkich aktywnych (tryb początkowy bez harmonogramu).
+        // Chorzy okazjonalni są domyślnie ukryci i dodawani ręcznie dla konkretnej daty.
         const aktywni = chorzy.filter(c => c.status === 'TAK' && (c.imieNazwisko || '').trim());
         let doPokazania = aktywni.filter(c => {
             const sched = c.nastepnaWizyta;
+            if (isOccasionalVisit(sched)) return false;
             if (!sched) return true;
             return sched <= dateStr;
         });
         if (doPokazania.length === 0) {
-            doPokazania = aktywni;
+            doPokazania = aktywni.filter(c => !isOccasionalVisit(c.nastepnaWizyta));
         }
 
         const visitedChorzy = historiaData[dateStr] || [];
+        const renderedNames = new Set();
+        const occasionalCandidates = aktywni.filter(c => isOccasionalVisit(c.nastepnaWizyta));
 
-        if (doPokazania.length === 0) {
-            listEl.innerHTML = '<div class="oc-raport-empty">Brak aktywnych chorych do wyświetlenia.</div>';
-        }
-
-        doPokazania.forEach((chory, index) => {
+        let nextSelectIndex = 0;
+        const appendChoryCard = (chory) => {
             const name = chory.imieNazwisko;
+            if (!name || renderedNames.has(name)) return;
+            renderedNames.add(name);
+
             const isVisited = visitedChorzy.length ? visitedChorzy.includes(name) : true;
 
             let defaultDate = upcoming.length ? upcoming[0] : '';
-            if (chory.nastepnaWizyta && upcoming.includes(chory.nastepnaWizyta)) {
+            if (isOccasionalVisit(chory.nastepnaWizyta)) {
+                defaultDate = OCCASIONAL_VISIT_MARKER;
+            } else if (chory.nastepnaWizyta && upcoming.includes(chory.nastepnaWizyta)) {
                 defaultDate = chory.nastepnaWizyta;
             }
 
@@ -1554,6 +1573,8 @@
                 const selected = ds === defaultDate ? 'selected' : '';
                 return `<option value="${ds}" ${selected}>${formatNextVisitOption(ds)}</option>`;
             }).join('');
+            const occasionalSelected = defaultDate === OCCASIONAL_VISIT_MARKER ? 'selected' : '';
+            const selectId = `oc-raportNext-${nextSelectIndex++}`;
 
             const card = document.createElement('div');
             card.className = 'oc-raport-card' + (isVisited ? '' : ' nieobecny');
@@ -1567,8 +1588,9 @@
                     </label>
                 </div>
                 <div class="oc-raport-bottom">
-                    <label class="oc-raport-next-label" for="oc-raportNext-${index}">Następna wizyta:</label>
-                    <select class="oc-raport-next-select" id="oc-raportNext-${index}" ${upcoming.length ? '' : 'disabled'}>
+                    <label class="oc-raport-next-label" for="${selectId}">Następna wizyta:</label>
+                    <select class="oc-raport-next-select" id="${selectId}">
+                        <option value="${OCCASIONAL_VISIT_MARKER}" ${occasionalSelected}>${formatNextVisitOption(OCCASIONAL_VISIT_MARKER)}</option>
                         ${optionsHtml || '<option value="">Brak dostępnych terminów</option>'}
                     </select>
                 </div>
@@ -1587,7 +1609,44 @@
             });
 
             listEl.appendChild(card);
-        });
+        };
+
+        doPokazania.forEach(chory => appendChoryCard(chory));
+
+        const occasionalToAdd = occasionalCandidates.filter(c => !renderedNames.has(c.imieNazwisko));
+        const hasOccasionalPicker = occasionalToAdd.length > 0;
+        if (hasOccasionalPicker) {
+            const addBox = document.createElement('div');
+            addBox.className = 'oc-raport-add-occasional';
+            addBox.innerHTML = `
+                <span class="oc-raport-add-occasional-label">Dodaj chorego okazjonalnego na ten termin:</span>
+                <div class="oc-raport-add-occasional-controls">
+                    <select class="oc-raport-next-select" id="oc-raportOccasionalSelect">
+                        <option value="">— wybierz osobę —</option>
+                        ${occasionalToAdd.map(ch => `<option value="${ch.imieNazwisko}">${ch.imieNazwisko}</option>`).join('')}
+                    </select>
+                    <button type="button" class="oc-btn oc-btn-small" id="oc-raportAddOccasionalBtn">Dodaj</button>
+                </div>
+            `;
+            listEl.prepend(addBox);
+
+            const occasionalSelect = addBox.querySelector('#oc-raportOccasionalSelect');
+            const addOccasionalBtn = addBox.querySelector('#oc-raportAddOccasionalBtn');
+            addOccasionalBtn.addEventListener('click', () => {
+                const selectedName = occasionalSelect.value;
+                if (!selectedName) return;
+                const chory = occasionalCandidates.find(c => c.imieNazwisko === selectedName);
+                if (!chory) return;
+                appendChoryCard(chory);
+                const selectedOption = occasionalSelect.querySelector(`option[value="${selectedName}"]`);
+                if (selectedOption) selectedOption.remove();
+                occasionalSelect.value = '';
+            });
+        }
+
+        if (renderedNames.size === 0 && !hasOccasionalPicker) {
+            listEl.innerHTML = '<div class="oc-raport-empty">Brak aktywnych chorych do wyświetlenia.</div>';
+        }
 
         modal.style.display = 'flex';
     }
