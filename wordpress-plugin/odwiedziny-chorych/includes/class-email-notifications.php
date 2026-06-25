@@ -325,6 +325,7 @@ class OC_Email_Notifications {
                     <table class="chorzy-table">
                         <thead>
                             <tr>
+                                <th>Lp.</th>
                                 <th>Imię i nazwisko</th>
                                 <th>Adres</th>
                                 <th>Telefon</th>
@@ -332,8 +333,9 @@ class OC_Email_Notifications {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($chorzy as $chory): ?>
+                            <?php foreach ($chorzy as $index => $chory): ?>
                             <tr>
+                                <td><?php echo (int) ($index + 1); ?></td>
                                 <td><?php echo esc_html($chory['imie_nazwisko'] ?? ''); ?></td>
                                 <td><?php echo esc_html($chory['adres'] ?? ''); ?></td>
                                 <td><?php echo esc_html($chory['telefon'] ?? ''); ?></td>

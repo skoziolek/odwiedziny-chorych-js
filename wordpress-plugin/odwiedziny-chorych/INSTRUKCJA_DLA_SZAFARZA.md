@@ -36,14 +36,27 @@ Zakładki **Dane szafarzy** i **Raporty** są **ukryte** — służą do pracy a
 ## 4. Kalendarz i odwiedziny
 
 - Przełącz **rok** (jeśli jest na pasku), przejdź do odpowiedniego miesiąca.
-- **Niedziele, święta oraz dni z informacją o dyżurze** — administrator ustala przypisania; Ty możesz korzystać z funkcji związanych z odwiedzinami zgodnie z tym, co pokazuje się na ekranie (np. zaznaczenie odwiedzonych, zapisywanie).
+- **Niedziele, święta oraz dni z informacją o dyżurze** — administrator ustala przypisania; Ty możesz korzystać z funkcji związanych z odwiedzinami zgodnie z tym, co pokazuje się na ekranie.
 - Użycie przycisków typu **Drukuj** zależy od potrzeb — wydruk list może być przydatny przed wyjściem do chorych.
+
+### Raport odwiedzin (po dyżurze)
+
+Po kliknięciu w dzień dyżuru otwiera się **Raport odwiedzin** — pionowa lista chorych, którą wypełniasz po wizytach:
+
+1. Przy każdym chorym ustaw **status wizyty**:
+   - **Odwiedzona** — wizyta się odbyła (zapisze się wpis w historii odwiedzin),
+   - **Nieobecny** — chory był nieobecny / nie udało się odwiedzić.
+2. Z listy rozwijanej **Następna wizyta** wybierz **termin kolejnej wizyty**. Lista pokazuje najbliższe dyżury (niedziele i święta nakazane) z podpowiedzią, jak daleko są w czasie (np. „za tydzień”). Wybrany termin **przypisuje chorego do tej daty**.
+3. Kliknij **Zapisz raport**, aby zapamiętać zaznaczenia i terminy. **Anuluj** zamyka okno bez zapisu.
+
+> Wskazówka: na liście w raporcie pojawiają się chorzy, którzy są w danym dniu **do odwiedzenia** (mają na ten dzień zaplanowaną wizytę, mają termin zaległy lub nie mają jeszcze wyznaczonego terminu).
 
 ---
 
 ## 5. Dane chorych
 
-- Lista zawiera m.in. **imię i nazwisko, adres, telefon, uwagi, status** (aktywny / nieaktywny według ustaleń parafii).
+- Lista zawiera m.in. **imię i nazwisko, adres, telefon, uwagi, następną wizytę, status** (aktywny / nieaktywny według ustaleń parafii).
+- Kolumna **Następna wizyta** pokazuje termin wyznaczony w *Raporcie odwiedzin* (patrz pkt 4). Jeśli termin nie został jeszcze wybrany, widnieje „—”.
 - Zmiany zapisują się zgodnie z działaniem aplikacji (automatyczny zapis po edycji pól — nie zamykaj strony od razu po wpisaniu tekstu, daj chwilę na zapis).
 
 ---

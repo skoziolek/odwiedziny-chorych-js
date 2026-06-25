@@ -641,6 +641,12 @@ body:has(.oc-container) .site-header:first-of-type {
     color: #4a3f29;
 }
 
+.oc-raport-lp {
+    display: inline-block;
+    min-width: 1.6em;
+    color: #7a6b50;
+}
+
 .oc-raport-status {
     display: flex;
     align-items: center;
@@ -695,8 +701,36 @@ body:has(.oc-container) .site-header:first-of-type {
     padding: 20px;
 }
 
+.oc-raport-add-occasional {
+    border: 1px dashed #d4c3a4;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #fffdf8;
+}
+
+.oc-raport-add-occasional-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #5a4b34;
+    font-weight: 600;
+}
+
+.oc-raport-add-occasional-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.oc-raport-add-occasional-controls .oc-btn {
+    flex-shrink: 0;
+}
+
 @media (max-width: 600px) {
     .oc-raport-bottom {
+        flex-wrap: wrap;
+    }
+    .oc-raport-add-occasional-controls {
         flex-wrap: wrap;
     }
 }
@@ -826,8 +860,8 @@ body:has(.oc-container) .site-header:first-of-type {
     }
 
     /* Dane chorych: „NIEAKTYWNY” / select statusu musi mieć minimalną szerokość */
-    #oc-tabelaChorzy th:nth-child(5),
-    #oc-tabelaChorzy td:nth-child(5) {
+    #oc-tabelaChorzy th:nth-child(6),
+    #oc-tabelaChorzy td:nth-child(6) {
         min-width: 10rem;
         white-space: normal;
     }
