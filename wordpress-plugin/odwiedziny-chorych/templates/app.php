@@ -131,6 +131,7 @@ if (!defined('ABSPATH')) {
                 <table id="oc-tabelaChorzy" class="oc-table">
                     <thead>
                         <tr>
+                            <th>Lp.</th>
                             <th>Imię i Nazwisko</th>
                             <th>Adres</th>
                             <th>Telefon</th>

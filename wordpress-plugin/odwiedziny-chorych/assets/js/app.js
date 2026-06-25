@@ -436,16 +436,16 @@
         rows.forEach(row => {
             const cells = row.querySelectorAll('td');
             const select = row.querySelector('select');
-            if (cells.length < 4) return;
+            if (cells.length < 5) return;
             const idRaw = row.dataset.ocId;
             const id = idRaw ? parseInt(idRaw, 10) : null;
             const prev = id ? chorzy.find(c => c.id === id) : null;
             newChorzy.push({
                 id: id || undefined,
-                imieNazwisko: cells[0].textContent.trim(),
-                adres: cells[1].textContent.trim(),
-                telefon: cells[2].textContent.trim(),
-                uwagi: cells[3].textContent.trim(),
+                imieNazwisko: cells[1].textContent.trim(),
+                adres: cells[2].textContent.trim(),
+                telefon: cells[3].textContent.trim(),
+                uwagi: cells[4].textContent.trim(),
                 status: select ? select.value : 'TAK',
                 nastepnaWizyta: prev ? prev.nastepnaWizyta : undefined,
                 uwagiOstatnioPrzez: prev ? prev.uwagiOstatnioPrzez : undefined,
@@ -478,6 +478,7 @@
             const nastepnaWizytaText = formatNextVisitDisplay(chory.nastepnaWizyta);
 
             row.innerHTML = `
+                <td class="oc-lp-cell">${index + 1}</td>
                 <td contenteditable="true">${chory.imieNazwisko || ''}</td>
                 <td contenteditable="true">${chory.adres || ''}</td>
                 <td contenteditable="true">${chory.telefon || ''}</td>
@@ -1553,6 +1554,7 @@
         const visitedChorzy = historiaData[dateStr] || [];
         const renderedNames = new Set();
         const occasionalCandidates = aktywni.filter(c => isOccasionalVisit(c.nastepnaWizyta));
+        let raportLp = 0;
 
         let nextSelectIndex = 0;
         const appendChoryCard = (chory) => {
@@ -1581,7 +1583,7 @@
             card.dataset.name = name;
             card.innerHTML = `
                 <div class="oc-raport-top">
-                    <span class="oc-raport-name">${name}</span>
+                    <span class="oc-raport-name"><span class="oc-raport-lp">${++raportLp}.</span> ${name}</span>
                     <label class="oc-raport-status">
                         <input type="checkbox" class="oc-raport-odwiedzona" ${isVisited ? 'checked' : ''}>
                         <span class="oc-raport-status-label">${isVisited ? 'Odwiedzona' : 'Nieobecny'}</span>

@@ -641,6 +641,12 @@ body:has(.oc-container) .site-header:first-of-type {
     color: #4a3f29;
 }
 
+.oc-raport-lp {
+    display: inline-block;
+    min-width: 1.6em;
+    color: #7a6b50;
+}
+
 .oc-raport-status {
     display: flex;
     align-items: center;
@@ -854,8 +860,8 @@ body:has(.oc-container) .site-header:first-of-type {
     }
 
     /* Dane chorych: „NIEAKTYWNY” / select statusu musi mieć minimalną szerokość */
-    #oc-tabelaChorzy th:nth-child(5),
-    #oc-tabelaChorzy td:nth-child(5) {
+    #oc-tabelaChorzy th:nth-child(6),
+    #oc-tabelaChorzy td:nth-child(6) {
         min-width: 10rem;
         white-space: normal;
     }
