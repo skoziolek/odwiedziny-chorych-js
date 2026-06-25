@@ -2,6 +2,14 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.9] – 2026-06-25
+
+**Wtyczka WordPress**
+
+- Dodano tryb **„Okazjonalne odwiedziny”** w wyborze „Następna wizyta” w raporcie odwiedzin.
+- Chorzy oznaczeni jako okazjonalni nie pojawiają się automatycznie na każdej kolejnej dacie dyżuru — są dodawani ręcznie dla konkretnego terminu.
+- W raporcie odwiedzin dodano sekcję **„Dodaj chorego okazjonalnego na ten termin”**, która pozwala szybko dopisać chorego „na telefon” do wybranej daty.
+
 ## [1.2.8] – 2026-06-11
 
 **Nowy raport odwiedzin (układ pionowy) — WordPress i wersja Node.js**
