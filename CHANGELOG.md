@@ -2,6 +2,14 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.10] – 2026-06-26
+
+**Wtyczka WordPress**
+
+- Dodano kolumnę **Lp.** w tabeli *Dane chorych* dla łatwiejszego odwoływania się do pozycji.
+- Dodano numerację **Lp.** w raporcie odwiedzin (lista osób do odwiedzenia).
+- Dodano kolumnę **Lp.** w mailu przypomnienia o dyżurze (tabela chorych).
+
 ## [1.2.9] – 2026-06-25
 
 **Wtyczka WordPress**
