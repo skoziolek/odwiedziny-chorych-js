@@ -8,6 +8,45 @@ if (!defined('ABSPATH')) {
 }
 
 class OC_Email_Notifications {
+    /**
+     * Marker daty dla trybu "Okazjonalne odwiedziny".
+     *
+     * W tym trybie chory jest dodawany ręcznie do konkretnego terminu,
+     * więc nie powinien trafiać automatycznie do maila przypominającego.
+     */
+    private const OCCASIONAL_VISIT_MARKER = '9999-12-31';
+
+    /**
+     * Pobiera chorych przewidzianych na wskazany dyżur.
+     *
+     * Zasady:
+     * - tylko aktywni (status TAK),
+     * - tylko z wyznaczonym terminem kolejnej wizyty,
+     * - termin <= data dyżuru (obsługa zaległych),
+     * - bez markeru "okazjonalne odwiedziny" (dodawane ręcznie).
+     *
+     * @param string $duty_date Data dyżuru (YYYY-MM-DD)
+     * @return array<int,array<string,mixed>>
+     */
+    private static function get_chorzy_for_duty_date($duty_date) {
+        global $wpdb;
+        $table_chorzy = OC_Database::get_table_name('chorzy');
+
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT imie_nazwisko, adres, telefon, uwagi
+                 FROM $table_chorzy
+                 WHERE status = 'TAK'
+                   AND nastepna_wizyta IS NOT NULL
+                   AND nastepna_wizyta <> %s
+                   AND nastepna_wizyta <= %s
+                 ORDER BY nastepna_wizyta ASC, imie_nazwisko ASC",
+                self::OCCASIONAL_VISIT_MARKER,
+                $duty_date
+            ),
+            ARRAY_A
+        );
+    }
     
     /**
      * Sprawdź i wyślij emaile dla jutrzejszych dyżurów
@@ -20,7 +59,6 @@ class OC_Email_Notifications {
         
         $table_kalendarz = OC_Database::get_table_name('kalendarz');
         $table_szafarze = OC_Database::get_table_name('szafarze');
-        $table_chorzy = OC_Database::get_table_name('chorzy');
         
         // Pobierz dyżury na jutro
         $duties = $wpdb->get_results($wpdb->prepare(
@@ -41,14 +79,8 @@ class OC_Email_Notifications {
             return;
         }
         
-        // Pobierz aktywnych chorych (ze statusem TAK)
-        $chorzy = $wpdb->get_results(
-            "SELECT imie_nazwisko, adres, telefon, uwagi 
-             FROM $table_chorzy 
-             WHERE status = 'TAK' 
-             ORDER BY imie_nazwisko ASC",
-            ARRAY_A
-        );
+        // Pobierz chorych zaplanowanych (lub zaległych) na jutrzejszy dyżur.
+        $chorzy = self::get_chorzy_for_duty_date($tomorrow);
         
         foreach ($duties as $duty) {
             // Wyślij email do głównego szafarza
@@ -426,7 +458,6 @@ class OC_Email_Notifications {
         
         $table_kalendarz = OC_Database::get_table_name('kalendarz');
         $table_szafarze = OC_Database::get_table_name('szafarze');
-        $table_chorzy = OC_Database::get_table_name('chorzy');
         
         // Pobierz dyżury dla podanej daty
         $duties = $wpdb->get_results($wpdb->prepare(
@@ -447,14 +478,8 @@ class OC_Email_Notifications {
             return array('success' => false, 'message' => 'Brak dyżurów dla podanej daty');
         }
         
-        // Pobierz aktywnych chorych
-        $chorzy = $wpdb->get_results(
-            "SELECT imie_nazwisko, adres, telefon, uwagi 
-             FROM $table_chorzy 
-             WHERE status = 'TAK' 
-             ORDER BY imie_nazwisko ASC",
-            ARRAY_A
-        );
+        // Pobierz chorych zaplanowanych (lub zaległych) na wskazaną datę dyżuru.
+        $chorzy = self::get_chorzy_for_duty_date($date);
         
         $sent_emails = array();
         
