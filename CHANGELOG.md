@@ -2,6 +2,13 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.11] – 2026-07-05
+
+**Wtyczka WordPress**
+
+- Poprawiono listę chorych w mailach przypominających o dyżurze: wiadomości zawierają tylko osoby zaplanowane (lub zaległe) na konkretną datę dyżuru.
+- Chorzy oznaczeni jako **okazjonalne odwiedziny** nie są dodawani automatycznie do maila (pozostają do ręcznego dopisania na wybrany termin).
+
 ## [1.2.10] – 2026-06-26
 
 **Wtyczka WordPress**
