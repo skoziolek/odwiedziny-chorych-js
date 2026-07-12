@@ -2,6 +2,13 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.12] – 2026-07-12
+
+**Wtyczka WordPress**
+
+- Poprawiono przycisk **„Otwórz aplikację”** w mailu przypomnienia o dyżurze: link jest teraz wyznaczany dynamicznie na podstawie opublikowanej strony z shortcode `[odwiedziny_chorych]`.
+- Dodano możliwość nadpisania URL aplikacji przez filtr `oc_email_app_url` oraz bezpieczny fallback na domyślną ścieżkę.
+
 ## [1.2.11] – 2026-07-05
 
 **Wtyczka WordPress**
