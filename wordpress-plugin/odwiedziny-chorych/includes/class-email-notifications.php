@@ -15,6 +15,7 @@ class OC_Email_Notifications {
      * więc nie powinien trafiać automatycznie do maila przypominającego.
      */
     private const OCCASIONAL_VISIT_MARKER = '9999-12-31';
+    private const SHORTCODE_TAG = 'odwiedziny_chorych';
 
     /**
      * Pobiera chorych przewidzianych na wskazany dyżur.
@@ -46,6 +47,58 @@ class OC_Email_Notifications {
             ),
             ARRAY_A
         );
+    }
+
+    /**
+     * Ustala URL aplikacji do przycisku w emailu.
+     *
+     * Priorytet:
+     * 1) filtr `oc_email_app_url`,
+     * 2) pierwszy opublikowany post/strona z shortcode [odwiedziny_chorych],
+     * 3) fallback historyczny: /odwiedziny-chorych/
+     *
+     * @return string
+     */
+    private static function resolve_app_url() {
+        $fallback = home_url('/odwiedziny-chorych/');
+
+        $filtered = apply_filters('oc_email_app_url', '');
+        if (is_string($filtered) && trim($filtered) !== '') {
+            return esc_url_raw($filtered);
+        }
+
+        global $wpdb;
+        $table_posts = $wpdb->posts;
+        $like = '%' . $wpdb->esc_like('[' . self::SHORTCODE_TAG) . '%';
+        $ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT ID
+                 FROM $table_posts
+                 WHERE post_status = 'publish'
+                   AND post_type IN ('page', 'post')
+                   AND post_content LIKE %s
+                 ORDER BY CASE WHEN post_type = 'page' THEN 0 ELSE 1 END, ID ASC
+                 LIMIT 20",
+                $like
+            )
+        );
+
+        foreach ((array) $ids as $id) {
+            $id = (int) $id;
+            if ($id <= 0) {
+                continue;
+            }
+            $content = get_post_field('post_content', $id);
+            if (!is_string($content) || !has_shortcode($content, self::SHORTCODE_TAG)) {
+                continue;
+            }
+            $permalink = get_permalink($id);
+            if (is_string($permalink) && $permalink !== '') {
+                return esc_url_raw($permalink);
+            }
+        }
+
+        return $fallback;
     }
     
     /**
@@ -138,8 +191,8 @@ class OC_Email_Notifications {
         
         $subject = "Przypomnienie o dyżurze - {$date_formatted}";
         
-        // Pobierz URL aplikacji
-        $app_url = home_url('/odwiedziny-chorych/');
+        // Pobierz URL aplikacji (dynamicznie z faktycznej strony z shortcode).
+        $app_url = self::resolve_app_url();
         
         // HTML version
         $html_message = self::get_html_email($szafarz_name, $date, $liturgical_name, $chorzy, $role, $app_url);
