@@ -3,7 +3,7 @@
  * Plugin Name: Odwiedziny Chorych
  * Plugin URI: https://example.com/odwiedziny-chorych
  * Description: System zarządzania odwiedzinami chorych - kalendarz, szafarze, raporty
- * Version: 1.2.12
+ * Version: 1.2.13
  * Author: Administrator
  * Author URI: https://example.com
  * License: GPL v2 or later
