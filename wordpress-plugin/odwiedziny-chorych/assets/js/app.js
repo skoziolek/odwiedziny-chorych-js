@@ -1547,9 +1547,6 @@
             if (!sched) return true;
             return sched <= dateStr;
         });
-        if (doPokazania.length === 0) {
-            doPokazania = aktywni.filter(c => !isOccasionalVisit(c.nastepnaWizyta));
-        }
 
         const visitedChorzy = historiaData[dateStr] || [];
         const renderedNames = new Set();
