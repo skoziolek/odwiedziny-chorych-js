@@ -44,11 +44,17 @@ class OC_API_Historia {
      * Sprawdź uprawnienia
      */
     public function check_permission($request) {
+        $method = $request->get_method();
+        $write = in_array($method, array('POST', 'PUT', 'DELETE', 'PATCH'), true);
+
+        // Nonce z frontendu dopuszcza tylko odczyt.
         $nonce = $request->get_header('X-WP-Nonce');
-        if ($nonce && wp_verify_nonce($nonce, 'wp_rest')) {
+        $nonce_ok = $nonce && wp_verify_nonce($nonce, 'wp_rest');
+        if ($nonce_ok && !$write) {
             return true;
         }
         
+        // Zapis zawsze wymaga sesji Bearer.
         $auth_header = $request->get_header('Authorization');
         if ($auth_header && strpos($auth_header, 'Bearer ') === 0) {
             $token = substr($auth_header, 7);
