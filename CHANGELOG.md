@@ -2,6 +2,20 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.14] – 2026-07-19
+
+**Wtyczka WordPress**
+
+- Poprawiono numer wersji w kodzie (`OC_PLUGIN_VERSION`) tak, aby był zgodny z wersją wydania i poprawnie odczytywany przez workflow publikacji.
+- Wydanie techniczne przygotowujące stabilny release po niespójnym oznaczeniu wersji.
+
+## [1.2.13] – 2026-07-19
+
+**Wtyczka WordPress**
+
+- Raport odwiedzin nie pokazuje już domyślnie wszystkich chorych, gdy dla danej daty nie ma zaplanowanych osób.
+- Chorzy oznaczeni jako **okazjonalne odwiedziny** pozostają do ręcznego dodania na konkretny termin.
+
 ## [1.2.12] – 2026-07-12
 
 **Wtyczka WordPress**
