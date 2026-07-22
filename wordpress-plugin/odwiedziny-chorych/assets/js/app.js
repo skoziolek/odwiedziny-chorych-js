@@ -1549,6 +1549,49 @@
         });
 
         const visitedChorzy = historiaData[dateStr] || [];
+        const chorzyByName = new Map();
+        chorzy.forEach(c => {
+            const name = (c.imieNazwisko || '').trim();
+            if (name && !chorzyByName.has(name)) {
+                chorzyByName.set(name, c);
+            }
+        });
+
+        // Korekta zapisanego raportu: pokaż także osoby zapisane wcześniej jako odwiedzone
+        // dla tej daty, nawet jeśli ich bieżący termin kolejnej wizyty został już przesunięty.
+        visitedChorzy.forEach(name => {
+            if (!name || doPokazania.some(c => c.imieNazwisko === name)) return;
+            const source = chorzyByName.get(name);
+            if (source) {
+                doPokazania.push(source);
+            } else {
+                doPokazania.push({
+                    imieNazwisko: name,
+                    status: 'TAK',
+                    nastepnaWizyta: '',
+                });
+            }
+        });
+
+        // Dla przeszłych dat bez zapisanego raportu: odtwórz plan dyżurowy,
+        // aby szafarz mógł wykonać korektę zamiast widzieć pustą listę.
+        if (doPokazania.length === 0 && visitedChorzy.length === 0) {
+            const selectedDate = new Date(dateStr);
+            selectedDate.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (selectedDate < today) {
+                const nextDuty = getUpcomingDutyDates(dateStr, 1)[0] || '';
+                if (nextDuty) {
+                    doPokazania = aktywni.filter(c => {
+                        const sched = c.nastepnaWizyta;
+                        if (!sched || isOccasionalVisit(sched)) return false;
+                        return sched <= nextDuty;
+                    });
+                }
+            }
+        }
+
         const renderedNames = new Set();
         const occasionalCandidates = aktywni.filter(c => isOccasionalVisit(c.nastepnaWizyta));
         let raportLp = 0;
@@ -1612,6 +1655,39 @@
 
         doPokazania.forEach(chory => appendChoryCard(chory));
 
+        const regularToAdd = aktywni.filter(c =>
+            !isOccasionalVisit(c.nastepnaWizyta) && !renderedNames.has(c.imieNazwisko)
+        );
+        const hasRegularPicker = regularToAdd.length > 0;
+        if (hasRegularPicker) {
+            const addRegularBox = document.createElement('div');
+            addRegularBox.className = 'oc-raport-add-occasional';
+            addRegularBox.innerHTML = `
+                <span class="oc-raport-add-occasional-label">Dodaj chorego ręcznie na ten termin:</span>
+                <div class="oc-raport-add-occasional-controls">
+                    <select class="oc-raport-next-select" id="oc-raportRegularSelect">
+                        <option value="">— wybierz osobę —</option>
+                        ${regularToAdd.map(ch => `<option value="${ch.imieNazwisko}">${ch.imieNazwisko}</option>`).join('')}
+                    </select>
+                    <button type="button" class="oc-btn oc-btn-small" id="oc-raportAddRegularBtn">Dodaj</button>
+                </div>
+            `;
+            listEl.prepend(addRegularBox);
+
+            const regularSelect = addRegularBox.querySelector('#oc-raportRegularSelect');
+            const addRegularBtn = addRegularBox.querySelector('#oc-raportAddRegularBtn');
+            addRegularBtn.addEventListener('click', () => {
+                const selectedName = regularSelect.value;
+                if (!selectedName) return;
+                const chory = aktywni.find(c => c.imieNazwisko === selectedName && !isOccasionalVisit(c.nastepnaWizyta));
+                if (!chory) return;
+                appendChoryCard(chory);
+                const selectedOption = regularSelect.querySelector(`option[value="${selectedName}"]`);
+                if (selectedOption) selectedOption.remove();
+                regularSelect.value = '';
+            });
+        }
+
         const occasionalToAdd = occasionalCandidates.filter(c => !renderedNames.has(c.imieNazwisko));
         const hasOccasionalPicker = occasionalToAdd.length > 0;
         if (hasOccasionalPicker) {
@@ -1643,7 +1719,7 @@
             });
         }
 
-        if (renderedNames.size === 0 && !hasOccasionalPicker) {
+        if (renderedNames.size === 0 && !hasOccasionalPicker && !hasRegularPicker) {
             listEl.innerHTML = '<div class="oc-raport-empty">Brak aktywnych chorych do wyświetlenia.</div>';
         }
 
