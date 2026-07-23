@@ -2,6 +2,21 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.16] – 2026-07-22
+
+**Wtyczka WordPress**
+
+- Naprawiono pustą listę w raporcie odwiedzin dla przeszłych dat: przy korekcie raportu ponownie wyświetlani są chorzy zapisani historycznie dla tej daty.
+- Dla przeszłego dyżuru bez zapisanego raportu odtwarzana jest lista planu dyżurowego, aby można było uzupełnić lub poprawić raport.
+- Dodano ręczne dopisanie chorego na termin także dla osób nieokazjonalnych (sekcja „Dodaj chorego ręcznie na ten termin”).
+
+## [1.2.15] – 2026-07-19
+
+**Wtyczka WordPress**
+
+- Uszczelniono autoryzację REST API: operacje zapisu (`POST/PUT/PATCH/DELETE`) nie są już autoryzowane samym `X-WP-Nonce` z frontendu.
+- Zapis danych (chorzy, kalendarz, adwent, historia) wymaga teraz aktywnej sesji Bearer, co ogranicza ryzyko nieautoryzowanych modyfikacji.
+
 ## [1.2.14] – 2026-07-19
 
 **Wtyczka WordPress**
