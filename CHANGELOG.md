@@ -2,6 +2,14 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.17] – 2026-07-23
+
+**Wtyczka WordPress**
+
+- Uporządkowano sekcję dopisywania osób w raporcie: usunięto oddzielne pole „Dodaj chorego ręcznie na ten termin”.
+- Pozostawiono jedno pole „Dodaj chorego okazjonalnie na ten termin”, które pozwala wyjątkowo dopisać także chorych zaplanowanych standardowo na inne daty.
+- W karcie chorego zachowywana jest bieżąca data „Następna wizyta” nawet wtedy, gdy nie mieści się w krótkiej liście najbliższych terminów.
+
 ## [1.2.16] – 2026-07-22
 
 **Wtyczka WordPress**
