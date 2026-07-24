@@ -34,6 +34,7 @@
     let kalendarzData = {};
     let adwentData = {};
     let historiaData = {}; // Przechowuje odwiedzonych chorych dla każdej daty
+    let plannedData = {}; // Przechowuje zaplanowanych chorych dla każdej daty
     const OCCASIONAL_VISIT_MARKER = '9999-12-31';
 
     // ==================== UTILITIES ====================
@@ -1549,6 +1550,7 @@
         });
 
         const visitedChorzy = historiaData[dateStr] || [];
+        const plannedChorzy = plannedData[dateStr] || [];
         const chorzyByName = new Map();
         chorzy.forEach(c => {
             const name = (c.imieNazwisko || '').trim();
@@ -1560,6 +1562,22 @@
         // Korekta zapisanego raportu: pokaż także osoby zapisane wcześniej jako odwiedzone
         // dla tej daty, nawet jeśli ich bieżący termin kolejnej wizyty został już przesunięty.
         visitedChorzy.forEach(name => {
+            if (!name || doPokazania.some(c => c.imieNazwisko === name)) return;
+            const source = chorzyByName.get(name);
+            if (source) {
+                doPokazania.push(source);
+            } else {
+                doPokazania.push({
+                    imieNazwisko: name,
+                    status: 'TAK',
+                    nastepnaWizyta: '',
+                });
+            }
+        });
+
+        // Korekta zaplanowanego składu dnia: pokaż także osoby ręcznie dopisane
+        // do listy na ten konkretny termin (bez oznaczania jako "odwiedzone").
+        plannedChorzy.forEach(name => {
             if (!name || doPokazania.some(c => c.imieNazwisko === name)) return;
             const source = chorzyByName.get(name);
             if (source) {
@@ -1601,7 +1619,8 @@
             if (!name || renderedNames.has(name)) return;
             renderedNames.add(name);
 
-            const isVisited = visitedChorzy.length ? visitedChorzy.includes(name) : true;
+            // Brak zapisu historii = domyślnie nie oznaczamy jako odwiedzone.
+            const isVisited = visitedChorzy.includes(name);
 
             let defaultDate = '';
             if (isOccasionalVisit(chory.nastepnaWizyta)) {
@@ -1691,6 +1710,23 @@
                 const selectedOption = occasionalSelect.querySelector(`option[value="${selectedName}"]`);
                 if (selectedOption) selectedOption.remove();
                 occasionalSelect.value = '';
+
+                // Utrwal od razu plan odwiedzin, aby po zamknięciu modala
+                // i ponownym otwarciu dopisana osoba nadal była widoczna.
+                const currentCards = Array.from(
+                    document.querySelectorAll('#oc-raportListaChorych .oc-raport-card')
+                );
+                const plannedNow = currentCards
+                    .map(card => card.dataset.name)
+                    .filter(Boolean);
+
+                savePlannedVisitList(dateStr, plannedNow).then(ok => {
+                    if (ok) {
+                        plannedData[dateStr] = plannedNow;
+                    } else {
+                        showMessage('Nie udało się zapisać listy planowanych odwiedzin', 'error');
+                    }
+                });
             });
         }
 
@@ -1704,6 +1740,25 @@
     function closeVisitModal() {
         const modal = document.getElementById('oc-modalRaport');
         if (modal) modal.style.display = 'none';
+    }
+
+    async function savePlannedVisitList(dateStr, plannedChorzy) {
+        if (!dateStr) return false;
+        try {
+            const response = await apiCall('/historia', {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'dodaj_odwiedziny',
+                    data: dateStr,
+                    chorzy: plannedChorzy || [],
+                    typ: 'plan_niedziela',
+                }),
+            });
+            return response.ok;
+        } catch (e) {
+            debugError('Błąd zapisu listy planowanych odwiedzin:', e);
+            return false;
+        }
     }
     
     /**
@@ -1841,11 +1896,13 @@
 
         const cards = document.querySelectorAll('#oc-raportListaChorych .oc-raport-card');
         const selectedChorzy = [];
+        const plannedChorzy = [];
         const scheduleMap = {};
 
         cards.forEach(card => {
             const name = card.dataset.name;
             if (!name) return;
+            plannedChorzy.push(name);
             const checkbox = card.querySelector('.oc-raport-odwiedzona');
             const select = card.querySelector('.oc-raport-next-select');
             if (checkbox && checkbox.checked) {
@@ -1857,6 +1914,23 @@
         });
 
         try {
+            // 1) Zapisz skład zaplanowanych odwiedzin dla tej daty (niezależnie od statusu odwiedzenia)
+            const planResponse = await apiCall('/historia', {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'dodaj_odwiedziny',
+                    data: dateStr,
+                    chorzy: plannedChorzy,
+                    typ: 'plan_niedziela',
+                }),
+            });
+            if (!planResponse.ok) {
+                debugError('saveVisit plan: odpowiedź API:', planResponse.status);
+                showMessage('Błąd zapisu listy planowanych odwiedzin', 'error');
+                return;
+            }
+
+            // 2) Zapisz osoby faktycznie odwiedzone (status raportu)
             const response = await apiCall('/historia', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -1873,7 +1947,8 @@
                 return;
             }
 
-            // Zaktualizuj lokalne dane historii
+            // Zaktualizuj lokalne dane historii i planu
+            plannedData[dateStr] = plannedChorzy;
             historiaData[dateStr] = selectedChorzy;
 
             // Zapisz kolejne terminy wizyt dla poszczególnych chorych
@@ -1943,11 +2018,16 @@
             if (response.ok) {
                 const allHistoria = await response.json();
                 historiaData = {};
+                plannedData = {};
                 
-                // Filtruj tylko wpisy dla danego roku i typu 'niedziela'
+                // Filtruj tylko wpisy dla danego roku i odpowiednich typów.
                 allHistoria.forEach(entry => {
-                    if (entry.data && entry.data.startsWith(year) && entry.typ === 'niedziela') {
+                    if (!entry.data || !entry.data.startsWith(year)) return;
+                    if (entry.typ === 'niedziela') {
                         historiaData[entry.data] = entry.chorzy || [];
+                    }
+                    if (entry.typ === 'plan_niedziela') {
+                        plannedData[entry.data] = entry.chorzy || [];
                     }
                 });
             }
