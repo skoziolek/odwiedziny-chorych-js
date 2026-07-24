@@ -32,10 +32,12 @@ class OC_Email_Notifications {
     private static function get_chorzy_for_duty_date($duty_date) {
         global $wpdb;
         $table_chorzy = OC_Database::get_table_name('chorzy');
+        $table_historia = OC_Database::get_table_name('historia');
 
-        return $wpdb->get_results(
+        // 1) Standardowa lista: aktywni, zaplanowani na ten termin lub zalegli.
+        $scheduled = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT imie_nazwisko, adres, telefon, uwagi
+                "SELECT id, imie_nazwisko, adres, telefon, uwagi
                  FROM $table_chorzy
                  WHERE status = 'TAK'
                    AND nastepna_wizyta IS NOT NULL
@@ -47,6 +49,36 @@ class OC_Email_Notifications {
             ),
             ARRAY_A
         );
+
+        $merged = array();
+        foreach ((array) $scheduled as $row) {
+            $merged[(int) $row['id']] = $row;
+        }
+
+        // 2) Dodatkowa lista ręcznie planowanych na konkretny dzień (modal "Dodaj okazjonalnie").
+        $planned_csv = $wpdb->get_var($wpdb->prepare(
+            "SELECT chorzy_ids
+             FROM $table_historia
+             WHERE data = %s AND typ = %s
+             LIMIT 1",
+            $duty_date,
+            'plan_niedziela'
+        ));
+
+        $planned_ids = array_values(array_filter(array_map('absint', explode(',', (string) $planned_csv))));
+        if (!empty($planned_ids)) {
+            $placeholders = implode(',', array_fill(0, count($planned_ids), '%d'));
+            $sql = "SELECT id, imie_nazwisko, adres, telefon, uwagi
+                    FROM $table_chorzy
+                    WHERE status = 'TAK' AND id IN ($placeholders)
+                    ORDER BY imie_nazwisko ASC";
+            $planned_rows = $wpdb->get_results($wpdb->prepare($sql, ...$planned_ids), ARRAY_A);
+            foreach ((array) $planned_rows as $row) {
+                $merged[(int) $row['id']] = $row;
+            }
+        }
+
+        return array_values($merged);
     }
 
     /**
