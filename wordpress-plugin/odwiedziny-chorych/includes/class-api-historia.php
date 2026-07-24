@@ -175,7 +175,7 @@ class OC_API_Historia {
             $data = sanitize_text_field($params['data'] ?? '');
             $chorzy_names = $params['chorzy'] ?? array();
             $uwagi = sanitize_textarea_field($params['uwagi'] ?? '');
-            $typ = in_array($params['typ'] ?? 'niedziela', array('niedziela', 'adwent')) ? $params['typ'] : 'niedziela';
+            $typ = in_array($params['typ'] ?? 'niedziela', array('niedziela', 'adwent', 'plan_niedziela')) ? $params['typ'] : 'niedziela';
             
             // Pobierz ID chorych na podstawie nazw
             $chorzy_ids = array();
