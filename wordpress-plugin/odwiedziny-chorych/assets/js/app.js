@@ -1612,7 +1612,13 @@
         }
 
         const renderedNames = new Set();
-        let raportLp = 0;
+        const renumberRaportCards = () => {
+            const cards = Array.from(listEl.querySelectorAll('.oc-raport-card'));
+            cards.forEach((cardEl, idx) => {
+                const lpEl = cardEl.querySelector('.oc-raport-lp');
+                if (lpEl) lpEl.textContent = `${idx + 1}.`;
+            });
+        };
 
         let nextSelectIndex = 0;
         const appendChoryCard = (chory) => {
@@ -1649,7 +1655,7 @@
             card.dataset.name = name;
             card.innerHTML = `
                 <div class="oc-raport-top">
-                    <span class="oc-raport-name"><span class="oc-raport-lp">${++raportLp}.</span> ${name}</span>
+                    <span class="oc-raport-name"><span class="oc-raport-lp"></span> ${name}</span>
                     <label class="oc-raport-status">
                         <input type="checkbox" class="oc-raport-odwiedzona" ${isVisited ? 'checked' : ''}>
                         <span class="oc-raport-status-label">${isVisited ? 'Odwiedzona' : 'Nieobecny'}</span>
@@ -1676,10 +1682,22 @@
                 }
             });
 
-            listEl.appendChild(card);
+            const existingCards = Array.from(listEl.querySelectorAll('.oc-raport-card'));
+            const insertBefore = existingCards.find(existing => {
+                const existingName = existing.dataset.name || '';
+                return existingName.localeCompare(name, 'pl', { sensitivity: 'base' }) > 0;
+            });
+            if (insertBefore) {
+                listEl.insertBefore(card, insertBefore);
+            } else {
+                listEl.appendChild(card);
+            }
+            renumberRaportCards();
         };
 
-        doPokazania.forEach(chory => appendChoryCard(chory));
+        doPokazania
+            .sort((a, b) => (a.imieNazwisko || '').localeCompare(b.imieNazwisko || '', 'pl', { sensitivity: 'base' }))
+            .forEach(chory => appendChoryCard(chory));
 
         const occasionalToAdd = aktywni
             .filter(c => !renderedNames.has(c.imieNazwisko))
