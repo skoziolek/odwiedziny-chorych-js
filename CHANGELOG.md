@@ -2,6 +2,15 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.18] – 2026-07-26
+
+**Wtyczka WordPress**
+
+- Dodawanie chorego „okazjonalnie” utrwala się od razu po kliknięciu `Dodaj` (bez konieczności wcześniejszego zapisu całego raportu), więc po ponownym otwarciu okna osoba pozostaje na liście.
+- Naprawiono wyścig zapisu przy szybkim dodawaniu wielu osób okazjonalnie (kolejka zapisu per data), aby nie gubić 2. i kolejnych pozycji.
+- Osoby dodane okazjonalnie są teraz porządkowane alfabetycznie na liście chorych do odwiedzenia danego dnia.
+- Ręcznie zaplanowane osoby na konkretną datę są uwzględniane także w mailu przypomnienia dla szafarza.
+
 ## [1.2.17] – 2026-07-23
 
 **Wtyczka WordPress**
