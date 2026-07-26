@@ -35,6 +35,7 @@
     let adwentData = {};
     let historiaData = {}; // Przechowuje odwiedzonych chorych dla każdej daty
     let plannedData = {}; // Przechowuje zaplanowanych chorych dla każdej daty
+    const plannedSaveState = {}; // Kolejka zapisu planu per data (chroni przed race condition)
     const OCCASIONAL_VISIT_MARKER = '9999-12-31';
 
     // ==================== UTILITIES ====================
@@ -1720,10 +1721,12 @@
                     .map(card => card.dataset.name)
                     .filter(Boolean);
 
-                savePlannedVisitList(dateStr, plannedNow).then(ok => {
-                    if (ok) {
-                        plannedData[dateStr] = plannedNow;
-                    } else {
+                // Zapisz natychmiast lokalnie (optymistycznie), żeby ponowne
+                // otwarcie modala od razu pokazywało dopisaną osobę.
+                plannedData[dateStr] = plannedNow;
+
+                queuePlannedVisitSave(dateStr, plannedNow).then(ok => {
+                    if (!ok) {
                         showMessage('Nie udało się zapisać listy planowanych odwiedzin', 'error');
                     }
                 });
@@ -1758,6 +1761,42 @@
         } catch (e) {
             debugError('Błąd zapisu listy planowanych odwiedzin:', e);
             return false;
+        }
+    }
+
+    function queuePlannedVisitSave(dateStr, plannedChorzy) {
+        if (!dateStr) return Promise.resolve(false);
+        const state = plannedSaveState[dateStr] || { inFlight: false, pending: null, waiters: [] };
+        plannedSaveState[dateStr] = state;
+        state.pending = Array.isArray(plannedChorzy) ? [...plannedChorzy] : [];
+
+        return new Promise(resolve => {
+            state.waiters.push(resolve);
+            if (!state.inFlight) {
+                void flushPlannedVisitSave(dateStr);
+            }
+        });
+    }
+
+    async function flushPlannedVisitSave(dateStr) {
+        const state = plannedSaveState[dateStr];
+        if (!state) return;
+        state.inFlight = true;
+        let lastOk = true;
+
+        try {
+            while (state.pending !== null) {
+                const payload = state.pending;
+                state.pending = null;
+                lastOk = await savePlannedVisitList(dateStr, payload);
+            }
+        } finally {
+            state.inFlight = false;
+            const waiters = state.waiters.splice(0);
+            waiters.forEach(resolve => resolve(lastOk));
+            if (state.pending !== null && !state.inFlight) {
+                void flushPlannedVisitSave(dateStr);
+            }
         }
     }
     
@@ -1915,17 +1954,9 @@
 
         try {
             // 1) Zapisz skład zaplanowanych odwiedzin dla tej daty (niezależnie od statusu odwiedzenia)
-            const planResponse = await apiCall('/historia', {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'dodaj_odwiedziny',
-                    data: dateStr,
-                    chorzy: plannedChorzy,
-                    typ: 'plan_niedziela',
-                }),
-            });
-            if (!planResponse.ok) {
-                debugError('saveVisit plan: odpowiedź API:', planResponse.status);
+            plannedData[dateStr] = plannedChorzy;
+            const planOk = await queuePlannedVisitSave(dateStr, plannedChorzy);
+            if (!planOk) {
                 showMessage('Błąd zapisu listy planowanych odwiedzin', 'error');
                 return;
             }
@@ -1947,8 +1978,7 @@
                 return;
             }
 
-            // Zaktualizuj lokalne dane historii i planu
-            plannedData[dateStr] = plannedChorzy;
+            // Zaktualizuj lokalne dane historii
             historiaData[dateStr] = selectedChorzy;
 
             // Zapisz kolejne terminy wizyt dla poszczególnych chorych
