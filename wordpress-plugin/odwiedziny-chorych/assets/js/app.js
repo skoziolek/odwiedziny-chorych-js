@@ -35,8 +35,11 @@
     let adwentData = {};
     let historiaData = {}; // Przechowuje odwiedzonych chorych dla każdej daty
     let plannedData = {}; // Przechowuje zaplanowanych chorych dla każdej daty
-    const plannedSaveState = {}; // Kolejka zapisu planu per data (chroni przed race condition)
     const OCCASIONAL_VISIT_MARKER = '9999-12-31';
+    const VISIT_HISTORY_TYPE = 'niedziela';
+    const PLANNED_VISIT_HISTORY_TYPE = 'plan_niedziela';
+    const NAME_SORT_LOCALE = 'pl';
+    const NAME_SORT_OPTIONS = { sensitivity: 'base' };
 
     // ==================== UTILITIES ====================
 
@@ -80,6 +83,164 @@
         if (!dateStr) return '—';
         if (isOccasionalVisit(dateStr)) return 'Okazjonalne odwiedziny';
         return formatDate(dateStr);
+    }
+
+    function normalizeName(value) {
+        return String(value || '').trim();
+    }
+
+    function compareNames(a, b) {
+        return normalizeName(a).localeCompare(normalizeName(b), NAME_SORT_LOCALE, NAME_SORT_OPTIONS);
+    }
+
+    function sortPatientsByName(list) {
+        return [...list].sort((a, b) => compareNames(a.imieNazwisko, b.imieNazwisko));
+    }
+
+    function createPatientFallback(name) {
+        return {
+            imieNazwisko: name,
+            status: 'TAK',
+            nastepnaWizyta: '',
+        };
+    }
+
+    function buildPatientIndexByName(list) {
+        const byName = new Map();
+        list.forEach(patient => {
+            const name = normalizeName(patient.imieNazwisko);
+            if (name && !byName.has(name)) {
+                byName.set(name, patient);
+            }
+        });
+        return byName;
+    }
+
+    function includesPatientByName(list, name) {
+        const normalized = normalizeName(name);
+        return list.some(patient => normalizeName(patient.imieNazwisko) === normalized);
+    }
+
+    function mergePatientNamesIntoList(baseList, names, patientByName) {
+        names.forEach(rawName => {
+            const name = normalizeName(rawName);
+            if (!name || includesPatientByName(baseList, name)) {
+                return;
+            }
+            baseList.push(patientByName.get(name) || createPatientFallback(name));
+        });
+    }
+
+    function isPastDate(dateStr) {
+        const selectedDate = new Date(dateStr);
+        selectedDate.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return selectedDate < today;
+    }
+
+    function getBasePatientsForDate(aktywni, dateStr) {
+        return aktywni.filter(patient => {
+            const sched = patient.nastepnaWizyta;
+            if (isOccasionalVisit(sched)) return false;
+            if (!sched) return true;
+            return sched <= dateStr;
+        });
+    }
+
+    function rebuildPastPlannedPatients(aktywni, dateStr) {
+        if (!isPastDate(dateStr)) {
+            return [];
+        }
+        const nextDuty = getUpcomingDutyDates(dateStr, 1)[0] || '';
+        if (!nextDuty) {
+            return [];
+        }
+        return aktywni.filter(patient => {
+            const sched = patient.nastepnaWizyta;
+            if (!sched || isOccasionalVisit(sched)) return false;
+            return sched <= nextDuty;
+        });
+    }
+
+    function collectPlannedNamesFromCards(rootSelector = '#oc-raportListaChorych .oc-raport-card') {
+        return Array.from(document.querySelectorAll(rootSelector))
+            .map(card => card.dataset.name)
+            .filter(Boolean);
+    }
+
+    function createPerKeySaveQueue(saveFn) {
+        const stateByKey = {};
+
+        function enqueue(key, payload) {
+            if (!key) return Promise.resolve(false);
+            const state = stateByKey[key] || { inFlight: false, pending: null, waiters: [] };
+            stateByKey[key] = state;
+            state.pending = Array.isArray(payload) ? [...payload] : [];
+
+            return new Promise(resolve => {
+                state.waiters.push(resolve);
+                if (!state.inFlight) {
+                    void flush(key);
+                }
+            });
+        }
+
+        async function flush(key) {
+            const state = stateByKey[key];
+            if (!state) return;
+
+            state.inFlight = true;
+            let lastOk = true;
+
+            try {
+                while (state.pending !== null) {
+                    const nextPayload = state.pending;
+                    state.pending = null;
+                    lastOk = await saveFn(key, nextPayload);
+                }
+            } finally {
+                state.inFlight = false;
+                const waiters = state.waiters.splice(0);
+                waiters.forEach(resolve => resolve(lastOk));
+
+                if (state.pending !== null && !state.inFlight) {
+                    void flush(key);
+                }
+            }
+        }
+
+        return { enqueue };
+    }
+
+    async function saveVisitHistory(dateStr, chorzyList, typ) {
+        const response = await apiCall('/historia', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'dodaj_odwiedziny',
+                data: dateStr,
+                chorzy: chorzyList || [],
+                typ,
+            }),
+        });
+        return response.ok;
+    }
+
+    function splitHistoriaEntriesByType(allHistoria, year) {
+        const nextHistoriaData = {};
+        const nextPlannedData = {};
+
+        allHistoria.forEach(entry => {
+            if (!entry.data || !entry.data.startsWith(year)) return;
+            if (entry.typ === VISIT_HISTORY_TYPE) {
+                nextHistoriaData[entry.data] = entry.chorzy || [];
+            }
+            if (entry.typ === PLANNED_VISIT_HISTORY_TYPE) {
+                nextPlannedData[entry.data] = entry.chorzy || [];
+            }
+        });
+
+        return { nextHistoriaData, nextPlannedData };
     }
 
     function showMessage(message, type = 'success') {
@@ -1526,92 +1687,54 @@
 
     // ==================== VISIT MODAL ====================
 
-    function openVisitModal(dateStr) {
-        const modal = document.getElementById('oc-modalRaport');
-        const listEl = document.getElementById('oc-raportListaChorych');
-        const titleEl = document.getElementById('oc-raportTytul');
-
-        if (!modal || !listEl) return;
-
-        modal.dataset.date = dateStr;
-        if (titleEl) titleEl.textContent = `Raport odwiedzin — ${formatDate(dateStr)}`;
-        listEl.innerHTML = '';
-
-        // Lista nadchodzących terminów (wspólna dla wszystkich chorych)
+    function buildVisitModalDataset(dateStr) {
         const upcoming = getUpcomingDutyDates(dateStr, 5);
-
-        // Chorzy do pokazania: zaplanowani na ten termin, zaległi lub jeszcze nieprzypisani.
-        // Chorzy okazjonalni są domyślnie ukryci i dodawani ręcznie dla konkretnej daty.
-        const aktywni = chorzy.filter(c => c.status === 'TAK' && (c.imieNazwisko || '').trim());
-        let doPokazania = aktywni.filter(c => {
-            const sched = c.nastepnaWizyta;
-            if (isOccasionalVisit(sched)) return false;
-            if (!sched) return true;
-            return sched <= dateStr;
-        });
+        const aktywni = chorzy.filter(c => c.status === 'TAK' && normalizeName(c.imieNazwisko));
+        let doPokazania = getBasePatientsForDate(aktywni, dateStr);
 
         const visitedChorzy = historiaData[dateStr] || [];
         const plannedChorzy = plannedData[dateStr] || [];
-        const chorzyByName = new Map();
-        chorzy.forEach(c => {
-            const name = (c.imieNazwisko || '').trim();
-            if (name && !chorzyByName.has(name)) {
-                chorzyByName.set(name, c);
-            }
-        });
+        const chorzyByName = buildPatientIndexByName(chorzy);
 
-        // Korekta zapisanego raportu: pokaż także osoby zapisane wcześniej jako odwiedzone
-        // dla tej daty, nawet jeśli ich bieżący termin kolejnej wizyty został już przesunięty.
-        visitedChorzy.forEach(name => {
-            if (!name || doPokazania.some(c => c.imieNazwisko === name)) return;
-            const source = chorzyByName.get(name);
-            if (source) {
-                doPokazania.push(source);
-            } else {
-                doPokazania.push({
-                    imieNazwisko: name,
-                    status: 'TAK',
-                    nastepnaWizyta: '',
-                });
-            }
-        });
+        mergePatientNamesIntoList(doPokazania, visitedChorzy, chorzyByName);
+        mergePatientNamesIntoList(doPokazania, plannedChorzy, chorzyByName);
 
-        // Korekta zaplanowanego składu dnia: pokaż także osoby ręcznie dopisane
-        // do listy na ten konkretny termin (bez oznaczania jako "odwiedzone").
-        plannedChorzy.forEach(name => {
-            if (!name || doPokazania.some(c => c.imieNazwisko === name)) return;
-            const source = chorzyByName.get(name);
-            if (source) {
-                doPokazania.push(source);
-            } else {
-                doPokazania.push({
-                    imieNazwisko: name,
-                    status: 'TAK',
-                    nastepnaWizyta: '',
-                });
-            }
-        });
-
-        // Dla przeszłych dat bez zapisanego raportu: odtwórz plan dyżurowy,
-        // aby szafarz mógł wykonać korektę zamiast widzieć pustą listę.
         if (doPokazania.length === 0 && visitedChorzy.length === 0) {
-            const selectedDate = new Date(dateStr);
-            selectedDate.setHours(0, 0, 0, 0);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (selectedDate < today) {
-                const nextDuty = getUpcomingDutyDates(dateStr, 1)[0] || '';
-                if (nextDuty) {
-                    doPokazania = aktywni.filter(c => {
-                        const sched = c.nastepnaWizyta;
-                        if (!sched || isOccasionalVisit(sched)) return false;
-                        return sched <= nextDuty;
-                    });
-                }
-            }
+            doPokazania = rebuildPastPlannedPatients(aktywni, dateStr);
         }
 
-        const renderedNames = new Set();
+        return {
+            upcoming,
+            aktywni,
+            visitedChorzy,
+            doPokazania: sortPatientsByName(doPokazania),
+        };
+    }
+
+    function buildVisitCardMarkup(name, isVisited, defaultDate, optionsHtml, selectId) {
+        const occasionalSelected = defaultDate === OCCASIONAL_VISIT_MARKER ? 'selected' : '';
+        return `
+            <div class="oc-raport-top">
+                <span class="oc-raport-name"><span class="oc-raport-lp"></span> ${name}</span>
+                <label class="oc-raport-status">
+                    <input type="checkbox" class="oc-raport-odwiedzona" ${isVisited ? 'checked' : ''}>
+                    <span class="oc-raport-status-label">${isVisited ? 'Odwiedzona' : 'Nieobecny'}</span>
+                </label>
+            </div>
+            <div class="oc-raport-bottom">
+                <label class="oc-raport-next-label" for="${selectId}">Następna wizyta:</label>
+                <select class="oc-raport-next-select" id="${selectId}">
+                    <option value="${OCCASIONAL_VISIT_MARKER}" ${occasionalSelected}>${formatNextVisitOption(OCCASIONAL_VISIT_MARKER)}</option>
+                    ${optionsHtml || '<option value="">Brak dostępnych terminów</option>'}
+                </select>
+            </div>
+        `;
+    }
+
+    function createVisitCardAppender(listEl, upcoming, visitedChorzy, renderedNames) {
+        const visitedSet = new Set(visitedChorzy.map(name => normalizeName(name)).filter(Boolean));
+        let nextSelectIndex = 0;
+
         const renumberRaportCards = () => {
             const cards = Array.from(listEl.querySelectorAll('.oc-raport-card'));
             cards.forEach((cardEl, idx) => {
@@ -1620,15 +1743,12 @@
             });
         };
 
-        let nextSelectIndex = 0;
-        const appendChoryCard = (chory) => {
-            const name = chory.imieNazwisko;
+        return function appendChoryCard(chory) {
+            const name = normalizeName(chory.imieNazwisko);
             if (!name || renderedNames.has(name)) return;
             renderedNames.add(name);
 
-            // Brak zapisu historii = domyślnie nie oznaczamy jako odwiedzone.
-            const isVisited = visitedChorzy.includes(name);
-
+            const isVisited = visitedSet.has(name);
             let defaultDate = '';
             if (isOccasionalVisit(chory.nastepnaWizyta)) {
                 defaultDate = OCCASIONAL_VISIT_MARKER;
@@ -1642,33 +1762,16 @@
             if (defaultDate && !isOccasionalVisit(defaultDate) && !optionsForSelect.includes(defaultDate)) {
                 optionsForSelect.unshift(defaultDate);
             }
-
             const optionsHtml = optionsForSelect.map(ds => {
                 const selected = ds === defaultDate ? 'selected' : '';
                 return `<option value="${ds}" ${selected}>${formatNextVisitOption(ds)}</option>`;
             }).join('');
-            const occasionalSelected = defaultDate === OCCASIONAL_VISIT_MARKER ? 'selected' : '';
-            const selectId = `oc-raportNext-${nextSelectIndex++}`;
 
+            const selectId = `oc-raportNext-${nextSelectIndex++}`;
             const card = document.createElement('div');
             card.className = 'oc-raport-card' + (isVisited ? '' : ' nieobecny');
             card.dataset.name = name;
-            card.innerHTML = `
-                <div class="oc-raport-top">
-                    <span class="oc-raport-name"><span class="oc-raport-lp"></span> ${name}</span>
-                    <label class="oc-raport-status">
-                        <input type="checkbox" class="oc-raport-odwiedzona" ${isVisited ? 'checked' : ''}>
-                        <span class="oc-raport-status-label">${isVisited ? 'Odwiedzona' : 'Nieobecny'}</span>
-                    </label>
-                </div>
-                <div class="oc-raport-bottom">
-                    <label class="oc-raport-next-label" for="${selectId}">Następna wizyta:</label>
-                    <select class="oc-raport-next-select" id="${selectId}">
-                        <option value="${OCCASIONAL_VISIT_MARKER}" ${occasionalSelected}>${formatNextVisitOption(OCCASIONAL_VISIT_MARKER)}</option>
-                        ${optionsHtml || '<option value="">Brak dostępnych terminów</option>'}
-                    </select>
-                </div>
-            `;
+            card.innerHTML = buildVisitCardMarkup(name, isVisited, defaultDate, optionsHtml, selectId);
 
             const checkbox = card.querySelector('.oc-raport-odwiedzona');
             const statusLabel = card.querySelector('.oc-raport-status-label');
@@ -1683,10 +1786,7 @@
             });
 
             const existingCards = Array.from(listEl.querySelectorAll('.oc-raport-card'));
-            const insertBefore = existingCards.find(existing => {
-                const existingName = existing.dataset.name || '';
-                return existingName.localeCompare(name, 'pl', { sensitivity: 'base' }) > 0;
-            });
+            const insertBefore = existingCards.find(existing => compareNames(existing.dataset.name, name) > 0);
             if (insertBefore) {
                 listEl.insertBefore(card, insertBefore);
             } else {
@@ -1694,62 +1794,77 @@
             }
             renumberRaportCards();
         };
+    }
 
-        doPokazania
-            .sort((a, b) => (a.imieNazwisko || '').localeCompare(b.imieNazwisko || '', 'pl', { sensitivity: 'base' }))
-            .forEach(chory => appendChoryCard(chory));
-
+    function renderOccasionalAddPicker(listEl, aktywni, renderedNames, appendChoryCard, dateStr) {
         const occasionalToAdd = aktywni
-            .filter(c => !renderedNames.has(c.imieNazwisko))
-            .sort((a, b) => (a.imieNazwisko || '').localeCompare(b.imieNazwisko || ''));
-        const hasOccasionalPicker = occasionalToAdd.length > 0;
-        if (hasOccasionalPicker) {
-            const addBox = document.createElement('div');
-            addBox.className = 'oc-raport-add-occasional';
-            addBox.innerHTML = `
-                <span class="oc-raport-add-occasional-label">Dodaj chorego okazjonalnie na ten termin:</span>
-                <div class="oc-raport-add-occasional-controls">
-                    <select class="oc-raport-next-select" id="oc-raportOccasionalSelect">
-                        <option value="">— wybierz osobę —</option>
-                        ${occasionalToAdd.map(ch => `<option value="${ch.imieNazwisko}">${ch.imieNazwisko}</option>`).join('')}
-                    </select>
-                    <button type="button" class="oc-btn oc-btn-small" id="oc-raportAddOccasionalBtn">Dodaj</button>
-                </div>
-            `;
-            listEl.prepend(addBox);
+            .filter(c => !renderedNames.has(normalizeName(c.imieNazwisko)))
+            .sort((a, b) => compareNames(a.imieNazwisko, b.imieNazwisko));
 
-            const occasionalSelect = addBox.querySelector('#oc-raportOccasionalSelect');
-            const addOccasionalBtn = addBox.querySelector('#oc-raportAddOccasionalBtn');
-            addOccasionalBtn.addEventListener('click', () => {
-                const selectedName = occasionalSelect.value;
-                if (!selectedName) return;
-                const chory = aktywni.find(c => c.imieNazwisko === selectedName);
-                if (!chory) return;
-                appendChoryCard(chory);
-                const selectedOption = occasionalSelect.querySelector(`option[value="${selectedName}"]`);
-                if (selectedOption) selectedOption.remove();
-                occasionalSelect.value = '';
-
-                // Utrwal od razu plan odwiedzin, aby po zamknięciu modala
-                // i ponownym otwarciu dopisana osoba nadal była widoczna.
-                const currentCards = Array.from(
-                    document.querySelectorAll('#oc-raportListaChorych .oc-raport-card')
-                );
-                const plannedNow = currentCards
-                    .map(card => card.dataset.name)
-                    .filter(Boolean);
-
-                // Zapisz natychmiast lokalnie (optymistycznie), żeby ponowne
-                // otwarcie modala od razu pokazywało dopisaną osobę.
-                plannedData[dateStr] = plannedNow;
-
-                queuePlannedVisitSave(dateStr, plannedNow).then(ok => {
-                    if (!ok) {
-                        showMessage('Nie udało się zapisać listy planowanych odwiedzin', 'error');
-                    }
-                });
-            });
+        if (occasionalToAdd.length === 0) {
+            return false;
         }
+
+        const addBox = document.createElement('div');
+        addBox.className = 'oc-raport-add-occasional';
+        addBox.innerHTML = `
+            <span class="oc-raport-add-occasional-label">Dodaj chorego okazjonalnie na ten termin:</span>
+            <div class="oc-raport-add-occasional-controls">
+                <select class="oc-raport-next-select" id="oc-raportOccasionalSelect">
+                    <option value="">— wybierz osobę —</option>
+                    ${occasionalToAdd.map(ch => {
+                        const name = normalizeName(ch.imieNazwisko);
+                        return `<option value="${name}">${name}</option>`;
+                    }).join('')}
+                </select>
+                <button type="button" class="oc-btn oc-btn-small" id="oc-raportAddOccasionalBtn">Dodaj</button>
+            </div>
+        `;
+        listEl.prepend(addBox);
+
+        const occasionalSelect = addBox.querySelector('#oc-raportOccasionalSelect');
+        const addOccasionalBtn = addBox.querySelector('#oc-raportAddOccasionalBtn');
+        addOccasionalBtn.addEventListener('click', () => {
+            const selectedName = normalizeName(occasionalSelect.value);
+            if (!selectedName) return;
+
+            const chory = aktywni.find(c => normalizeName(c.imieNazwisko) === selectedName);
+            if (!chory) return;
+
+            appendChoryCard(chory);
+            const selectedOption = occasionalSelect.querySelector(`option[value="${selectedName}"]`);
+            if (selectedOption) selectedOption.remove();
+            occasionalSelect.value = '';
+
+            const plannedNow = collectPlannedNamesFromCards();
+            plannedData[dateStr] = plannedNow;
+
+            queuePlannedVisitSave(dateStr, plannedNow).then(ok => {
+                if (!ok) {
+                    showMessage('Nie udało się zapisać listy planowanych odwiedzin', 'error');
+                }
+            });
+        });
+
+        return true;
+    }
+
+    function openVisitModal(dateStr) {
+        const modal = document.getElementById('oc-modalRaport');
+        const listEl = document.getElementById('oc-raportListaChorych');
+        const titleEl = document.getElementById('oc-raportTytul');
+        if (!modal || !listEl) return;
+
+        modal.dataset.date = dateStr;
+        if (titleEl) titleEl.textContent = `Raport odwiedzin — ${formatDate(dateStr)}`;
+        listEl.innerHTML = '';
+
+        const { upcoming, aktywni, visitedChorzy, doPokazania } = buildVisitModalDataset(dateStr);
+        const renderedNames = new Set();
+        const appendChoryCard = createVisitCardAppender(listEl, upcoming, visitedChorzy, renderedNames);
+
+        doPokazania.forEach(chory => appendChoryCard(chory));
+        const hasOccasionalPicker = renderOccasionalAddPicker(listEl, aktywni, renderedNames, appendChoryCard, dateStr);
 
         if (renderedNames.size === 0 && !hasOccasionalPicker) {
             listEl.innerHTML = '<div class="oc-raport-empty">Brak aktywnych chorych do wyświetlenia.</div>';
@@ -1766,56 +1881,17 @@
     async function savePlannedVisitList(dateStr, plannedChorzy) {
         if (!dateStr) return false;
         try {
-            const response = await apiCall('/historia', {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'dodaj_odwiedziny',
-                    data: dateStr,
-                    chorzy: plannedChorzy || [],
-                    typ: 'plan_niedziela',
-                }),
-            });
-            return response.ok;
+            return await saveVisitHistory(dateStr, plannedChorzy || [], PLANNED_VISIT_HISTORY_TYPE);
         } catch (e) {
             debugError('Błąd zapisu listy planowanych odwiedzin:', e);
             return false;
         }
     }
 
+    const plannedVisitSaveQueue = createPerKeySaveQueue(savePlannedVisitList);
+
     function queuePlannedVisitSave(dateStr, plannedChorzy) {
-        if (!dateStr) return Promise.resolve(false);
-        const state = plannedSaveState[dateStr] || { inFlight: false, pending: null, waiters: [] };
-        plannedSaveState[dateStr] = state;
-        state.pending = Array.isArray(plannedChorzy) ? [...plannedChorzy] : [];
-
-        return new Promise(resolve => {
-            state.waiters.push(resolve);
-            if (!state.inFlight) {
-                void flushPlannedVisitSave(dateStr);
-            }
-        });
-    }
-
-    async function flushPlannedVisitSave(dateStr) {
-        const state = plannedSaveState[dateStr];
-        if (!state) return;
-        state.inFlight = true;
-        let lastOk = true;
-
-        try {
-            while (state.pending !== null) {
-                const payload = state.pending;
-                state.pending = null;
-                lastOk = await savePlannedVisitList(dateStr, payload);
-            }
-        } finally {
-            state.inFlight = false;
-            const waiters = state.waiters.splice(0);
-            waiters.forEach(resolve => resolve(lastOk));
-            if (state.pending !== null && !state.inFlight) {
-                void flushPlannedVisitSave(dateStr);
-            }
-        }
+        return plannedVisitSaveQueue.enqueue(dateStr, plannedChorzy);
     }
     
     /**
@@ -1946,20 +2022,17 @@
         });
     }
 
-    async function saveVisit() {
-        const modal = document.getElementById('oc-modalRaport');
-        const dateStr = modal ? modal.dataset.date : '';
-        if (!dateStr) return;
-
-        const cards = document.querySelectorAll('#oc-raportListaChorych .oc-raport-card');
+    function collectVisitDataFromCards(cards) {
         const selectedChorzy = [];
         const plannedChorzy = [];
         const scheduleMap = {};
 
         cards.forEach(card => {
-            const name = card.dataset.name;
+            const name = normalizeName(card.dataset.name);
             if (!name) return;
+
             plannedChorzy.push(name);
+
             const checkbox = card.querySelector('.oc-raport-odwiedzona');
             const select = card.querySelector('.oc-raport-next-select');
             if (checkbox && checkbox.checked) {
@@ -1969,6 +2042,36 @@
                 scheduleMap[name] = select.value;
             }
         });
+
+        return { selectedChorzy, plannedChorzy, scheduleMap };
+    }
+
+    function updateVisitButtonState(dateStr, selectedChorzy) {
+        const button = document.querySelector(`button[data-date="${dateStr}"]`);
+        if (!button) return;
+
+        if (selectedChorzy.length > 0) {
+            button.textContent = 'Odwiedzone';
+            button.className = 'oc-btn oc-btn-small oc-btn-success';
+            setupTooltip(button, selectedChorzy);
+            return;
+        }
+
+        button.textContent = 'Zaplanowane';
+        button.className = 'oc-btn oc-btn-small';
+        if (button._tooltipElement) {
+            button._tooltipElement.remove();
+            button._tooltipElement = null;
+        }
+    }
+
+    async function saveVisit() {
+        const modal = document.getElementById('oc-modalRaport');
+        const dateStr = modal ? modal.dataset.date : '';
+        if (!dateStr) return;
+
+        const cards = document.querySelectorAll('#oc-raportListaChorych .oc-raport-card');
+        const { selectedChorzy, plannedChorzy, scheduleMap } = collectVisitDataFromCards(cards);
 
         try {
             // 1) Zapisz skład zaplanowanych odwiedzin dla tej daty (niezależnie od statusu odwiedzenia)
@@ -1980,18 +2083,9 @@
             }
 
             // 2) Zapisz osoby faktycznie odwiedzone (status raportu)
-            const response = await apiCall('/historia', {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'dodaj_odwiedziny',
-                    data: dateStr,
-                    chorzy: selectedChorzy,
-                    typ: 'niedziela',
-                }),
-            });
-
-            if (!response.ok) {
-                debugError('saveVisit: odpowiedź API:', response.status);
+            const savedVisit = await saveVisitHistory(dateStr, selectedChorzy, VISIT_HISTORY_TYPE);
+            if (!savedVisit) {
+                debugError('saveVisit: nieudany zapis historii odwiedzin');
                 showMessage('Błąd zapisu odwiedzin', 'error');
                 return;
             }
@@ -2003,23 +2097,7 @@
             await updateChorzySchedules(scheduleMap);
 
             // Zaktualizuj przycisk
-            const button = document.querySelector(`button[data-date="${dateStr}"]`);
-            if (button) {
-                if (selectedChorzy.length > 0) {
-                    button.textContent = 'Odwiedzone';
-                    button.className = 'oc-btn oc-btn-small oc-btn-success';
-                    // Ustaw tooltip
-                    setupTooltip(button, selectedChorzy);
-                } else {
-                    button.textContent = 'Zaplanowane';
-                    button.className = 'oc-btn oc-btn-small';
-                    // Usuń tooltip jeśli istnieje
-                    if (button._tooltipElement) {
-                        button._tooltipElement.remove();
-                        button._tooltipElement = null;
-                    }
-                }
-            }
+            updateVisitButtonState(dateStr, selectedChorzy);
 
             showMessage('Raport odwiedzin zapisany');
             closeVisitModal();
@@ -2065,19 +2143,9 @@
             const response = await apiCall('/historia');
             if (response.ok) {
                 const allHistoria = await response.json();
-                historiaData = {};
-                plannedData = {};
-                
-                // Filtruj tylko wpisy dla danego roku i odpowiednich typów.
-                allHistoria.forEach(entry => {
-                    if (!entry.data || !entry.data.startsWith(year)) return;
-                    if (entry.typ === 'niedziela') {
-                        historiaData[entry.data] = entry.chorzy || [];
-                    }
-                    if (entry.typ === 'plan_niedziela') {
-                        plannedData[entry.data] = entry.chorzy || [];
-                    }
-                });
+                const { nextHistoriaData, nextPlannedData } = splitHistoriaEntriesByType(allHistoria, year);
+                historiaData = nextHistoriaData;
+                plannedData = nextPlannedData;
             }
         } catch (e) {
             debugError('Błąd ładowania historii:', e);
@@ -2277,6 +2345,27 @@
 
     // ==================== INIT ====================
 
+    function applyNextDutyStylesIfPresent() {
+        const nextDutyRow = document.querySelector('.next-duty-row');
+        if (nextDutyRow) {
+            applyNextDutyRowStyles(nextDutyRow);
+        }
+    }
+
+    function scheduleNextDutyStyleRefreshes() {
+        [100, 500].forEach(delayMs => {
+            setTimeout(() => {
+                applyNextDutyStylesIfPresent();
+            }, delayMs);
+        });
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                applyNextDutyStylesIfPresent();
+            }, 300);
+        });
+    }
+
     async function initApp() {
         showMainApp();
         setupTabs();
@@ -2301,33 +2390,7 @@
         renderSzafarze();
         renderChorzy();
         renderKalendarz();
-        
-        // Upewnij się, że style ramki są zastosowane (również po załadowaniu)
-        // Wywołaj natychmiast po renderKalendarz
-        setTimeout(() => {
-            const nextDutyRow = document.querySelector('.next-duty-row');
-            if (nextDutyRow) {
-                applyNextDutyRowStyles(nextDutyRow);
-            }
-        }, 100);
-        
-        // Sprawdź ponownie po większym opóźnieniu
-        setTimeout(() => {
-            const nextDutyRow = document.querySelector('.next-duty-row');
-            if (nextDutyRow) {
-                applyNextDutyRowStyles(nextDutyRow);
-            }
-        }, 500);
-        
-        // Sprawdź ponownie po pełnym załadowaniu
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const nextDutyRow = document.querySelector('.next-duty-row');
-                if (nextDutyRow) {
-                    applyNextDutyRowStyles(nextDutyRow);
-                }
-            }, 300);
-        });
+        scheduleNextDutyStyleRefreshes();
 
         // Załaduj domyślny raport
         const currentMonth = new Date().toISOString().slice(0, 7);
@@ -2424,41 +2487,33 @@
         }
     }
     
-    // Funkcja do naprawy pozycjonowania przycisku - już nie potrzebna, przycisk jest w menu
-    function fixLogoutButtonPosition() {
-        // Przycisk wylogowania jest teraz w menu przycisków, nie potrzeba naprawy
-    }
-
-    // Start
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            init();
-            // Ukryj WordPress header po załadowaniu DOM
-            setTimeout(() => {
-                hideWordPressHeader();
-            }, 100);
-            // Ukryj też po pełnym załadowaniu strony
-            window.addEventListener('load', () => {
-                hideWordPressHeader();
-            });
-        });
-    } else {
-        init();
+    function startWordPressHeaderHider() {
         setTimeout(() => {
             hideWordPressHeader();
         }, 100);
         window.addEventListener('load', () => {
             hideWordPressHeader();
         });
+
+        // Ukryj header również po zmianach w DOM (jeśli WordPress dynamicznie dodaje elementy)
+        const observer = new MutationObserver(() => {
+            hideWordPressHeader();
+        });
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     }
-    
-    // Ukryj header również po zmianach w DOM (jeśli WordPress dynamicznie dodaje elementy)
-    const observer = new MutationObserver(() => {
-        hideWordPressHeader();
-    });
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
+
+    // Start
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            init();
+            startWordPressHeaderHider();
+        });
+    } else {
+        init();
+        startWordPressHeaderHider();
+    }
 
 })();
