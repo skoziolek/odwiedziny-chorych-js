@@ -116,6 +116,7 @@ Przy odinstalowaniu pluginu wszystkie dane zostaną usunięte z bazy danych.
 - `INSTALACJA_SMTP.md` - Konfiguracja SMTP dla emaili
 - `KONFIGURACJA_SSL.md` - Konfiguracja SSL
 - `AKTUALIZACJA.md` - Jak aktualizować plugin
+- `TESTY_AUTOMATYCZNE.md` - Testy jednostkowe i E2E (jak uruchamiać)
 - `BEZPIECZENSTWO.md` - Informacje o bezpieczeństwie
 - `RESPONSYWNOŚĆ.md` - Informacje o responsywności
 
