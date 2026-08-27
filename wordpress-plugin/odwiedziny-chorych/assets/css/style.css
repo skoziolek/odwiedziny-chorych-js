@@ -635,6 +635,30 @@ body:has(.oc-container) .site-header:first-of-type {
     margin-bottom: 10px;
 }
 
+.oc-raport-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.oc-raport-remove {
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    color: #8a6a5a;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    white-space: nowrap;
+}
+
+.oc-raport-remove:hover,
+.oc-raport-remove:focus {
+    color: #c62828;
+}
+
 .oc-raport-name {
     font-weight: 700;
     font-size: 15px;
@@ -701,6 +725,16 @@ body:has(.oc-container) .site-header:first-of-type {
     padding: 20px;
 }
 
+.oc-raport-empty-planned {
+    text-align: left;
+    color: #5a4b34;
+    background: #f7f3ea;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
 .oc-raport-add-occasional {
     border: 1px dashed #d4c3a4;
     border-radius: 8px;
@@ -728,6 +762,9 @@ body:has(.oc-container) .site-header:first-of-type {
 
 @media (max-width: 600px) {
     .oc-raport-bottom {
+        flex-wrap: wrap;
+    }
+    .oc-raport-top {
         flex-wrap: wrap;
     }
     .oc-raport-add-occasional-controls {
