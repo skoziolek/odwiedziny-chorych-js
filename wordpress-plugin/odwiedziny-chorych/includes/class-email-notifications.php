@@ -22,9 +22,8 @@ class OC_Email_Notifications {
      *
      * Zasady:
      * - tylko aktywni (status TAK),
-     * - tylko z wyznaczonym terminem kolejnej wizyty,
-     * - termin <= data dyżuru (obsługa zaległych),
-     * - bez markeru "okazjonalne odwiedziny" (dodawane ręcznie).
+     * - tylko z terminem kolejnej wizyty równym dacie dyżuru,
+     * - bez markeru "okazjonalne odwiedziny" (dodawane ręcznie na konkretny dzień).
      *
      * @param string $duty_date Data dyżuru (YYYY-MM-DD)
      * @return array<int,array<string,mixed>>
@@ -34,7 +33,7 @@ class OC_Email_Notifications {
         $table_chorzy = OC_Database::get_table_name('chorzy');
         $table_historia = OC_Database::get_table_name('historia');
 
-        // 1) Standardowa lista: aktywni, zaplanowani na ten termin lub zalegli.
+        // 1) Standardowa lista: aktywni zaplanowani dokładnie na ten termin.
         $scheduled = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT id, imie_nazwisko, adres, telefon, uwagi
@@ -42,7 +41,7 @@ class OC_Email_Notifications {
                  WHERE status = 'TAK'
                    AND nastepna_wizyta IS NOT NULL
                    AND nastepna_wizyta <> %s
-                   AND nastepna_wizyta <= %s
+                   AND nastepna_wizyta = %s
                  ORDER BY nastepna_wizyta ASC, imie_nazwisko ASC",
                 self::OCCASIONAL_VISIT_MARKER,
                 $duty_date
@@ -164,7 +163,7 @@ class OC_Email_Notifications {
             return;
         }
         
-        // Pobierz chorych zaplanowanych (lub zaległych) na jutrzejszy dyżur.
+        // Pobierz chorych zaplanowanych na jutrzejszy dyżur.
         $chorzy = self::get_chorzy_for_duty_date($tomorrow);
         
         foreach ($duties as $duty) {
@@ -563,7 +562,7 @@ class OC_Email_Notifications {
             return array('success' => false, 'message' => 'Brak dyżurów dla podanej daty');
         }
         
-        // Pobierz chorych zaplanowanych (lub zaległych) na wskazaną datę dyżuru.
+        // Pobierz chorych zaplanowanych na wskazaną datę dyżuru.
         $chorzy = self::get_chorzy_for_duty_date($date);
         
         $sent_emails = array();

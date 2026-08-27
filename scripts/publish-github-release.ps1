@@ -1,14 +1,14 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Tworzy lub aktualizuje Release na GitHubie dla tagu v1.2.0 i wgrywa ZIP wtyczki WordPress.
+  Tworzy lub aktualizuje Release na GitHubie dla tagu v1.2.19 i wgrywa ZIP wtyczki WordPress.
 
 .EXAMPLE
   $env:GITHUB_TOKEN = "ghp_xxxxxxxx"   # classic PAT: zakres repo (public_repo wystarczy dla publicznego repo)
   .\scripts\publish-github-release.ps1
 #>
 param(
-  [string] $Version = "1.2.0"
+  [string] $Version = "1.2.19"
 )
 
 $ErrorActionPreference = "Stop"

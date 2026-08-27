@@ -3,7 +3,7 @@
  * Plugin Name: Odwiedziny Chorych
  * Plugin URI: https://example.com/odwiedziny-chorych
  * Description: System zarządzania odwiedzinami chorych - kalendarz, szafarze, raporty
- * Version: 1.2.18
+ * Version: 1.2.19
  * Author: Administrator
  * Author URI: https://example.com
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Stałe pluginu
-define('OC_PLUGIN_VERSION', '1.2.18');
+define('OC_PLUGIN_VERSION', '1.2.19');
 define('OC_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('OC_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('OC_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -213,8 +213,11 @@ class OdwiedzinyChorych {
         $css_version = file_exists(OC_PLUGIN_DIR . 'assets/css/style.css') 
             ? filemtime(OC_PLUGIN_DIR . 'assets/css/style.css') 
             : OC_PLUGIN_VERSION;
-        $js_version = file_exists(OC_PLUGIN_DIR . 'assets/js/app.js') 
-            ? filemtime(OC_PLUGIN_DIR . 'assets/js/app.js') 
+        $planning_js_version = file_exists(OC_PLUGIN_DIR . 'assets/js/visit-planning.js')
+            ? filemtime(OC_PLUGIN_DIR . 'assets/js/visit-planning.js')
+            : OC_PLUGIN_VERSION;
+        $js_version = file_exists(OC_PLUGIN_DIR . 'assets/js/app.js')
+            ? filemtime(OC_PLUGIN_DIR . 'assets/js/app.js')
             : OC_PLUGIN_VERSION;
         
         // Style
@@ -227,9 +230,17 @@ class OdwiedzinyChorych {
         
         // Skrypty
         wp_enqueue_script(
+            'oc-visit-planning',
+            OC_PLUGIN_URL . 'assets/js/visit-planning.js',
+            array(),
+            $planning_js_version,
+            true
+        );
+
+        wp_enqueue_script(
             'oc-app',
             OC_PLUGIN_URL . 'assets/js/app.js',
-            array(),
+            array('oc-visit-planning'),
             $js_version,
             true
         );

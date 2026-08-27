@@ -210,7 +210,7 @@ if (!defined('ABSPATH')) {
                 <button class="oc-modal-close oc-raport-close" aria-label="Zamknij okno">&times;</button>
             </div>
             <div class="oc-modal-body">
-                <p class="oc-raport-hint">Zaznacz, kto został odwiedzony, i wybierz termin kolejnej wizyty z listy.</p>
+                <p class="oc-raport-hint">Zaznacz, kto został odwiedzony, i wybierz termin kolejnej wizyty. Osobę, której nie będzie, możesz usunąć z listy.</p>
                 <div id="oc-raportListaChorych" class="oc-raport-lista">
                     <!-- Karty chorych generowane dynamicznie -->
                 </div>

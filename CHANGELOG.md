@@ -2,6 +2,19 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.19] – 2026-08-27
+
+**Wtyczka WordPress**
+
+- Raport odwiedzin pokazuje tylko chorych zaplanowanych **dokładnie na wybraną datę** (oraz osoby dopisane okazjonalnie lub zapisane wcześniej na ten termin).
+- Przyszłe daty bez przypisanych osób mają pustą listę, zamiast powielać chorych z wcześniejszych terminów (w tym zaległych).
+- Lista „Następna wizyta” nie podpowiada już daty bieżącego raportu ani dat z przeszłości.
+- Osoby dopisane okazjonalnie można zdjąć z listy przyciskiem **Usuń** (zapisuje się od razu, osoba wraca do listy wyboru).
+- **Usuń** działa też przy osobach zaplanowanych na ten dzień: schodzą z listy, a ich następna wizyta przesuwa się na najbliższy kolejny dyżur.
+- Po zapisaniu raportu przycisk w kalendarzu zmienia się na **Odwiedzone**. Nowy raport startuje z zaznaczeniem „Odwiedzona” (nieobecność odznacza się ręcznie).
+- Mail przypomnienia o dyżurze używa tej samej zasady: tylko osoby na ten konkretny dzień plus dopisane okazjonalnie.
+- Gdy na wybrany dzień nikt jeszcze nie jest zaplanowany, raport wyjaśnia, że lista jest pusta celowo i jak dodać osoby.
+
 ## [1.2.18] – 2026-07-26
 
 **Wtyczka WordPress**

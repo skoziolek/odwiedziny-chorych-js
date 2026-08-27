@@ -91,3 +91,7 @@ js-version/src/data/*.json
 # Lokalna ścieżka LocalWP (site-shell)
 site-shell/config.local.ps1
 site-shell/config.local.sh
+
+# Wyniki testów E2E i gotowe paczki ZIP
+wordpress-plugin/odwiedziny-chorych/test-results/
+odwiedziny-chorych-v*.zip

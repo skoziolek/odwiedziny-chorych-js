@@ -35,11 +35,32 @@
     let adwentData = {};
     let historiaData = {}; // Przechowuje odwiedzonych chorych dla każdej daty
     let plannedData = {}; // Przechowuje zaplanowanych chorych dla każdej daty
-    const OCCASIONAL_VISIT_MARKER = '9999-12-31';
-    const VISIT_HISTORY_TYPE = 'niedziela';
-    const PLANNED_VISIT_HISTORY_TYPE = 'plan_niedziela';
-    const NAME_SORT_LOCALE = 'pl';
-    const NAME_SORT_OPTIONS = { sensitivity: 'base' };
+    const visitPlanning = window.ocVisitPlanning;
+    if (!visitPlanning) {
+        throw new Error('Brak modułu ocVisitPlanning. Odśwież stronę i sprawdź enqueue skryptów.');
+    }
+    const {
+        OCCASIONAL_VISIT_MARKER,
+        VISIT_HISTORY_TYPE,
+        PLANNED_VISIT_HISTORY_TYPE,
+        normalizeName,
+        compareNames,
+        buildPatientIndexByName,
+        isOccasionalVisit,
+        assembleVisitPatientList,
+        resolveNextVisitDefault,
+        resolveScheduleAfterRemoval,
+        splitHistoriaEntriesByType,
+        getUpcomingDutyDates: planningGetUpcomingDutyDates,
+        createPerKeySaveQueue,
+        collectVisitDataFromCards,
+        getVisitButtonState,
+        formatNextVisitOption: planningFormatNextVisitOption,
+        buildVisitHistoryPayload,
+        persistVisitReport,
+        VISIT_LIST_HINT,
+        getEmptyVisitListMessage,
+    } = visitPlanning;
 
     // ==================== UTILITIES ====================
 
@@ -75,92 +96,10 @@
         return d.toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' });
     }
 
-    function isOccasionalVisit(dateStr) {
-        return dateStr === OCCASIONAL_VISIT_MARKER;
-    }
-
     function formatNextVisitDisplay(dateStr) {
         if (!dateStr) return '—';
         if (isOccasionalVisit(dateStr)) return 'Okazjonalne odwiedziny';
         return formatDate(dateStr);
-    }
-
-    function normalizeName(value) {
-        return String(value || '').trim();
-    }
-
-    function compareNames(a, b) {
-        return normalizeName(a).localeCompare(normalizeName(b), NAME_SORT_LOCALE, NAME_SORT_OPTIONS);
-    }
-
-    function sortPatientsByName(list) {
-        return [...list].sort((a, b) => compareNames(a.imieNazwisko, b.imieNazwisko));
-    }
-
-    function createPatientFallback(name) {
-        return {
-            imieNazwisko: name,
-            status: 'TAK',
-            nastepnaWizyta: '',
-        };
-    }
-
-    function buildPatientIndexByName(list) {
-        const byName = new Map();
-        list.forEach(patient => {
-            const name = normalizeName(patient.imieNazwisko);
-            if (name && !byName.has(name)) {
-                byName.set(name, patient);
-            }
-        });
-        return byName;
-    }
-
-    function includesPatientByName(list, name) {
-        const normalized = normalizeName(name);
-        return list.some(patient => normalizeName(patient.imieNazwisko) === normalized);
-    }
-
-    function mergePatientNamesIntoList(baseList, names, patientByName) {
-        names.forEach(rawName => {
-            const name = normalizeName(rawName);
-            if (!name || includesPatientByName(baseList, name)) {
-                return;
-            }
-            baseList.push(patientByName.get(name) || createPatientFallback(name));
-        });
-    }
-
-    function isPastDate(dateStr) {
-        const selectedDate = new Date(dateStr);
-        selectedDate.setHours(0, 0, 0, 0);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return selectedDate < today;
-    }
-
-    function getBasePatientsForDate(aktywni, dateStr) {
-        return aktywni.filter(patient => {
-            const sched = patient.nastepnaWizyta;
-            if (isOccasionalVisit(sched)) return false;
-            if (!sched) return true;
-            return sched <= dateStr;
-        });
-    }
-
-    function rebuildPastPlannedPatients(aktywni, dateStr) {
-        if (!isPastDate(dateStr)) {
-            return [];
-        }
-        const nextDuty = getUpcomingDutyDates(dateStr, 1)[0] || '';
-        if (!nextDuty) {
-            return [];
-        }
-        return aktywni.filter(patient => {
-            const sched = patient.nastepnaWizyta;
-            if (!sched || isOccasionalVisit(sched)) return false;
-            return sched <= nextDuty;
-        });
     }
 
     function collectPlannedNamesFromCards(rootSelector = '#oc-raportListaChorych .oc-raport-card') {
@@ -169,78 +108,12 @@
             .filter(Boolean);
     }
 
-    function createPerKeySaveQueue(saveFn) {
-        const stateByKey = {};
-
-        function enqueue(key, payload) {
-            if (!key) return Promise.resolve(false);
-            const state = stateByKey[key] || { inFlight: false, pending: null, waiters: [] };
-            stateByKey[key] = state;
-            state.pending = Array.isArray(payload) ? [...payload] : [];
-
-            return new Promise(resolve => {
-                state.waiters.push(resolve);
-                if (!state.inFlight) {
-                    void flush(key);
-                }
-            });
-        }
-
-        async function flush(key) {
-            const state = stateByKey[key];
-            if (!state) return;
-
-            state.inFlight = true;
-            let lastOk = true;
-
-            try {
-                while (state.pending !== null) {
-                    const nextPayload = state.pending;
-                    state.pending = null;
-                    lastOk = await saveFn(key, nextPayload);
-                }
-            } finally {
-                state.inFlight = false;
-                const waiters = state.waiters.splice(0);
-                waiters.forEach(resolve => resolve(lastOk));
-
-                if (state.pending !== null && !state.inFlight) {
-                    void flush(key);
-                }
-            }
-        }
-
-        return { enqueue };
-    }
-
     async function saveVisitHistory(dateStr, chorzyList, typ) {
         const response = await apiCall('/historia', {
             method: 'POST',
-            body: JSON.stringify({
-                action: 'dodaj_odwiedziny',
-                data: dateStr,
-                chorzy: chorzyList || [],
-                typ,
-            }),
+            body: JSON.stringify(buildVisitHistoryPayload(dateStr, chorzyList || [], typ)),
         });
         return response.ok;
-    }
-
-    function splitHistoriaEntriesByType(allHistoria, year) {
-        const nextHistoriaData = {};
-        const nextPlannedData = {};
-
-        allHistoria.forEach(entry => {
-            if (!entry.data || !entry.data.startsWith(year)) return;
-            if (entry.typ === VISIT_HISTORY_TYPE) {
-                nextHistoriaData[entry.data] = entry.chorzy || [];
-            }
-            if (entry.typ === PLANNED_VISIT_HISTORY_TYPE) {
-                nextPlannedData[entry.data] = entry.chorzy || [];
-            }
-        });
-
-        return { nextHistoriaData, nextPlannedData };
     }
 
     function showMessage(message, type = 'success') {
@@ -808,10 +681,12 @@
             const swietoName = getSwietoName(date) || 'Niedziela';
             
             // Sprawdź czy są odwiedzeni chorzy dla tej daty
+            const hasSavedVisitReport = Object.prototype.hasOwnProperty.call(historiaData, dateStr);
             const visitedChorzy = historiaData[dateStr] || [];
             const hasVisited = visitedChorzy.length > 0;
-            const buttonText = hasVisited ? 'Odwiedzone' : 'Zaplanowane';
-            const buttonClass = hasVisited ? 'oc-btn oc-btn-small oc-btn-success' : 'oc-btn oc-btn-small';
+            const buttonState = getVisitButtonState(visitedChorzy, { completed: hasSavedVisitReport });
+            const buttonText = buttonState.text;
+            const buttonClass = buttonState.className;
 
             const row = document.createElement('tr');
             if (isSwieto) row.classList.add('swieto-row');
@@ -1424,60 +1299,16 @@
 
     // Kolejne dni dyżurowe (niedziele + święta nakazane) po podanej dacie
     function getUpcomingDutyDates(dateStr, count = 5) {
-        const result = [];
-        const start = new Date(dateStr);
-        start.setDate(start.getDate() + 1);
-        const limit = new Date(start);
-        limit.setDate(limit.getDate() + 400);
-
-        for (let d = new Date(start); d <= limit && result.length < count; d.setDate(d.getDate() + 1)) {
-            const dayOfWeek = d.getDay();
-            if (dayOfWeek === 0 || isSwietoNakazane(d)) {
-                result.push(formatDateForAPI(d));
-            }
-        }
-        return result;
-    }
-
-    // Polska odmiana liczebnika (1 / 2-4 / 5+)
-    function ocPlural(n, one, few, many) {
-        if (n === 1) return one;
-        const mod10 = n % 10;
-        const mod100 = n % 100;
-        if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return few;
-        return many;
-    }
-
-    // Opis względny terminu liczony od dzisiaj
-    function formatRelativeLabel(dateStr) {
-        const target = new Date(dateStr);
-        target.setHours(0, 0, 0, 0);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const diffDays = Math.round((target - today) / 86400000);
-
-        if (diffDays <= 3) return 'najbliższy termin';
-        const weeks = Math.round(diffDays / 7);
-        if (weeks === 1) return 'za tydzień';
-        if (weeks < 5) return `za ${weeks} ${ocPlural(weeks, 'tydzień', 'tygodnie', 'tygodni')}`;
-        const months = Math.round(diffDays / 30);
-        if (months <= 1) return 'za miesiąc';
-        return `za ${months} ${ocPlural(months, 'miesiąc', 'miesiące', 'miesięcy')}`;
+        return planningGetUpcomingDutyDates(dateStr, count, isSwietoNakazane);
     }
 
     // Czytelna etykieta opcji dla listy "Następna wizyta"
     function formatNextVisitOption(dateStr) {
-        if (isOccasionalVisit(dateStr)) {
-            return 'Okazjonalne odwiedziny (dodawane ręcznie)';
-        }
         const date = new Date(dateStr);
-        const weekday = date.toLocaleDateString('pl-PL', { weekday: 'long' });
-        const weekdayCap = weekday.charAt(0).toUpperCase() + weekday.slice(1);
-        const dateFmt = formatDate(date);
-        const isSwieto = isSwietoNakazane(date);
-        const rel = formatRelativeLabel(dateStr);
-        const swietoPrefix = isSwieto ? 'święto — ' : '';
-        return `${weekdayCap}, ${dateFmt} (${swietoPrefix}${rel})`;
+        return planningFormatNextVisitOption(dateStr, {
+            isHoliday: isSwietoNakazane(date),
+            nowDate: new Date(),
+        });
     }
 
     // ==================== ADWENT ====================
@@ -1690,36 +1521,133 @@
     function buildVisitModalDataset(dateStr) {
         const upcoming = getUpcomingDutyDates(dateStr, 5);
         const aktywni = chorzy.filter(c => c.status === 'TAK' && normalizeName(c.imieNazwisko));
-        let doPokazania = getBasePatientsForDate(aktywni, dateStr);
-
-        const visitedChorzy = historiaData[dateStr] || [];
+        const visitedChorzy = historiaData[dateStr];
         const plannedChorzy = plannedData[dateStr] || [];
-        const chorzyByName = buildPatientIndexByName(chorzy);
-
-        mergePatientNamesIntoList(doPokazania, visitedChorzy, chorzyByName);
-        mergePatientNamesIntoList(doPokazania, plannedChorzy, chorzyByName);
-
-        if (doPokazania.length === 0 && visitedChorzy.length === 0) {
-            doPokazania = rebuildPastPlannedPatients(aktywni, dateStr);
-        }
 
         return {
             upcoming,
             aktywni,
-            visitedChorzy,
-            doPokazania: sortPatientsByName(doPokazania),
+            visitedChorzy: visitedChorzy || [],
+            hasSavedVisitReport: Array.isArray(visitedChorzy),
+            doPokazania: assembleVisitPatientList({
+                aktywni,
+                dateStr,
+                visitedNames: visitedChorzy || [],
+                plannedNames: plannedChorzy,
+                patientByName: buildPatientIndexByName(chorzy),
+                getUpcomingDutyDatesFn: getUpcomingDutyDates,
+            }),
         };
     }
 
-    function buildVisitCardMarkup(name, isVisited, defaultDate, optionsHtml, selectId) {
+    function syncVisitModalEmptyState(listEl) {
+        const hintEl = document.querySelector('#oc-modalRaport .oc-raport-hint');
+        const hasCards = !!listEl.querySelector('.oc-raport-card');
+        const canAddOccasional = !!listEl.querySelector('.oc-raport-add-occasional');
+        const message = getEmptyVisitListMessage({ hasCards, canAddOccasional });
+        const existing = listEl.querySelector('.oc-raport-empty');
+
+        if (hintEl) {
+            hintEl.hidden = !hasCards;
+            if (hasCards) hintEl.textContent = VISIT_LIST_HINT;
+        }
+
+        if (!message) {
+            if (existing) existing.remove();
+            return;
+        }
+
+        const isPlannedEmpty = canAddOccasional;
+        if (existing) {
+            existing.textContent = message;
+            existing.classList.toggle('oc-raport-empty-planned', isPlannedEmpty);
+            return;
+        }
+
+        const notice = document.createElement('div');
+        notice.className = 'oc-raport-empty' + (isPlannedEmpty ? ' oc-raport-empty-planned' : '');
+        notice.textContent = message;
+        const picker = listEl.querySelector('.oc-raport-add-occasional');
+        if (picker) {
+            picker.after(notice);
+        } else {
+            listEl.appendChild(notice);
+        }
+    }
+
+    function persistCurrentPlannedList(dateStr) {
+        const plannedNow = collectPlannedNamesFromCards();
+        plannedData[dateStr] = plannedNow;
+        return queuePlannedVisitSave(dateStr, plannedNow).then(ok => {
+            if (!ok) {
+                showMessage('Nie udało się zapisać listy planowanych odwiedzin', 'error');
+            }
+            return ok;
+        });
+    }
+
+    function persistAfterRemovingFromVisitList(dateStr, removedName) {
+        const plannedPromise = persistCurrentPlannedList(dateStr);
+        const previousVisited = historiaData[dateStr] || [];
+        const wasVisited = previousVisited.some(n => normalizeName(n) === removedName);
+        if (!wasVisited) {
+            return plannedPromise;
+        }
+
+        const remainingVisited = previousVisited.filter(n => normalizeName(n) !== removedName);
+        historiaData[dateStr] = remainingVisited;
+        return Promise.all([
+            plannedPromise,
+            saveVisitHistory(dateStr, remainingVisited, VISIT_HISTORY_TYPE),
+        ]).then(([planOk, visitOk]) => {
+            if (planOk && visitOk) {
+                updateVisitButtonState(dateStr, remainingVisited);
+                return true;
+            }
+            if (planOk && !visitOk) {
+                showMessage('Nie udało się zaktualizować zapisanego raportu odwiedzin', 'error');
+            }
+            return planOk && visitOk;
+        });
+    }
+
+    function restoreNameToOccasionalSelect(ctx, name) {
+        const { listEl } = ctx;
+        let select = listEl.querySelector('#oc-raportOccasionalSelect');
+        if (!select) {
+            renderOccasionalAddPicker(ctx);
+            return;
+        }
+        if (Array.from(select.options).some(opt => opt.value === name)) {
+            return;
+        }
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        const rest = Array.from(select.options).slice(1);
+        const insertBefore = rest.find(opt => compareNames(opt.value, name) > 0);
+        if (insertBefore) {
+            select.insertBefore(option, insertBefore);
+        } else {
+            select.appendChild(option);
+        }
+    }
+
+    function buildVisitCardMarkup(name, isVisited, defaultDate, optionsHtml, selectId, removable) {
         const occasionalSelected = defaultDate === OCCASIONAL_VISIT_MARKER ? 'selected' : '';
+        const removeBtn = removable
+            ? `<button type="button" class="oc-raport-remove" aria-label="Usuń ${name} z listy tego dnia">Usuń</button>`
+            : '';
         return `
             <div class="oc-raport-top">
                 <span class="oc-raport-name"><span class="oc-raport-lp"></span> ${name}</span>
-                <label class="oc-raport-status">
-                    <input type="checkbox" class="oc-raport-odwiedzona" ${isVisited ? 'checked' : ''}>
-                    <span class="oc-raport-status-label">${isVisited ? 'Odwiedzona' : 'Nieobecny'}</span>
-                </label>
+                <div class="oc-raport-top-actions">
+                    <label class="oc-raport-status">
+                        <input type="checkbox" class="oc-raport-odwiedzona" ${isVisited ? 'checked' : ''}>
+                        <span class="oc-raport-status-label">${isVisited ? 'Odwiedzona' : 'Nieobecny'}</span>
+                    </label>
+                    ${removeBtn}
+                </div>
             </div>
             <div class="oc-raport-bottom">
                 <label class="oc-raport-next-label" for="${selectId}">Następna wizyta:</label>
@@ -1731,7 +1659,8 @@
         `;
     }
 
-    function createVisitCardAppender(listEl, upcoming, visitedChorzy, renderedNames) {
+    function createVisitCardAppender(ctx) {
+        const { listEl, upcoming, visitedChorzy, hasSavedVisitReport, renderedNames, dateStr } = ctx;
         const visitedSet = new Set(visitedChorzy.map(name => normalizeName(name)).filter(Boolean));
         let nextSelectIndex = 0;
 
@@ -1748,15 +1677,13 @@
             if (!name || renderedNames.has(name)) return;
             renderedNames.add(name);
 
-            const isVisited = visitedSet.has(name);
-            let defaultDate = '';
-            if (isOccasionalVisit(chory.nastepnaWizyta)) {
-                defaultDate = OCCASIONAL_VISIT_MARKER;
-            } else if (chory.nastepnaWizyta) {
-                defaultDate = chory.nastepnaWizyta;
-            } else if (upcoming.length) {
-                defaultDate = upcoming[0];
-            }
+            const isVisited = hasSavedVisitReport ? visitedSet.has(name) : true;
+            const defaultDate = resolveNextVisitDefault(chory.nastepnaWizyta, upcoming, dateStr);
+            const shiftedSchedule = resolveScheduleAfterRemoval(
+                chory.nastepnaWizyta,
+                dateStr,
+                upcoming[0] || ''
+            );
 
             const optionsForSelect = [...upcoming];
             if (defaultDate && !isOccasionalVisit(defaultDate) && !optionsForSelect.includes(defaultDate)) {
@@ -1771,7 +1698,7 @@
             const card = document.createElement('div');
             card.className = 'oc-raport-card' + (isVisited ? '' : ' nieobecny');
             card.dataset.name = name;
-            card.innerHTML = buildVisitCardMarkup(name, isVisited, defaultDate, optionsHtml, selectId);
+            card.innerHTML = buildVisitCardMarkup(name, isVisited, defaultDate, optionsHtml, selectId, true);
 
             const checkbox = card.querySelector('.oc-raport-odwiedzona');
             const statusLabel = card.querySelector('.oc-raport-status-label');
@@ -1785,6 +1712,28 @@
                 }
             });
 
+            const removeBtn = card.querySelector('.oc-raport-remove');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', async () => {
+                    let confirmMsg = `Usunąć ${name} z listy tego dnia?`;
+                    if (shiftedSchedule && !isOccasionalVisit(shiftedSchedule)) {
+                        confirmMsg += ` Następna wizyta zostanie ustawiona na ${formatDate(shiftedSchedule)}.`;
+                    }
+                    const confirmed = await confirm(confirmMsg);
+                    if (!confirmed) return;
+
+                    renderedNames.delete(name);
+                    card.remove();
+                    renumberRaportCards();
+                    restoreNameToOccasionalSelect(ctx, name);
+                    if (shiftedSchedule) {
+                        await updateChorzySchedules({ [chory.imieNazwisko]: shiftedSchedule });
+                    }
+                    persistAfterRemovingFromVisitList(dateStr, name);
+                    syncVisitModalEmptyState(listEl);
+                });
+            }
+
             const existingCards = Array.from(listEl.querySelectorAll('.oc-raport-card'));
             const insertBefore = existingCards.find(existing => compareNames(existing.dataset.name, name) > 0);
             if (insertBefore) {
@@ -1793,10 +1742,12 @@
                 listEl.appendChild(card);
             }
             renumberRaportCards();
+            syncVisitModalEmptyState(listEl);
         };
     }
 
-    function renderOccasionalAddPicker(listEl, aktywni, renderedNames, appendChoryCard, dateStr) {
+    function renderOccasionalAddPicker(ctx) {
+        const { listEl, aktywni, renderedNames, appendChoryCard, dateStr } = ctx;
         const occasionalToAdd = aktywni
             .filter(c => !renderedNames.has(normalizeName(c.imieNazwisko)))
             .sort((a, b) => compareNames(a.imieNazwisko, b.imieNazwisko));
@@ -1832,18 +1783,11 @@
             if (!chory) return;
 
             appendChoryCard(chory);
-            const selectedOption = occasionalSelect.querySelector(`option[value="${selectedName}"]`);
+            const selectedOption = Array.from(occasionalSelect.options).find(opt => opt.value === selectedName);
             if (selectedOption) selectedOption.remove();
             occasionalSelect.value = '';
 
-            const plannedNow = collectPlannedNamesFromCards();
-            plannedData[dateStr] = plannedNow;
-
-            queuePlannedVisitSave(dateStr, plannedNow).then(ok => {
-                if (!ok) {
-                    showMessage('Nie udało się zapisać listy planowanych odwiedzin', 'error');
-                }
-            });
+            persistCurrentPlannedList(dateStr);
         });
 
         return true;
@@ -1859,16 +1803,22 @@
         if (titleEl) titleEl.textContent = `Raport odwiedzin — ${formatDate(dateStr)}`;
         listEl.innerHTML = '';
 
-        const { upcoming, aktywni, visitedChorzy, doPokazania } = buildVisitModalDataset(dateStr);
-        const renderedNames = new Set();
-        const appendChoryCard = createVisitCardAppender(listEl, upcoming, visitedChorzy, renderedNames);
+        const { upcoming, aktywni, visitedChorzy, hasSavedVisitReport, doPokazania } = buildVisitModalDataset(dateStr);
+        const ctx = {
+            listEl,
+            dateStr,
+            upcoming,
+            aktywni,
+            visitedChorzy,
+            hasSavedVisitReport,
+            renderedNames: new Set(),
+            appendChoryCard: null,
+        };
+        ctx.appendChoryCard = createVisitCardAppender(ctx);
 
-        doPokazania.forEach(chory => appendChoryCard(chory));
-        const hasOccasionalPicker = renderOccasionalAddPicker(listEl, aktywni, renderedNames, appendChoryCard, dateStr);
-
-        if (renderedNames.size === 0 && !hasOccasionalPicker) {
-            listEl.innerHTML = '<div class="oc-raport-empty">Brak aktywnych chorych do wyświetlenia.</div>';
-        }
+        doPokazania.forEach(chory => ctx.appendChoryCard(chory));
+        renderOccasionalAddPicker(ctx);
+        syncVisitModalEmptyState(listEl);
 
         modal.style.display = 'flex';
     }
@@ -2022,43 +1972,21 @@
         });
     }
 
-    function collectVisitDataFromCards(cards) {
-        const selectedChorzy = [];
-        const plannedChorzy = [];
-        const scheduleMap = {};
-
-        cards.forEach(card => {
-            const name = normalizeName(card.dataset.name);
-            if (!name) return;
-
-            plannedChorzy.push(name);
-
-            const checkbox = card.querySelector('.oc-raport-odwiedzona');
-            const select = card.querySelector('.oc-raport-next-select');
-            if (checkbox && checkbox.checked) {
-                selectedChorzy.push(name);
-            }
-            if (select && select.value) {
-                scheduleMap[name] = select.value;
-            }
-        });
-
-        return { selectedChorzy, plannedChorzy, scheduleMap };
-    }
-
     function updateVisitButtonState(dateStr, selectedChorzy) {
-        const button = document.querySelector(`button[data-date="${dateStr}"]`);
+        const button = document.querySelector(`#oc-tabelaKalendarzBody button[data-date="${dateStr}"]`)
+            || document.querySelector(`button[data-date="${dateStr}"]`);
         if (!button) return;
 
-        if (selectedChorzy.length > 0) {
-            button.textContent = 'Odwiedzone';
-            button.className = 'oc-btn oc-btn-small oc-btn-success';
+        const completed = Object.prototype.hasOwnProperty.call(historiaData, dateStr);
+        const state = getVisitButtonState(selectedChorzy, { completed });
+        button.textContent = state.text;
+        button.className = state.className;
+
+        if (state.hasVisited) {
             setupTooltip(button, selectedChorzy);
             return;
         }
 
-        button.textContent = 'Zaplanowane';
-        button.className = 'oc-btn oc-btn-small';
         if (button._tooltipElement) {
             button._tooltipElement.remove();
             button._tooltipElement = null;
@@ -2076,15 +2004,19 @@
         try {
             // 1) Zapisz skład zaplanowanych odwiedzin dla tej daty (niezależnie od statusu odwiedzenia)
             plannedData[dateStr] = plannedChorzy;
-            const planOk = await queuePlannedVisitSave(dateStr, plannedChorzy);
-            if (!planOk) {
-                showMessage('Błąd zapisu listy planowanych odwiedzin', 'error');
-                return;
-            }
+            const persistResult = await persistVisitReport({
+                dateStr,
+                plannedChorzy,
+                selectedChorzy,
+                queuePlannedVisitSave,
+                saveVisitHistoryFn: saveVisitHistory,
+            });
 
-            // 2) Zapisz osoby faktycznie odwiedzone (status raportu)
-            const savedVisit = await saveVisitHistory(dateStr, selectedChorzy, VISIT_HISTORY_TYPE);
-            if (!savedVisit) {
+            if (!persistResult.ok) {
+                if (persistResult.error === 'planned_save_failed') {
+                    showMessage('Błąd zapisu listy planowanych odwiedzin', 'error');
+                    return;
+                }
                 debugError('saveVisit: nieudany zapis historii odwiedzin');
                 showMessage('Błąd zapisu odwiedzin', 'error');
                 return;
