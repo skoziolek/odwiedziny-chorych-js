@@ -47,7 +47,7 @@ Po kliknięciu w dzień dyżuru otwiera się **Raport odwiedzin** — pionowa li
    - **Odwiedzona** — wizyta się odbyła (zapisze się wpis w historii odwiedzin),
    - **Nieobecny** — chory był nieobecny / nie udało się odwiedzić.
 2. Z listy rozwijanej **Następna wizyta** wybierz **termin kolejnej wizyty**. Lista pokazuje najbliższe dyżury (niedziele i święta nakazane) z podpowiedzią, jak daleko są w czasie (np. „za tydzień”). Wybrany termin **przypisuje chorego do tej daty**.
-3. Przy każdej osobie jest **Usuń**. Zdejmuje ją z listy tego dnia. Jeśli miała wizytę zaplanowaną właśnie na ten dzień, następna wizyta ustawi się na najbliższy kolejny dyżur (można to potem zmienić). Osobę dopisaną okazjonalnie Usuń tylko ściąga z tej listy.
+3. Przy każdej osobie jest **Usuń**. Zdejmuje ją z listy tego dnia — bez automatycznego dopisywania do kolejnego dyżuru. Jeśli miała wizytę zaplanowaną właśnie na ten dzień, pole następnej wizyty zostanie wyczyszczone. Osobę dopisaną okazjonalnie Usuń tylko ściąga z tej listy.
 4. W razie potrzeby **dodaj chorego okazjonalnie** na ten termin.
 5. Kliknij **Zapisz raport**, aby zapamiętać zaznaczenia i terminy. **Anuluj** zamyka okno bez zapisu całego raportu (dodanie i usunięcie z listy zapisuje się od razu).
 

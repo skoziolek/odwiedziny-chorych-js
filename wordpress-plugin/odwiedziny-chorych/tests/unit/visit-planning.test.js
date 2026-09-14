@@ -340,22 +340,22 @@ test('resolveNextVisitDefault uses a later saved date or the next duty, never th
     );
 });
 
-test('resolveScheduleAfterRemoval shifts only people scheduled for this report date', () => {
+test('resolveScheduleAfterRemoval clears schedule only for people planned on this report date', () => {
     assert.equal(
-        planning.resolveScheduleAfterRemoval('2026-09-30', '2026-09-30', '2026-10-04'),
-        '2026-10-04'
+        planning.resolveScheduleAfterRemoval('2026-09-30', '2026-09-30'),
+        ''
     );
     assert.equal(
-        planning.resolveScheduleAfterRemoval(planning.OCCASIONAL_VISIT_MARKER, '2026-09-30', '2026-10-04'),
+        planning.resolveScheduleAfterRemoval(planning.OCCASIONAL_VISIT_MARKER, '2026-09-30'),
         null
     );
     assert.equal(
-        planning.resolveScheduleAfterRemoval('2026-10-11', '2026-09-30', '2026-10-04'),
+        planning.resolveScheduleAfterRemoval('2026-10-11', '2026-09-30'),
         null
     );
     assert.equal(
-        planning.resolveScheduleAfterRemoval('2026-09-30', '2026-09-30', ''),
-        planning.OCCASIONAL_VISIT_MARKER
+        planning.resolveScheduleAfterRemoval('', '2026-09-30'),
+        null
     );
 });
 
