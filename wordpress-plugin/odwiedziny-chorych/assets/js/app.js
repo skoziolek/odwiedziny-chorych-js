@@ -1679,10 +1679,9 @@
 
             const isVisited = hasSavedVisitReport ? visitedSet.has(name) : true;
             const defaultDate = resolveNextVisitDefault(chory.nastepnaWizyta, upcoming, dateStr);
-            const shiftedSchedule = resolveScheduleAfterRemoval(
+            const scheduleAfterRemoval = resolveScheduleAfterRemoval(
                 chory.nastepnaWizyta,
-                dateStr,
-                upcoming[0] || ''
+                dateStr
             );
 
             const optionsForSelect = [...upcoming];
@@ -1715,19 +1714,15 @@
             const removeBtn = card.querySelector('.oc-raport-remove');
             if (removeBtn) {
                 removeBtn.addEventListener('click', async () => {
-                    let confirmMsg = `Usunąć ${name} z listy tego dnia?`;
-                    if (shiftedSchedule && !isOccasionalVisit(shiftedSchedule)) {
-                        confirmMsg += ` Następna wizyta zostanie ustawiona na ${formatDate(shiftedSchedule)}.`;
-                    }
-                    const confirmed = await confirm(confirmMsg);
+                    const confirmed = await confirm(`Czy na pewno chcesz usunąć ${name} z listy tego dnia?`);
                     if (!confirmed) return;
 
                     renderedNames.delete(name);
                     card.remove();
                     renumberRaportCards();
                     restoreNameToOccasionalSelect(ctx, name);
-                    if (shiftedSchedule) {
-                        await updateChorzySchedules({ [chory.imieNazwisko]: shiftedSchedule });
+                    if (scheduleAfterRemoval !== null) {
+                        await updateChorzySchedules({ [chory.imieNazwisko]: scheduleAfterRemoval });
                     }
                     persistAfterRemovingFromVisitList(dateStr, name);
                     syncVisitModalEmptyState(listEl);

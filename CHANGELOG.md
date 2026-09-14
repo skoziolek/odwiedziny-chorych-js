@@ -2,6 +2,13 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.20] – 2026-09-14
+
+**Wtyczka WordPress**
+
+- Przycisk **Usuń** w raporcie „Zaplanowane” zdejmuje osobę z listy tego dnia **bez** automatycznego dopisywania do kolejnego dyżuru.
+- Potwierdzenie pyta tylko, czy na pewno usunąć osobę; jeśli była zaplanowana na ten dzień, pole następnej wizyty jest czyszczone.
+
 ## [1.2.19] – 2026-08-27
 
 **Wtyczka WordPress**
