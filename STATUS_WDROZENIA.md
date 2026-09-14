@@ -1,8 +1,8 @@
 # Status wdrożenia — WordPress (parafia)
 
-**Ostatnia weryfikacja:** 2026-08-27  
-**Wersja do wdrożenia:** **1.2.19** (tag Git: **`v1.2.19`**)  
-**Gałąź źródłowa:** `release/v1.2.19` (po merge: `main`)
+**Ostatnia weryfikacja:** 2026-09-14  
+**Wersja do wdrożenia:** **1.2.20** (tag Git: **`v1.2.20`**)  
+**Gałąź źródłowa:** `release/v1.2.20` (po merge: `main`)
 
 ---
 
@@ -14,21 +14,21 @@ Repozytorium zawiera też aplikację Node.js (`js-version/`) i dokumentację. **
 |-------------|------------------------------|
 | **Jeden folder:** `odwiedziny-chorych` | `wordpress-plugin/odwiedziny-chorych/` |
 
-W środku musi być m.in. plik **`odwiedziny-chorych.php`** (nagłówek wtyczki z **Version: 1.2.19**).
+W środku musi być m.in. plik **`odwiedziny-chorych.php`** (nagłówek wtyczki z **Version: 1.2.20**).
 
 **Nie** wgrywaj całego ZIP repozytorium do `wp-content/plugins/` — powstanie zła struktura katalogów.
 
 ### Zalecane: gotowy ZIP z GitHub Release
 
 1. Otwórz listę wydań: https://github.com/skoziolek/odwiedziny-chorych-js/releases  
-2. Przy **v1.2.19** pobierz załącznik **`odwiedziny-chorych-v1.2.19.zip`** (to jest sama wtyczka — nie wybieraj „Source code”, jeśli chcesz tylko paczkę do WordPressa).  
+2. Przy **v1.2.20** pobierz załącznik **`odwiedziny-chorych-v1.2.20.zip`** (to jest sama wtyczka — nie wybieraj „Source code”, jeśli chcesz tylko paczkę do WordPressa).  
 3. W WordPress: **Wtyczki → Dodaj nową → Wyślij wtyczkę na serwer** — wgraj ten ZIP.
 
-**Jeśli przy v1.2.19 nie ma jeszcze załącznika:** osoba z uprawnieniami do repozytorium może go wygenerować: [Actions → Release WordPress plugin → Run workflow](https://github.com/skoziolek/odwiedziny-chorych-js/actions/workflows/release-wordpress.yml) (po wmergowaniu zmian na `main`).
+**Jeśli przy v1.2.20 nie ma jeszcze załącznika:** osoba z uprawnieniami do repozytorium może go wygenerować: [Actions → Release WordPress plugin → Run workflow](https://github.com/skoziolek/odwiedziny-chorych-js/actions/workflows/release-wordpress.yml) (po wmergowaniu zmian na `main`).
 
 ### Alternatywa: pobranie z tagu (ręczne wycinanie folderu)
 
-1. Strona tagu: https://github.com/skoziolek/odwiedziny-chorych-js/releases/tag/v1.2.19 (lub zakładka **Tags** przy **`v1.2.19`**).
+1. Strona tagu: https://github.com/skoziolek/odwiedziny-chorych-js/releases/tag/v1.2.20 (lub zakładka **Tags** przy **`v1.2.20`**).
 
 2. Pobierz archiwum kodu (np. **Source code (zip)**), rozpakuj.
 
@@ -50,9 +50,9 @@ Szczegółowa mini-instrukcja jest też w folderze wtyczki:
 
 ## Instrukcja wdrożenia (FTP / panel hostingu)
 
-1. Przygotuj folder `odwiedziny-chorych` jak wyżej (z tagu **v1.2.19**).  
+1. Przygotuj folder `odwiedziny-chorych` jak wyżej (z tagu **v1.2.20**).  
 2. Wgraj do `wp-content/plugins/` (nadpisz pliki przy aktualizacji).  
-3. W panelu WordPress: **Wtyczki** — upewnij się, że widać wersję **1.2.19**, w razie potrzeby włącz wtyczkę ponownie.  
+3. W panelu WordPress: **Wtyczki** — upewnij się, że widać wersję **1.2.20**, w razie potrzeby włącz wtyczkę ponownie.  
 4. Shortcode na stronie: `[odwiedziny_chorych]`  
 5. SMTP: skonfiguruj wysyłkę e-maili (np. wtyczka WP Mail SMTP).  
 6. Zmień domyślne hasło w ustawieniach wtyczki.
@@ -61,18 +61,18 @@ Szczegółowa mini-instrukcja jest też w folderze wtyczki:
 
 ## Checklist przed wdrożeniem
 
-- [ ] Pobrano kod z tagu **v1.2.19** (albo z gałęzi `main` po merge `release/v1.2.19`).  
+- [ ] Pobrano kod z tagu **v1.2.20** (albo z gałęzi `main` po merge `release/v1.2.20`).  
 - [ ] Na serwer trafił wyłącznie folder **`wordpress-plugin/odwiedziny-chorych`**, nie całe repo.  
 - [ ] Kopia zapasowa bazy i (przy aktualizacji) folderu wtyczki.  
-- [ ] Po wdrożeniu: wersja w panelu WP = **1.2.19**.  
-- [ ] Twarde odświeżenie aplikacji (Ctrl+F5), w rogu: **Wersja 1.2.19**.
+- [ ] Po wdrożeniu: wersja w panelu WP = **1.2.20**.  
+- [ ] Twarde odświeżenie aplikacji (Ctrl+F5), w rogu: **Wersja 1.2.20**.
 
 ---
 
 ## Wersja (źródło prawdy)
 
-- **Nazwa wersji / tag:** `v1.2.19`  
-- **Numer w panelu WordPress:** **1.2.19** (pole Version w `odwiedziny-chorych.php`)
+- **Nazwa wersji / tag:** `v1.2.20`  
+- **Numer w panelu WordPress:** **1.2.20** (pole Version w `odwiedziny-chorych.php`)
 
 ---
 

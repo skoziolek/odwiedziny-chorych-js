@@ -116,10 +116,10 @@
         return (upcomingDates && upcomingDates[0]) || '';
     }
 
-    function resolveScheduleAfterRemoval(scheduledDate, reportDateStr, nextDutyDate) {
+    function resolveScheduleAfterRemoval(scheduledDate, reportDateStr) {
         if (!scheduledDate || isOccasionalVisit(scheduledDate)) return null;
         if (scheduledDate !== reportDateStr) return null;
-        return nextDutyDate || OCCASIONAL_VISIT_MARKER;
+        return '';
     }
 
     function rebuildPastPlannedPatients(aktywni, dateStr, getUpcomingDutyDates) {
