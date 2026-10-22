@@ -113,7 +113,7 @@ class OC_Database {
         $sql_historia = "CREATE TABLE $table_historia (
             id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             data date NOT NULL,
-            typ enum('niedziela','adwent') DEFAULT 'niedziela',
+            typ enum('niedziela','adwent','plan_niedziela') DEFAULT 'niedziela',
             chorzy_ids text DEFAULT '',
             uwagi text DEFAULT '',
             data_zapisu datetime DEFAULT CURRENT_TIMESTAMP,
@@ -176,6 +176,11 @@ class OC_Database {
             update_option('oc_db_schema_version', '1.2.8');
         }
         $schema = get_option('oc_db_schema_version', '');
+        if (version_compare($schema, '1.2.22', '<')) {
+            self::upgrade_to_1_2_22();
+            update_option('oc_db_schema_version', '1.2.22');
+        }
+        $schema = get_option('oc_db_schema_version', '');
         if (version_compare($schema, OC_PLUGIN_VERSION, '<')) {
             update_option('oc_db_schema_version', OC_PLUGIN_VERSION);
         }
@@ -222,6 +227,30 @@ class OC_Database {
         $t_ch = self::get_table_name('chorzy');
         // Termin kolejnej wizyty (przypisanie chorego do daty) — nowy raport odwiedzin
         self::add_column_if_missing($t_ch, 'nastepna_wizyta', 'date NULL DEFAULT NULL');
+    }
+
+    private static function upgrade_to_1_2_22() {
+        global $wpdb;
+        $table = self::get_table_name('historia');
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
+        if (!$exists) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $col = $wpdb->get_row("SHOW COLUMNS FROM `{$table}` LIKE 'typ'", ARRAY_A);
+        $type = strtolower((string) ($col['Type'] ?? ''));
+        if (strpos($type, 'plan_niedziela') === false) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $wpdb->query(
+                "ALTER TABLE `{$table}` MODIFY typ enum('niedziela','adwent','plan_niedziela') NOT NULL DEFAULT 'niedziela'"
+            );
+        }
+
+        // Wpisy odrzucone przez stary ENUM mogły trafić jako pusty typ.
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $wpdb->query("UPDATE `{$table}` SET typ = 'plan_niedziela' WHERE typ = '' OR typ IS NULL");
     }
     
     /**

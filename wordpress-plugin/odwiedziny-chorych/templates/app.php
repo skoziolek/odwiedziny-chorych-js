@@ -216,6 +216,7 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
             <div class="oc-modal-footer">
+                <button type="button" class="oc-btn oc-raport-revert" id="oc-raportPrzywrocBtn" hidden aria-label="Cofnij zapisany raport i przywróć status Zaplanowane">Przywróć jako zaplanowane</button>
                 <button class="oc-btn oc-btn-secondary oc-raport-cancel" aria-label="Anuluj i zamknij okno">Anuluj</button>
                 <button class="oc-btn oc-btn-primary" id="oc-raportZapiszBtn" aria-label="Zapisz raport odwiedzin">Zapisz raport</button>
             </div>

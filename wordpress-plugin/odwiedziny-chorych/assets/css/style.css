@@ -579,9 +579,14 @@ body:has(.oc-container) .site-header:first-of-type {
 .oc-modal-footer {
     display: flex;
     justify-content: flex-end;
+    flex-wrap: wrap;
     gap: 10px;
     padding: 15px 20px;
     border-top: 1px solid #eee;
+}
+
+.oc-modal-footer .oc-raport-revert {
+    margin-right: auto;
 }
 
 .oc-chorzy-list {
@@ -764,11 +769,54 @@ body:has(.oc-container) .site-header:first-of-type {
     .oc-raport-bottom {
         flex-wrap: wrap;
     }
+
     .oc-raport-top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .oc-raport-top-actions {
+        width: 100%;
+        justify-content: flex-start;
         flex-wrap: wrap;
     }
+
+    .oc-raport-remove {
+        background: #f5e9d4;
+        border: 1px solid #bfa76a;
+        border-radius: 6px;
+        padding: 8px 14px;
+        color: #6b4c1b;
+        text-decoration: none;
+        font-size: 0.9rem;
+        line-height: 1.2;
+    }
+
+    .oc-raport-remove:hover,
+    .oc-raport-remove:focus {
+        background: #e6d3b3;
+        color: #4d3200;
+    }
+
     .oc-raport-add-occasional-controls {
-        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .oc-raport-add-occasional-controls .oc-raport-next-select,
+    .oc-raport-add-occasional-controls .oc-btn {
+        width: 100%;
+    }
+
+    .oc-modal-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .oc-modal-footer .oc-raport-revert {
+        margin-right: 0;
+        width: 100%;
     }
 }
 
