@@ -9,9 +9,9 @@
 
 ## Skąd pobrać najnowszą wersję?
 
-1. Otwórz repozytorium na GitHubie i użyj **tagu `v1.2.20`** (to jest nazwa wersji do wdrożenia):  
-   https://github.com/skoziolek/odwiedziny-chorych-js/releases/tag/v1.2.20  
-   (jeśli nie ma jeszcze wpisu „Release”, wejdź w **Tags** i wybierz `v1.2.20`.)
+1. Otwórz repozytorium na GitHubie i użyj **tagu `v1.2.22`** (to jest nazwa wersji do wdrożenia):  
+   https://github.com/skoziolek/odwiedziny-chorych-js/releases/tag/v1.2.22  
+   (jeśli nie ma jeszcze wpisu „Release”, wejdź w **Tags** i wybierz `v1.2.22`.)
 
 2. Pobierz kod (np. **Source code (zip)** przy tagu).
 
@@ -27,6 +27,6 @@
 
 ## Jak sprawdzić, że to właściwa wersja?
 
-- W panelu WordPress przy wtyczce **Odwiedziny Chorych** powinna być widoczna wersja **1.2.20** (zgodna z tagiem **v1.2.20**).
+- W panelu WordPress przy wtyczce **Odwiedziny Chorych** powinna być widoczna wersja **1.2.22** (zgodna z tagiem **v1.2.22**).
 
 Szczegóły i kopie zapasowe: plik `STATUS_WDROZENIA.md` w głównym katalogu repozytorium na GitHubie.

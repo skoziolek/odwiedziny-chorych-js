@@ -62,4 +62,26 @@ test.describe('Visit Modal E2E', () => {
         await expect(page.locator('#oc-modalRaport')).toBeVisible();
         await expect(page.locator(`.oc-raport-card[data-name="${patientName}"]`)).toBeVisible();
     });
+
+    test('reverts saved report back to planned', async ({ page }) => {
+        await ensureLoggedIn(page);
+        const dateStr = await openFirstPlannedModal(page);
+
+        await expect(page.locator('#oc-raportPrzywrocBtn')).toBeHidden();
+        await page.locator('#oc-raportZapiszBtn').click();
+        await expect(page.locator('#oc-modalRaport')).toBeHidden();
+
+        const dateBtn = page.locator(`#oc-tabelaKalendarzBody button[data-date="${dateStr}"]`);
+        await expect(dateBtn).toHaveText('Odwiedzone');
+
+        await dateBtn.click();
+        await expect(page.locator('#oc-modalRaport')).toBeVisible();
+        await expect(page.locator('#oc-raportPrzywrocBtn')).toBeVisible();
+
+        page.once('dialog', dialog => dialog.accept());
+        await page.locator('#oc-raportPrzywrocBtn').click();
+
+        await expect(page.locator('#oc-modalRaport')).toBeHidden();
+        await expect(dateBtn).toHaveText('Zaplanowane');
+    });
 });

@@ -272,34 +272,129 @@ test('persistVisitReport returns visit error when visit save fails', async () =>
     assert.deepEqual(result, { ok: false, error: 'visit_save_failed' });
 });
 
+test('buildDeleteVisitHistoryPayload returns delete action for visit type', () => {
+    const payload = planning.buildDeleteVisitHistoryPayload('2026-08-09');
+    assert.deepEqual(payload, {
+        action: 'usun_odwiedziny',
+        data: '2026-08-09',
+        typ: planning.VISIT_HISTORY_TYPE,
+    });
+});
+
+test('resolveScheduleAfterRevertingVisit restores this date except occasional visits', () => {
+    assert.equal(
+        planning.resolveScheduleAfterRevertingVisit('2026-08-16', '2026-08-09'),
+        '2026-08-09'
+    );
+    assert.equal(
+        planning.resolveScheduleAfterRevertingVisit('2026-08-09', '2026-08-09'),
+        null
+    );
+    assert.equal(
+        planning.resolveScheduleAfterRevertingVisit(planning.OCCASIONAL_VISIT_MARKER, '2026-08-09'),
+        null
+    );
+    assert.equal(
+        planning.resolveScheduleAfterRevertingVisit('', '2026-08-09'),
+        null
+    );
+});
+
+test('buildScheduleMapAfterRevertingVisit restores only regular patients on the list', () => {
+    const patients = [
+        { imieNazwisko: 'Adam', nastepnaWizyta: '2026-08-16' },
+        { imieNazwisko: 'Maria', nastepnaWizyta: planning.OCCASIONAL_VISIT_MARKER },
+        { imieNazwisko: 'Ewa', nastepnaWizyta: '2026-08-09' },
+        { imieNazwisko: 'Poza listą', nastepnaWizyta: '2026-08-23' },
+    ];
+
+    assert.deepEqual(
+        planning.buildScheduleMapAfterRevertingVisit(patients, ['Adam', 'Maria', 'Ewa'], '2026-08-09'),
+        { Adam: '2026-08-09' }
+    );
+});
+
+test('revertVisitReportToPlanned keeps planned list and deletes visit history', async () => {
+    const calls = [];
+    const result = await planning.revertVisitReportToPlanned({
+        dateStr: '2026-08-09',
+        plannedChorzy: ['Adam', 'Maria'],
+        queuePlannedVisitSave: async (dateStr, chorzy) => {
+            calls.push(['plan', dateStr, chorzy]);
+            return true;
+        },
+        deleteVisitHistoryFn: async (dateStr, typ) => {
+            calls.push(['delete', dateStr, typ]);
+            return true;
+        },
+    });
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(calls, [
+        ['plan', '2026-08-09', ['Adam', 'Maria']],
+        ['delete', '2026-08-09', planning.VISIT_HISTORY_TYPE],
+    ]);
+});
+
+test('revertVisitReportToPlanned stops when planned save fails', async () => {
+    const calls = [];
+    const result = await planning.revertVisitReportToPlanned({
+        dateStr: '2026-08-09',
+        plannedChorzy: ['Adam'],
+        queuePlannedVisitSave: async () => {
+            calls.push('plan');
+            return false;
+        },
+        deleteVisitHistoryFn: async () => {
+            calls.push('delete');
+            return true;
+        },
+    });
+
+    assert.deepEqual(result, { ok: false, error: 'planned_save_failed' });
+    assert.deepEqual(calls, ['plan']);
+});
+
+test('getVisitButtonState returns Zaplanowane after completed flag is cleared', () => {
+    const completed = planning.getVisitButtonState(['Adam'], { completed: true });
+    assert.equal(completed.text, 'Odwiedzone');
+
+    const reverted = planning.getVisitButtonState([]);
+    assert.deepEqual(reverted, {
+        text: 'Zaplanowane',
+        className: 'oc-btn oc-btn-small',
+        hasVisited: false,
+    });
+});
+
 test('assembleVisitPatientList keeps later future dates empty unless scheduled or added', () => {
     const patients = [
-        { imieNazwisko: 'Długajczyk Bernadeta', nastepnaWizyta: '2026-08-30' },
-        { imieNazwisko: 'Harupa Daniela', nastepnaWizyta: '2026-08-16' },
-        { imieNazwisko: 'Dąbrowska Helena', nastepnaWizyta: '2026-09-06' },
+        { imieNazwisko: 'Długajczyk Bernadeta', nastepnaWizyta: '2027-08-29' },
+        { imieNazwisko: 'Harupa Daniela', nastepnaWizyta: '2027-08-15' },
+        { imieNazwisko: 'Dąbrowska Helena', nastepnaWizyta: '2027-09-05' },
         { imieNazwisko: 'Okazjonalna', nastepnaWizyta: planning.OCCASIONAL_VISIT_MARKER },
     ];
 
-    const forAug30 = planning.assembleVisitPatientList({
+    const forAug29 = planning.assembleVisitPatientList({
         aktywni: patients,
-        dateStr: '2026-08-30',
+        dateStr: '2027-08-29',
         getUpcomingDutyDatesFn: planning.getUpcomingDutyDates,
     });
-    assert.deepEqual(forAug30.map(p => p.imieNazwisko), ['Długajczyk Bernadeta']);
+    assert.deepEqual(forAug29.map(p => p.imieNazwisko), ['Długajczyk Bernadeta']);
 
-    const forSep6 = planning.assembleVisitPatientList({
+    const forSep5 = planning.assembleVisitPatientList({
         aktywni: patients,
-        dateStr: '2026-09-06',
+        dateStr: '2027-09-05',
         getUpcomingDutyDatesFn: planning.getUpcomingDutyDates,
     });
-    assert.deepEqual(forSep6.map(p => p.imieNazwisko), ['Dąbrowska Helena']);
+    assert.deepEqual(forSep5.map(p => p.imieNazwisko), ['Dąbrowska Helena']);
 
-    const forSep13 = planning.assembleVisitPatientList({
+    const forSep12 = planning.assembleVisitPatientList({
         aktywni: patients,
-        dateStr: '2026-09-13',
+        dateStr: '2027-09-12',
         getUpcomingDutyDatesFn: planning.getUpcomingDutyDates,
     });
-    assert.deepEqual(forSep13.map(p => p.imieNazwisko), []);
+    assert.deepEqual(forSep12.map(p => p.imieNazwisko), []);
 });
 
 test('assembleVisitPatientList keeps occasional and previously planned names on that date', () => {

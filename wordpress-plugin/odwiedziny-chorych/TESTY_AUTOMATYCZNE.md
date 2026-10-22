@@ -22,6 +22,7 @@ Zakres:
 - stan przycisku `Zaplanowane/Odwiedzone` (`getVisitButtonState`)
 - etykiety terminów (`formatRelativeLabel`, `formatNextVisitOption`)
 - kontrakt payloadu API oraz flow zapisu raportu (`buildVisitHistoryPayload`, `persistVisitReport`)
+- cofnięcie zapisanego raportu do statusu zaplanowanego (`buildDeleteVisitHistoryPayload`, `revertVisitReportToPlanned`, `buildScheduleMapAfterRevertingVisit`)
 
 ### 2) Testy E2E (Playwright)
 
@@ -33,6 +34,7 @@ Zakres:
 - otwarcie modala `Zaplanowane`
 - zapis raportu bez błędów UI
 - dodanie chorego okazjonalnie, zamknięcie modala bez zapisu i ponowne otwarcie (sprawdzenie trwałości)
+- cofnięcie zapisanego raportu z **Odwiedzone** z powrotem do **Zaplanowane**
 
 Konfiguracja:
 - `playwright.config.js`

@@ -50,6 +50,7 @@
         assembleVisitPatientList,
         resolveNextVisitDefault,
         resolveScheduleAfterRemoval,
+        buildScheduleMapAfterRevertingVisit,
         splitHistoriaEntriesByType,
         getUpcomingDutyDates: planningGetUpcomingDutyDates,
         createPerKeySaveQueue,
@@ -57,7 +58,9 @@
         getVisitButtonState,
         formatNextVisitOption: planningFormatNextVisitOption,
         buildVisitHistoryPayload,
+        buildDeleteVisitHistoryPayload,
         persistVisitReport,
+        revertVisitReportToPlanned,
         VISIT_LIST_HINT,
         getEmptyVisitListMessage,
     } = visitPlanning;
@@ -112,6 +115,14 @@
         const response = await apiCall('/historia', {
             method: 'POST',
             body: JSON.stringify(buildVisitHistoryPayload(dateStr, chorzyList || [], typ)),
+        });
+        return response.ok;
+    }
+
+    async function deleteVisitHistory(dateStr, typ) {
+        const response = await apiCall('/historia', {
+            method: 'POST',
+            body: JSON.stringify(buildDeleteVisitHistoryPayload(dateStr, typ)),
         });
         return response.ok;
     }
@@ -1814,8 +1825,15 @@
         doPokazania.forEach(chory => ctx.appendChoryCard(chory));
         renderOccasionalAddPicker(ctx);
         syncVisitModalEmptyState(listEl);
+        syncRevertVisitButton(hasSavedVisitReport);
 
         modal.style.display = 'flex';
+    }
+
+    function syncRevertVisitButton(visible) {
+        const btn = document.getElementById('oc-raportPrzywrocBtn');
+        if (!btn) return;
+        btn.hidden = !visible;
     }
 
     function closeVisitModal() {
@@ -2033,6 +2051,48 @@
         }
     }
 
+    async function revertVisitToPlanned() {
+        const modal = document.getElementById('oc-modalRaport');
+        const dateStr = modal ? modal.dataset.date : '';
+        if (!dateStr) return;
+
+        const confirmed = await confirm(
+            'Czy na pewno chcesz cofnąć raport odwiedzin? Lista osób na ten dzień zostanie, status wróci do „Zaplanowane”, a następna wizyta wróci na ten dzień.'
+        );
+        if (!confirmed) return;
+
+        const cards = document.querySelectorAll('#oc-raportListaChorych .oc-raport-card');
+        const { plannedChorzy } = collectVisitDataFromCards(cards);
+        const scheduleMap = buildScheduleMapAfterRevertingVisit(chorzy, plannedChorzy, dateStr);
+
+        try {
+            plannedData[dateStr] = plannedChorzy;
+            const persistResult = await revertVisitReportToPlanned({
+                dateStr,
+                plannedChorzy,
+                queuePlannedVisitSave,
+                deleteVisitHistoryFn: deleteVisitHistory,
+            });
+
+            if (!persistResult.ok) {
+                if (persistResult.error === 'planned_save_failed') {
+                    showMessage('Błąd zapisu listy planowanych odwiedzin', 'error');
+                    return;
+                }
+                showMessage('Nie udało się cofnąć raportu odwiedzin', 'error');
+                return;
+            }
+
+            delete historiaData[dateStr];
+            await updateChorzySchedules(scheduleMap);
+            updateVisitButtonState(dateStr, []);
+            showMessage('Raport cofnięty — status: Zaplanowane');
+            closeVisitModal();
+        } catch (e) {
+            showMessage('Nie udało się cofnąć raportu odwiedzin', 'error');
+        }
+    }
+
     /**
      * Zapisuje termin kolejnej wizyty (nastepnaWizyta) dla wskazanych chorych.
      * Aktualizuje lokalną listę i zapisuje całość przez /chorzy/bulk
@@ -2245,10 +2305,12 @@
         const modalClose = document.querySelector('.oc-raport-close');
         const modalCancel = document.querySelector('.oc-raport-cancel');
         const modalSave = document.getElementById('oc-raportZapiszBtn');
+        const modalRevert = document.getElementById('oc-raportPrzywrocBtn');
 
         if (modalClose) modalClose.addEventListener('click', closeVisitModal);
         if (modalCancel) modalCancel.addEventListener('click', closeVisitModal);
         if (modalSave) modalSave.addEventListener('click', saveVisit);
+        if (modalRevert) modalRevert.addEventListener('click', revertVisitToPlanned);
 
         // Print buttons
         document.getElementById('oc-print-btn')?.addEventListener('click', () => window.print());

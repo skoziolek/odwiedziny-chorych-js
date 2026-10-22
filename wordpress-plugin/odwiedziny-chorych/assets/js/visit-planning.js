@@ -263,6 +263,40 @@
         };
     }
 
+    function buildDeleteVisitHistoryPayload(dateStr, typ = VISIT_HISTORY_TYPE) {
+        return {
+            action: 'usun_odwiedziny',
+            data: dateStr,
+            typ,
+        };
+    }
+
+    /**
+     * Po cofnięciu raportu regularne osoby z listy wracają na ten dzień.
+     * Osób okazjonalnych i bez terminu nie ruszamy.
+     */
+    function resolveScheduleAfterRevertingVisit(scheduledDate, reportDateStr) {
+        if (!scheduledDate || isOccasionalVisit(scheduledDate)) return null;
+        if (scheduledDate === reportDateStr) return null;
+        return reportDateStr;
+    }
+
+    function buildScheduleMapAfterRevertingVisit(patients, namesOnList, reportDateStr) {
+        const scheduleMap = {};
+        const wanted = new Set((namesOnList || []).map(normalizeName).filter(Boolean));
+
+        (patients || []).forEach(patient => {
+            const name = normalizeName(patient.imieNazwisko);
+            if (!name || !wanted.has(name)) return;
+
+            const restored = resolveScheduleAfterRevertingVisit(patient.nastepnaWizyta, reportDateStr);
+            if (restored === null) return;
+            scheduleMap[patient.imieNazwisko] = restored;
+        });
+
+        return scheduleMap;
+    }
+
     async function persistVisitReport({
         dateStr,
         plannedChorzy,
@@ -282,6 +316,31 @@
         const visitOk = await saveVisitHistoryFn(dateStr, selectedChorzy || [], VISIT_HISTORY_TYPE);
         if (!visitOk) {
             return { ok: false, error: 'visit_save_failed' };
+        }
+
+        return { ok: true };
+    }
+
+    async function revertVisitReportToPlanned({
+        dateStr,
+        plannedChorzy,
+        queuePlannedVisitSave,
+        deleteVisitHistoryFn,
+    }) {
+        if (!dateStr) {
+            return { ok: false, error: 'invalid_date' };
+        }
+
+        if (typeof queuePlannedVisitSave === 'function') {
+            const planOk = await queuePlannedVisitSave(dateStr, plannedChorzy || []);
+            if (!planOk) {
+                return { ok: false, error: 'planned_save_failed' };
+            }
+        }
+
+        const deleted = await deleteVisitHistoryFn(dateStr, VISIT_HISTORY_TYPE);
+        if (!deleted) {
+            return { ok: false, error: 'visit_delete_failed' };
         }
 
         return { ok: true };
@@ -363,6 +422,8 @@
         assembleVisitPatientList,
         resolveNextVisitDefault,
         resolveScheduleAfterRemoval,
+        resolveScheduleAfterRevertingVisit,
+        buildScheduleMapAfterRevertingVisit,
         rebuildPastPlannedPatients,
         splitHistoriaEntriesByType,
         getUpcomingDutyDates,
@@ -373,7 +434,9 @@
         formatRelativeLabel,
         formatNextVisitOption,
         buildVisitHistoryPayload,
+        buildDeleteVisitHistoryPayload,
         persistVisitReport,
+        revertVisitReportToPlanned,
         EMPTY_VISIT_LIST_NO_PATIENTS,
         EMPTY_VISIT_LIST_NOT_PLANNED,
         VISIT_LIST_HINT,

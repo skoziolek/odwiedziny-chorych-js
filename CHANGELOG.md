@@ -2,6 +2,17 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.22] – 2026-10-22
+
+Jedna paczka od **1.2.20** (zmiany z 1.2.21 nie miały osobnego tagu).
+
+**Wtyczka WordPress**
+
+- W zapisanym raporcie odwiedzin jest przycisk **Przywróć jako zaplanowane**. Po potwierdzeniu wpis „odwiedzone” znika, lista osób na ten dzień zostaje, a przycisk w kalendarzu wraca do **Zaplanowane**. Następna wizyta wraca na ten dzień (poza odwiedzinami okazjonalnymi).
+- Na telefonie w karcie raportu status **Odwiedzona / Nieobecny** jest pod imieniem i nazwiskiem, a **Usuń** stoi obok jako zwykły przycisk. **Dodaj**, **Przywróć** i **Zapisz raport** mają ten sam beżowy/brązowy wygląd co na komputerze.
+- Naprawiono znikające osoby dopisane okazjonalnie: po odświeżeniu strony lista wraca, bo baza przyjmuje teraz typ `plan_niedziela`.
+- API historii zgłasza błąd, gdy zapis do bazy się nie uda, zamiast udawać sukces.
+
 ## [1.2.20] – 2026-09-14
 
 **Wtyczka WordPress**
