@@ -2728,7 +2728,7 @@
         ])).sort();
 
         if (dates.length === 0) {
-            return '<tr><td colspan="5">Brak dyżurów w kalendarzu dla wybranego zakresu.</td></tr>';
+            return '<tr><td class="oc-raport-empty-cell" colspan="5">Brak dyżurów w kalendarzu dla wybranego zakresu.</td></tr>';
         }
 
         return dates.map(dateStr => {
@@ -2740,11 +2740,11 @@
             const uwagiText = (dane.uwagi || '').trim() || (odwiedziny && odwiedziny.uwagi ? String(odwiedziny.uwagi).trim() : '');
             return `
                 <tr>
-                    <td>${escapeHtml(formatDate(dateStr))}</td>
-                    <td>${escapeHtml(dane.osobaGlowna || '')}</td>
-                    <td>${escapeHtml(dane.pomocnik || '')}</td>
-                    <td>${escapeHtml(uwagiText)}</td>
-                    <td>${escapeHtml(chorzyText)}</td>
+                    <td class="oc-cal-date" data-label="Data">${escapeHtml(formatDate(dateStr))}</td>
+                    <td class="oc-cal-osoba" data-label="Osoba główna">${escapeHtml(dane.osobaGlowna || '')}</td>
+                    <td class="oc-cal-pomocnik" data-label="Pomocnik">${escapeHtml(dane.pomocnik || '')}</td>
+                    <td class="oc-cal-uwagi" data-label="Uwagi">${escapeHtml(uwagiText)}</td>
+                    <td class="oc-rap-chorzy" data-label="Odwiedzeni chorzy">${escapeHtml(chorzyText)}</td>
                 </tr>
             `;
         }).join('');
@@ -2820,9 +2820,9 @@
         const szafarzeText = (stats.szafarze || []).filter(Boolean).join(', ') || 'Brak';
         const monthRows = miesiace.map(row => `
             <tr>
-                <td>${escapeHtml(formatRaportMonthName(row.miesiac))}</td>
-                <td>${Number(row.liczbaOdwiedzin) || 0}</td>
-                <td>${Number(row.odwiedzeniChorzy) || 0}</td>
+                <td class="oc-cal-date" data-label="Miesiąc">${escapeHtml(formatRaportMonthName(row.miesiac))}</td>
+                <td class="oc-rap-stat" data-label="Odwiedziny">${Number(row.liczbaOdwiedzin) || 0}</td>
+                <td class="oc-rap-stat" data-label="Odwiedzeni chorzy">${Number(row.odwiedzeniChorzy) || 0}</td>
             </tr>
         `).join('');
 
@@ -2850,9 +2850,9 @@
                         <tbody>${monthRows || '<tr><td colspan="3">Brak danych.</td></tr>'}</tbody>
                         <tfoot>
                             <tr>
-                                <th scope="row">Cały rok</th>
-                                <td>${visitCount}</td>
-                                <td>${visitedCount}</td>
+                                <th class="oc-cal-date" scope="row" data-label="Zakres">Cały rok</th>
+                                <td class="oc-rap-stat" data-label="Odwiedziny">${visitCount}</td>
+                                <td class="oc-rap-stat" data-label="Odwiedzeni chorzy">${visitedCount}</td>
                             </tr>
                         </tfoot>
                     </table>

@@ -1048,8 +1048,7 @@ body:has(.oc-container) .site-header:first-of-type {
     }
 
     #oc-tabelaChorzy,
-    #oc-tabelaSzafarze,
-    .oc-raport-table {
+    #oc-tabelaSzafarze {
         min-width: 600px;
     }
     
@@ -1060,7 +1059,8 @@ body:has(.oc-container) .site-header:first-of-type {
     }
 
     #oc-kalendarz .oc-table-container,
-    #oc-adwent .oc-table-container {
+    #oc-adwent .oc-table-container,
+    #oc-raporty .oc-table-container {
         overflow-x: hidden;
         overflow-y: visible;
     }
@@ -1209,6 +1209,101 @@ body:has(.oc-container) .site-header:first-of-type {
         border: none !important;
     }
 
+    .oc-raport-table {
+        display: block;
+        min-width: 0 !important;
+        width: 100%;
+        border: none;
+        font-size: 0.95rem;
+    }
+
+    .oc-raport-table thead {
+        display: none;
+    }
+
+    .oc-raport-table tbody,
+    .oc-raport-table tfoot {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .oc-raport-table tfoot {
+        margin-top: 4px;
+    }
+
+    .oc-raport-table tbody tr,
+    .oc-raport-table tfoot tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 14px;
+        margin: 0;
+        border: 1px solid #d4c4a8;
+        border-radius: 10px;
+        background: #fffdf8;
+        box-shadow: 0 1px 4px rgba(109, 92, 61, 0.08);
+    }
+
+    .oc-raport-table tfoot tr {
+        background: #f5f0e8;
+        font-weight: 700;
+    }
+
+    .oc-raport-table tbody td,
+    .oc-raport-table tfoot th,
+    .oc-raport-table tfoot td {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 0 !important;
+        padding: 0;
+        border: none !important;
+        white-space: normal;
+        word-break: break-word;
+        text-align: left;
+        vertical-align: top;
+        background: transparent !important;
+        box-shadow: none !important;
+        position: static !important;
+    }
+
+    .oc-raport-table tbody td::before,
+    .oc-raport-table tfoot td::before,
+    .oc-raport-table tfoot th::before {
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #7a6b50;
+        margin-bottom: 4px;
+        letter-spacing: 0.02em;
+    }
+
+    .oc-raport-table tbody td.oc-cal-date,
+    .oc-raport-table tfoot th.oc-cal-date {
+        grid-column: 1 / -1;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #4a3f29;
+    }
+
+    .oc-raport-table tbody td.oc-cal-date::before,
+    .oc-raport-table tfoot th.oc-cal-date::before {
+        display: none;
+    }
+
+    .oc-raport-table tbody td.oc-cal-uwagi,
+    .oc-raport-table tbody td.oc-rap-chorzy,
+    .oc-raport-table tbody td.oc-raport-empty-cell {
+        grid-column: 1 / -1;
+    }
+
+    .oc-raport-table tbody td.oc-raport-empty-cell::before {
+        display: none;
+    }
+
     /* Dane chorych: „NIEAKTYWNY” / select statusu musi mieć minimalną szerokość */
     #oc-tabelaChorzy th:nth-child(6),
     #oc-tabelaChorzy td:nth-child(6) {
@@ -1273,7 +1368,11 @@ body:has(.oc-container) .site-header:first-of-type {
     #oc-tabelaKalendarz tbody td.oc-cal-osoba,
     #oc-tabelaKalendarz tbody td.oc-cal-pomocnik,
     #oc-tabelaAdwent tbody td.oc-cal-osoba,
-    #oc-tabelaAdwent tbody td.oc-cal-pomocnik {
+    #oc-tabelaAdwent tbody td.oc-cal-pomocnik,
+    .oc-raport-table tbody td.oc-cal-osoba,
+    .oc-raport-table tbody td.oc-cal-pomocnik,
+    .oc-raport-table tbody td.oc-rap-stat,
+    .oc-raport-table tfoot td.oc-rap-stat {
         grid-column: 1 / -1;
     }
     
@@ -1296,8 +1395,7 @@ body:has(.oc-container) .site-header:first-of-type {
     }
     
     #oc-tabelaChorzy,
-    #oc-tabelaSzafarze,
-    .oc-raport-table {
+    #oc-tabelaSzafarze {
         font-size: 0.7rem;
         min-width: 550px;
     }
@@ -1355,7 +1453,8 @@ body:has(.oc-container) .site-header:first-of-type {
 /* Drukowanie */
 @media print {
     #oc-kalendarz .oc-table-container,
-    #oc-adwent .oc-table-container {
+    #oc-adwent .oc-table-container,
+    #oc-raporty .oc-table-container {
         overflow: visible !important;
     }
 
@@ -1418,6 +1517,74 @@ body:has(.oc-container) .site-header:first-of-type {
 
     #oc-tabelaKalendarz tbody td::before,
     #oc-tabelaAdwent tbody td::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .oc-raport-table {
+        display: table !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        border: none;
+        font-size: inherit;
+    }
+
+    .oc-raport-table thead {
+        display: table-header-group !important;
+    }
+
+    .oc-raport-table tbody {
+        display: table-row-group !important;
+    }
+
+    .oc-raport-table tfoot {
+        display: table-footer-group !important;
+        margin-top: 0;
+    }
+
+    .oc-raport-table tbody tr,
+    .oc-raport-table tfoot tr {
+        display: table-row !important;
+        grid-template-columns: none;
+        gap: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        outline: none;
+        background: transparent;
+        font-weight: inherit;
+    }
+
+    .oc-raport-table tbody td,
+    .oc-raport-table tfoot th,
+    .oc-raport-table tfoot td,
+    .oc-raport-table tbody td.oc-cal-date,
+    .oc-raport-table tbody td.oc-cal-osoba,
+    .oc-raport-table tbody td.oc-cal-pomocnik,
+    .oc-raport-table tbody td.oc-cal-uwagi,
+    .oc-raport-table tbody td.oc-rap-chorzy,
+    .oc-raport-table tbody td.oc-rap-stat,
+    .oc-raport-table tfoot th.oc-cal-date,
+    .oc-raport-table tfoot td.oc-rap-stat {
+        display: table-cell !important;
+        grid-column: auto;
+        padding: 6px 4px !important;
+        border: 0.5px solid #000 !important;
+        white-space: normal;
+        background: transparent !important;
+        box-shadow: none !important;
+        position: static !important;
+        min-height: 0;
+        font-size: inherit;
+        font-weight: inherit;
+        color: inherit;
+    }
+
+    .oc-raport-table tbody td::before,
+    .oc-raport-table tfoot td::before,
+    .oc-raport-table tfoot th::before {
         content: none !important;
         display: none !important;
     }

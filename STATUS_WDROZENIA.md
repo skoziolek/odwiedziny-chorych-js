@@ -11,7 +11,7 @@
 - **Kopia zapasowa JSON** — administrator pobiera plik z panelu WordPress albo z Raportów i trzyma go lokalnie (np. pendrive).
 - **Szyfrowanie** adresu i telefonu chorych w bazie.
 - **Pierwsze logowanie** administratora wymaga zmiany hasła.
-- **Telefon** — kalendarz i Adwent w kartach, bez poziomego przesuwania.
+- **Telefon** — kalendarz, Adwent i raporty w kartach, bez poziomego przesuwania.
 - **Adwent** — otwieranie i zamykanie roku; filtr **Moje dyżury**; raporty roczne (CSV).
 - **Cron hostingu** dla przypomnień e-mail oraz „jutro” według strefy WordPressa.
 

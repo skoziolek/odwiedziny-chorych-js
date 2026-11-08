@@ -9,7 +9,7 @@ Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 
 - Kopia zapasowa JSON (chorzy, szafarze, kalendarz, Adwent, historia): administrator pobiera plik z panelu WordPress albo z zakładki Raporty i zapisuje go lokalnie (np. na pendrive). Wgranie kopii nadpisuje dane. Aplikacja nie wysyła pliku do chmury.
 - Adres i telefon chorych są szyfrowane w bazie; w aplikacji i w kopii JSON pozostają czytelne po zalogowaniu.
 - Przy pierwszym logowaniu administrator musi zmienić hasło.
-- Na telefonie kalendarz i Adwent układają się w karty, bez poziomego przesuwania.
+- Na telefonie kalendarz, Adwent i raporty (miesięczny oraz roczny) układają się w karty, bez poziomego przesuwania.
 - Adwent: osobne otwieranie i zamykanie roku.
 - Filtr **Moje dyżury** w kalendarzu.
 - Raporty roczne z eksportem CSV.
