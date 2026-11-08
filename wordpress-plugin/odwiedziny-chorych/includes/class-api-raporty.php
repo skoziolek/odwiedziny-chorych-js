@@ -115,17 +115,18 @@ class OC_API_Raporty {
     }
 
     /**
+     * Liczba wizyt u chorych: każda osoba w każdym zapisanym raporcie osobno.
+     * Ta sama osoba odwiedzona w 4 niedziele liczy się jako 4, nie jako 1.
+     *
      * @param array<int,array<string,mixed>> $historia
-     * @return array<int,true>
+     * @return int
      */
-    private function collect_unique_chory_ids($historia) {
-        $unique = array();
+    private function count_chory_visits($historia) {
+        $count = 0;
         foreach ((array) $historia as $row) {
-            foreach ($this->parse_id_list($row['chorzy_ids'] ?? '') as $id) {
-                $unique[$id] = true;
-            }
+            $count += count($this->parse_id_list($row['chorzy_ids'] ?? ''));
         }
-        return $unique;
+        return $count;
     }
 
     /**
@@ -179,8 +180,8 @@ class OC_API_Raporty {
         $historia_rok = $this->get_visit_historia_between($year_start, $month_end);
 
         $chorzy_map = $this->get_chorzy_name_map();
-        $odwiedzeni_miesiac = $this->collect_unique_chory_ids($historia_miesiac);
-        $odwiedzeni_rok = $this->collect_unique_chory_ids($historia_rok);
+        $odwiedzeni_miesiac = $this->count_chory_visits($historia_miesiac);
+        $odwiedzeni_rok = $this->count_chory_visits($historia_rok);
 
         $szafarze_names = (array) $wpdb->get_col($wpdb->prepare(
             "SELECT DISTINCT s.imie
@@ -244,8 +245,8 @@ class OC_API_Raporty {
         return rest_ensure_response(array(
             'statystyki' => array(
                 'lacznaLiczbaOdwiedzinWMiesiacu' => count($historia_miesiac),
-                'odwiedzeniChorzyWMiesiacu' => count($odwiedzeni_miesiac),
-                'lacznaLiczbaChorychOdPoczatkuRoku' => count($odwiedzeni_rok),
+                'odwiedzeniChorzyWMiesiacu' => $odwiedzeni_miesiac,
+                'lacznaLiczbaChorychOdPoczatkuRoku' => $odwiedzeni_rok,
                 'szafarze' => array_values($szafarze_names),
             ),
             'kalendarz' => $kalendarz,
@@ -356,26 +357,24 @@ class OC_API_Raporty {
         $to = sprintf('%04d-12-31', $rok);
         $historia_rok = $this->get_visit_historia_between($from, $to);
         $chorzy_map = $this->get_chorzy_name_map();
-        $odwiedzeni_rok = $this->collect_unique_chory_ids($historia_rok);
+        $odwiedzeni_rok = $this->count_chory_visits($historia_rok);
 
         $miesiace = array();
         for ($month = 1; $month <= 12; $month++) {
             $prefix = sprintf('%04d-%02d', $rok, $month);
             $odwiedziny_miesiac = 0;
-            $chorzy_miesiac = array();
+            $chorzy_miesiac = 0;
             foreach ($historia_rok as $row) {
                 if (strpos((string) ($row['data'] ?? ''), $prefix) !== 0) {
                     continue;
                 }
                 $odwiedziny_miesiac++;
-                foreach ($this->parse_id_list($row['chorzy_ids'] ?? '') as $id) {
-                    $chorzy_miesiac[$id] = true;
-                }
+                $chorzy_miesiac += count($this->parse_id_list($row['chorzy_ids'] ?? ''));
             }
             $miesiace[] = array(
                 'miesiac' => $prefix,
                 'liczbaOdwiedzin' => $odwiedziny_miesiac,
-                'odwiedzeniChorzy' => count($chorzy_miesiac),
+                'odwiedzeniChorzy' => $chorzy_miesiac,
             );
         }
 
@@ -383,7 +382,7 @@ class OC_API_Raporty {
             'rok' => $rok,
             'statystyki' => array(
                 'lacznaLiczbaOdwiedzinWRoku' => count($historia_rok),
-                'odwiedzeniChorzyWRoku' => count($odwiedzeni_rok),
+                'odwiedzeniChorzyWRoku' => $odwiedzeni_rok,
                 'szafarze' => array_values($this->get_szafarze_names_between($from, $to)),
             ),
             'miesiace' => $miesiace,

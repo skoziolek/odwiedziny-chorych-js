@@ -13,6 +13,7 @@ Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 
 - Adwent: osobne otwieranie i zamykanie roku.
 - Filtr **Moje dyżury** w kalendarzu.
 - Raporty roczne z eksportem CSV.
+- W statystykach raportu każda wizyta u chorego liczy się osobno (ta sama osoba w 4 niedziele = 4, nie 1).
 - Przypomnienia e-mail: adres crona do hostingu oraz „jutro” według strefy czasowej WordPressa.
 - Listy chorych i szafarzy zapisują się tylko przyciskiem **Zapisz** (komunikat „Zapisano”); zapis listy chorych nie kasuje osób, których nie ma w wysłanej paczce.
 - Nowy rok kalendarza startuje rotacją od ostatniego szafarza głównego poprzedniego roku.
