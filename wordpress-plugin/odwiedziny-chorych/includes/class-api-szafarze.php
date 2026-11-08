@@ -16,6 +16,13 @@ class OC_API_Szafarze {
      * Zarejestruj routes
      */
     public function register_routes() {
+        // GET /szafarze/login-list — tylko imię i nazwisko, bez danych kontaktowych.
+        register_rest_route($this->namespace, '/' . $this->rest_base . '/login-list', array(
+            'methods' => WP_REST_Server::READABLE,
+            'callback' => array($this, 'get_login_list'),
+            'permission_callback' => '__return_true',
+        ));
+
         // GET /szafarze - pobierz wszystkich
         register_rest_route($this->namespace, '/' . $this->rest_base, array(
             array(
@@ -44,43 +51,29 @@ class OC_API_Szafarze {
      * Sprawdź uprawnienia
      */
     public function check_permission($request) {
-        $method = $request->get_method();
-        $write = in_array($method, array('POST', 'PUT', 'DELETE', 'PATCH'), true);
-
-        $nonce = $request->get_header('X-WP-Nonce');
-        $nonce_ok = $nonce && wp_verify_nonce($nonce, 'wp_rest');
-
-        if ($nonce_ok && !$write) {
-            return true;
-        }
-
-        $auth_header = $request->get_header('Authorization');
-        if ($auth_header && strpos($auth_header, 'Bearer ') === 0) {
-            $token = substr($auth_header, 7);
-            $session = $this->get_session($token);
-            if (!$session) {
-                return false;
-            }
-            if ($write) {
-                return OC_Auth::is_app_admin_session($session);
-            }
-            return true;
-        }
-
-        return false;
+        return OC_Auth::rest_permission($request, true);
     }
 
     /**
-     * @param string $token
-     * @return object|null
+     * Lista do wyboru na ekranie logowania — bez adresu, maila i telefonu.
      */
-    private function get_session($token) {
+    public function get_login_list($request) {
+        unset($request);
         global $wpdb;
-        $table = OC_Database::get_table_name('sesje');
-        return $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table WHERE token = %s AND data_wygasniecia > NOW()",
-            $token
-        ));
+        $table = OC_Database::get_table_name('szafarze');
+        $results = $wpdb->get_results(
+            "SELECT id, imie, nazwisko FROM $table WHERE aktywny = 1 ORDER BY kolejnosc ASC, id ASC",
+            ARRAY_A
+        );
+        $list = array();
+        foreach ((array) $results as $row) {
+            $list[] = array(
+                'id' => (int) $row['id'],
+                'imie' => $row['imie'],
+                'nazwisko' => $row['nazwisko'],
+            );
+        }
+        return rest_ensure_response($list);
     }
     
     /**

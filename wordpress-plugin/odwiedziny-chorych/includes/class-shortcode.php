@@ -40,6 +40,45 @@ class OC_Shortcode {
             'callback' => array(__CLASS__, 'handle_logout'),
             'permission_callback' => '__return_true',
         ));
+
+        register_rest_route('odwiedziny-chorych/v1', '/auth/change-password', array(
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => array(__CLASS__, 'handle_change_password'),
+            'permission_callback' => array(__CLASS__, 'require_admin_session'),
+        ));
+    }
+
+    /**
+     * @param WP_REST_Request $request
+     * @return bool|WP_Error
+     */
+    public static function require_admin_session($request) {
+        $session = OC_Auth::get_session_from_request($request);
+        if (!$session) {
+            return new WP_Error('oc_unauthorized', 'Wymagane logowanie do aplikacji.', array('status' => 401));
+        }
+        if (!OC_Auth::is_app_admin_session($session)) {
+            return new WP_Error('oc_forbidden', 'Brak uprawnień administratora.', array('status' => 403));
+        }
+        return true;
+    }
+
+    /**
+     * Zmiana hasła administratora aplikacji (wymuszana przy haśle startowym).
+     */
+    public static function handle_change_password($request) {
+        $params = $request->get_json_params();
+        $result = OC_Auth::change_admin_password(
+            $params['newPassword'] ?? '',
+            $params['confirmPassword'] ?? ''
+        );
+        if (is_wp_error($result)) {
+            return $result;
+        }
+        return rest_ensure_response(array(
+            'success' => true,
+            'user' => OC_Auth::admin_user_payload(),
+        ));
     }
     
     /**
@@ -140,12 +179,7 @@ class OC_Shortcode {
         return rest_ensure_response(array(
             'success' => true,
             'token' => $token,
-            'user' => array(
-                'role' => 'admin',
-                'szafarzId' => null,
-                'label' => 'Administrator',
-                'loggedin' => true,
-            ),
+            'user' => OC_Auth::admin_user_payload(),
         ));
     }
     
@@ -283,12 +317,7 @@ class OC_Shortcode {
 
         return rest_ensure_response(array(
             'success' => true,
-            'user' => array(
-                'role' => 'admin',
-                'szafarzId' => null,
-                'label' => 'Administrator',
-                'loggedin' => true,
-            ),
+            'user' => OC_Auth::admin_user_payload(),
         ));
     }
     
