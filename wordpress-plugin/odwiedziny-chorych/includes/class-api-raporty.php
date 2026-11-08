@@ -183,26 +183,6 @@ class OC_API_Raporty {
         $odwiedzeni_miesiac = $this->count_chory_visits($historia_miesiac);
         $odwiedzeni_rok = $this->count_chory_visits($historia_rok);
 
-        $szafarze_names = (array) $wpdb->get_col($wpdb->prepare(
-            "SELECT DISTINCT s.imie
-             FROM (
-                SELECT osoba_glowna_id AS sid
-                FROM $table_kalendarz
-                WHERE data >= %s AND data <= %s AND osoba_glowna_id IS NOT NULL
-                UNION
-                SELECT pomocnik_id AS sid
-                FROM $table_kalendarz
-                WHERE data >= %s AND data <= %s AND pomocnik_id IS NOT NULL
-             ) ids
-             INNER JOIN $table_szafarze s ON s.id = ids.sid
-             WHERE s.imie IS NOT NULL AND s.imie <> ''
-             ORDER BY s.imie ASC",
-            $month_start,
-            $month_end,
-            $month_start,
-            $month_end
-        ));
-
         $kalendarz_entries = (array) $wpdb->get_results($wpdb->prepare(
             "SELECT k.data,
                     og.imie AS osoba_glowna,
@@ -247,7 +227,7 @@ class OC_API_Raporty {
                 'lacznaLiczbaOdwiedzinWMiesiacu' => count($historia_miesiac),
                 'odwiedzeniChorzyWMiesiacu' => $odwiedzeni_miesiac,
                 'lacznaLiczbaChorychOdPoczatkuRoku' => $odwiedzeni_rok,
-                'szafarze' => array_values($szafarze_names),
+                'szafarze' => $this->szafarze_in_duty_order($kalendarz),
             ),
             'kalendarz' => $kalendarz,
             'historia' => $historia,
@@ -255,34 +235,23 @@ class OC_API_Raporty {
     }
     
     /**
-     * @param string $from Y-m-d
-     * @param string $to   Y-m-d
+     * Szafarze w kolejności dyżurów (osoba główna, potem pomocnik). Każdy tylko raz.
+     *
+     * @param array<string,array{osobaGlowna?:string,pomocnik?:string}> $kalendarz
      * @return string[]
      */
-    private function get_szafarze_names_between($from, $to) {
-        global $wpdb;
-        $table_kalendarz = OC_Database::get_table_name('kalendarz');
-        $table_szafarze = OC_Database::get_table_name('szafarze');
-
-        return (array) $wpdb->get_col($wpdb->prepare(
-            "SELECT DISTINCT s.imie
-             FROM (
-                SELECT osoba_glowna_id AS sid
-                FROM $table_kalendarz
-                WHERE data >= %s AND data <= %s AND osoba_glowna_id IS NOT NULL
-                UNION
-                SELECT pomocnik_id AS sid
-                FROM $table_kalendarz
-                WHERE data >= %s AND data <= %s AND pomocnik_id IS NOT NULL
-             ) ids
-             INNER JOIN $table_szafarze s ON s.id = ids.sid
-             WHERE s.imie IS NOT NULL AND s.imie <> ''
-             ORDER BY s.imie ASC",
-            $from,
-            $to,
-            $from,
-            $to
-        ));
+    private function szafarze_in_duty_order($kalendarz) {
+        $names = array();
+        foreach ((array) $kalendarz as $dane) {
+            foreach (array('osobaGlowna', 'pomocnik') as $key) {
+                $name = trim((string) ($dane[$key] ?? ''));
+                if ($name === '' || isset($names[$name])) {
+                    continue;
+                }
+                $names[$name] = true;
+            }
+        }
+        return array_keys($names);
     }
 
     /**
@@ -358,6 +327,7 @@ class OC_API_Raporty {
         $historia_rok = $this->get_visit_historia_between($from, $to);
         $chorzy_map = $this->get_chorzy_name_map();
         $odwiedzeni_rok = $this->count_chory_visits($historia_rok);
+        $kalendarz = $this->get_kalendarz_map_between($from, $to);
 
         $miesiace = array();
         for ($month = 1; $month <= 12; $month++) {
@@ -383,10 +353,10 @@ class OC_API_Raporty {
             'statystyki' => array(
                 'lacznaLiczbaOdwiedzinWRoku' => count($historia_rok),
                 'odwiedzeniChorzyWRoku' => $odwiedzeni_rok,
-                'szafarze' => array_values($this->get_szafarze_names_between($from, $to)),
+                'szafarze' => $this->szafarze_in_duty_order($kalendarz),
             ),
             'miesiace' => $miesiace,
-            'kalendarz' => $this->get_kalendarz_map_between($from, $to),
+            'kalendarz' => $kalendarz,
             'historia' => $this->format_historia_rows($historia_rok, $chorzy_map),
         ));
     }
