@@ -173,14 +173,15 @@
 
 ### 9. Szyfrowanie danych wrażliwych (RODO) ✅
 
-**Status:** Zaimplementowane (opcjonalne)
+**Status:** Zaimplementowane dla adresu i telefonu chorych
 
 **Szczegóły:**
-- Metody `encrypt()` i `decrypt()` w klasie Database
-- Używa AES-256-CBC
-- Przechowywanie klucza szyfrowania w opcjach WordPress
+- Przy zapisie adres i telefon chorego są szyfrowane AES-256-CBC
+- Przy odczycie (aplikacja, mail, kopia JSON) wracają jawnym tekstem dla zalogowanego
+- Stare rekordy są przepisywane raz przy aktualizacji wtyczki
+- Klucz jest w opcjach WordPressa (`oc_encryption_key`); kopia bazy z kluczem nadal pozwala odczytać dane
 
-**Ocena:** ✅ Dostępne (do użycia gdy potrzebne)
+**Ocena:** ✅ Adres i telefon chorych nie leżą w tabeli jawnym tekstem
 
 ---
 

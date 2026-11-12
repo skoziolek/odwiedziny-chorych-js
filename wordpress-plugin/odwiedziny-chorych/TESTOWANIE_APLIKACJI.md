@@ -105,6 +105,15 @@
   - Zapisz
   - ✅ Zmiany powinny być zapisane
 
+- [ ] **Przywróć jako zaplanowane**
+  - Otwórz zapisany raport (przycisk "Odwiedzone")
+  - ✅ W stopce powinien być przycisk "Przywróć jako zaplanowane"
+  - Kliknij go i potwierdź
+  - ✅ Modal powinien się zamknąć
+  - ✅ Przycisk w kalendarzu wraca do "Zaplanowane"
+  - ✅ Lista osób na ten dzień zostaje
+  - ✅ Następna wizyta osób z listy wraca na ten dzień (poza odwiedzinami okazjonalnymi)
+
 ### 2.4 Przyciski akcji
 - [ ] **Drukuj**
   - Kliknij "Drukuj"

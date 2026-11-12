@@ -61,25 +61,7 @@ class OC_API_Chorzy {
      * Sprawdź uprawnienia
      */
     public function check_permission($request) {
-        $method = $request->get_method();
-        $write = in_array($method, array('POST', 'PUT', 'DELETE', 'PATCH'), true);
-
-        // Nonce z frontendu dopuszcza tylko odczyt.
-        $nonce = $request->get_header('X-WP-Nonce');
-        $nonce_ok = $nonce && wp_verify_nonce($nonce, 'wp_rest');
-        if ($nonce_ok && !$write) {
-            return true;
-        }
-
-        // Zapis zawsze wymaga sesji Bearer.
-        // Sprawdź token sesji
-        $auth_header = $request->get_header('Authorization');
-        if ($auth_header && strpos($auth_header, 'Bearer ') === 0) {
-            $token = substr($auth_header, 7);
-            return $this->verify_token($token);
-        }
-        
-        return false;
+        return OC_Auth::rest_permission($request);
     }
     
     /**
@@ -120,8 +102,8 @@ class OC_API_Chorzy {
         return array(
             'id' => (int) $row['id'],
             'imieNazwisko' => $row['imie_nazwisko'],
-            'adres' => $row['adres'],
-            'telefon' => $row['telefon'],
+            'adres' => OC_Database::decrypt($row['adres'] ?? ''),
+            'telefon' => OC_Database::decrypt($row['telefon'] ?? ''),
             'uwagi' => $row['uwagi'],
             'status' => $row['status'],
             'nastepnaWizyta' => $row['nastepna_wizyta'] ?? null,
@@ -201,10 +183,16 @@ class OC_API_Chorzy {
         $data = $request->get_json_params();
 
         $uwagi = sanitize_textarea_field($data['uwagi'] ?? '');
+        try {
+            $adres = OC_Database::encrypt(sanitize_text_field($data['adres'] ?? ''));
+            $telefon = OC_Database::encrypt(sanitize_text_field($data['telefon'] ?? ''));
+        } catch (Exception $e) {
+            return new WP_Error('encrypt_error', $e->getMessage(), array('status' => 500));
+        }
         $insert = array(
             'imie_nazwisko' => sanitize_text_field($data['imieNazwisko'] ?? ''),
-            'adres' => sanitize_text_field($data['adres'] ?? ''),
-            'telefon' => sanitize_text_field($data['telefon'] ?? ''),
+            'adres' => $adres,
+            'telefon' => $telefon,
             'uwagi' => $uwagi,
             'status' => in_array($data['status'] ?? 'TAK', array('TAK', 'NIE')) ? $data['status'] : 'TAK',
             'nastepna_wizyta' => $this->sanitize_date($data['nastepnaWizyta'] ?? ''),
@@ -241,11 +229,15 @@ class OC_API_Chorzy {
         if (isset($data['imieNazwisko'])) {
             $update_data['imie_nazwisko'] = sanitize_text_field($data['imieNazwisko']);
         }
-        if (isset($data['adres'])) {
-            $update_data['adres'] = sanitize_text_field($data['adres']);
-        }
-        if (isset($data['telefon'])) {
-            $update_data['telefon'] = sanitize_text_field($data['telefon']);
+        try {
+            if (isset($data['adres'])) {
+                $update_data['adres'] = OC_Database::encrypt(sanitize_text_field($data['adres']));
+            }
+            if (isset($data['telefon'])) {
+                $update_data['telefon'] = OC_Database::encrypt(sanitize_text_field($data['telefon']));
+            }
+        } catch (Exception $e) {
+            return new WP_Error('encrypt_error', $e->getMessage(), array('status' => 500));
         }
         if (isset($data['uwagi'])) {
             $update_data['uwagi'] = sanitize_textarea_field($data['uwagi']);
@@ -277,9 +269,9 @@ class OC_API_Chorzy {
         global $wpdb;
         $table = OC_Database::get_table_name('chorzy');
         
-        $id = $request->get_param('id');
+        $id = absint($request->get_param('id'));
         
-        $result = $wpdb->delete($table, array('id' => $id));
+        $result = $wpdb->delete($table, array('id' => $id), array('%d'));
         
         if ($result === false) {
             return new WP_Error('db_error', 'Błąd usuwania', array('status' => 500));
@@ -304,23 +296,13 @@ class OC_API_Chorzy {
         $wpdb->query('START TRANSACTION');
         
         try {
-            $existing_ids = array_map('intval', (array) $wpdb->get_col("SELECT id FROM $table"));
-            $payload_ids = array();
-            foreach ($data as $chory) {
-                if (!empty($chory['id'])) {
-                    $payload_ids[] = (int) $chory['id'];
-                }
-            }
-            $to_delete = array_diff($existing_ids, $payload_ids);
-            foreach ($to_delete as $del_id) {
-                $wpdb->delete($table, array('id' => $del_id));
-            }
-
             foreach ($data as $chory) {
                 $id = !empty($chory['id']) ? (int) $chory['id'] : 0;
                 $imie = sanitize_text_field($chory['imieNazwisko'] ?? '');
-                $adres = sanitize_text_field($chory['adres'] ?? '');
-                $telefon = sanitize_text_field($chory['telefon'] ?? '');
+                $adres_plain = sanitize_text_field($chory['adres'] ?? '');
+                $telefon_plain = sanitize_text_field($chory['telefon'] ?? '');
+                $adres = OC_Database::encrypt($adres_plain);
+                $telefon = OC_Database::encrypt($telefon_plain);
                 $uwagi = sanitize_textarea_field($chory['uwagi'] ?? '');
                 $status = in_array($chory['status'] ?? 'TAK', array('TAK', 'NIE')) ? $chory['status'] : 'TAK';
                 $nastepna_wizyta = $this->sanitize_date($chory['nastepnaWizyta'] ?? '');
@@ -333,6 +315,10 @@ class OC_API_Chorzy {
                     } else {
                         $id = 0;
                     }
+                }
+
+                if ($id <= 0 && $imie === '' && $adres_plain === '' && $telefon_plain === '' && $uwagi === '') {
+                    continue;
                 }
 
                 if ($id > 0) {

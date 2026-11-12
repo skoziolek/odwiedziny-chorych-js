@@ -44,24 +44,7 @@ class OC_API_Historia {
      * Sprawdź uprawnienia
      */
     public function check_permission($request) {
-        $method = $request->get_method();
-        $write = in_array($method, array('POST', 'PUT', 'DELETE', 'PATCH'), true);
-
-        // Nonce z frontendu dopuszcza tylko odczyt.
-        $nonce = $request->get_header('X-WP-Nonce');
-        $nonce_ok = $nonce && wp_verify_nonce($nonce, 'wp_rest');
-        if ($nonce_ok && !$write) {
-            return true;
-        }
-        
-        // Zapis zawsze wymaga sesji Bearer.
-        $auth_header = $request->get_header('Authorization');
-        if ($auth_header && strpos($auth_header, 'Bearer ') === 0) {
-            $token = substr($auth_header, 7);
-            return $this->verify_token($token);
-        }
-        
-        return false;
+        return OC_Auth::rest_permission($request);
     }
     
     /**
@@ -197,22 +180,56 @@ class OC_API_Historia {
             ));
             
             if ($existing) {
-                // Aktualizuj
-                $wpdb->update($table_historia, array(
+                $updated = $wpdb->update($table_historia, array(
                     'chorzy_ids' => implode(',', $chorzy_ids),
                     'uwagi' => $uwagi,
                 ), array('id' => $existing->id));
+                if ($updated === false) {
+                    return new WP_Error('db_error', 'Nie udało się zapisać historii odwiedzin', array('status' => 500));
+                }
             } else {
-                // Dodaj nowy
-                $wpdb->insert($table_historia, array(
+                $inserted = $wpdb->insert($table_historia, array(
                     'data' => $data,
                     'typ' => $typ,
                     'chorzy_ids' => implode(',', $chorzy_ids),
                     'uwagi' => $uwagi,
                 ));
+                if (!$inserted) {
+                    return new WP_Error(
+                        'db_error',
+                        'Nie udało się zapisać historii odwiedzin',
+                        array('status' => 500)
+                    );
+                }
             }
             
             return rest_ensure_response(array('success' => true));
+        }
+
+        if ($action === 'usun_odwiedziny') {
+            $data = sanitize_text_field($params['data'] ?? '');
+            if ($data === '') {
+                return new WP_Error('invalid_date', 'Brak daty', array('status' => 400));
+            }
+
+            // Cofa tylko zapisany raport wizyty, bez ruszania listy zaplanowanych.
+            $deleted = $wpdb->delete(
+                $table_historia,
+                array(
+                    'data' => $data,
+                    'typ' => 'niedziela',
+                ),
+                array('%s', '%s')
+            );
+
+            if ($deleted === false) {
+                return new WP_Error('db_error', 'Nie udało się usunąć raportu odwiedzin', array('status' => 500));
+            }
+
+            return rest_ensure_response(array(
+                'success' => true,
+                'deleted' => (int) $deleted,
+            ));
         }
         
         return new WP_Error('invalid_action', 'Nieznana akcja', array('status' => 400));

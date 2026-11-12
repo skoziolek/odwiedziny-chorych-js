@@ -50,6 +50,7 @@ Po kliknięciu w dzień dyżuru otwiera się **Raport odwiedzin** — pionowa li
 3. Przy każdej osobie jest **Usuń**. Zdejmuje ją z listy tego dnia — bez automatycznego dopisywania do kolejnego dyżuru. Jeśli miała wizytę zaplanowaną właśnie na ten dzień, pole następnej wizyty zostanie wyczyszczone. Osobę dopisaną okazjonalnie Usuń tylko ściąga z tej listy.
 4. W razie potrzeby **dodaj chorego okazjonalnie** na ten termin.
 5. Kliknij **Zapisz raport**, aby zapamiętać zaznaczenia i terminy. **Anuluj** zamyka okno bez zapisu całego raportu (dodanie i usunięcie z listy zapisuje się od razu).
+6. Jeśli raport zapisano przez pomyłkę, kliknij **Przywróć jako zaplanowane**. Po potwierdzeniu przycisk w kalendarzu wraca do **Zaplanowane**, lista osób zostaje, a następna wizyta wraca na ten dzień. Przycisk widać tylko przy już zapisanym raporcie.
 
 > Wskazówka: na liście w raporcie pojawiają się chorzy, którzy są w danym dniu **do odwiedzenia** — mają na ten dzień zaplanowaną wizytę albo zostali dopisani ręcznie jako odwiedziny okazjonalne. Jeśli nikt jeszcze nie jest przypisany, okno wyjaśnia, że lista jest pusta i jak dodać osoby.
 

@@ -18,3 +18,7 @@ OC_Database::drop_tables();
 delete_option('oc_db_version');
 delete_option('oc_admin_password_hash');
 delete_option('oc_encryption_key');
+delete_option('oc_cron_token');
+delete_option('oc_cron_last_run');
+delete_option('oc_email_reminder_scheduled_hour');
+delete_option('oc_email_reminder_hour');

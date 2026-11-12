@@ -187,6 +187,10 @@ class OC_Swieta {
         $easter_monday->modify('+1 day');
         $swieta[$easter_monday->format('Y-m-d')] = 'Poniedziałek Wielkanocny';
         
+        $ascension = clone $easter;
+        $ascension->modify('+42 days');
+        $swieta[$ascension->format('Y-m-d')] = 'Uroczystość Wniebowstąpienia Pańskiego';
+
         $pentecost = clone $easter;
         $pentecost->modify('+49 days');
         $swieta[$pentecost->format('Y-m-d')] = 'Uroczystość Zesłania Ducha Świętego';
@@ -202,19 +206,42 @@ class OC_Swieta {
      * Generuj niedziele liturgiczne dla roku
      */
     public static function generate_niedziele_for_year($year) {
-        $niedziele = array();
-        
+        $niedziele = self::generate_swieta_for_year($year);
         $easter = self::calculate_easter($year);
-        
-        // Pierwsza niedziela Adwentu (4 niedziele przed Bożym Narodzeniem)
-        $christmas = new DateTime("$year-12-25");
-        $advent_start = clone $christmas;
-        $advent_start->modify('last sunday');
-        $advent_start->modify('-3 weeks');
-        
-        // Generuj niedziele...
-        // (Uproszczona wersja - w pełnej implementacji trzeba uwzględnić cały rok liturgiczny)
-        
+
+        $advent1 = new DateTime("$year-11-27");
+        while ((int) $advent1->format('w') !== 0) {
+            $advent1->modify('+1 day');
+        }
+
+        $cursor = new DateTime("$year-01-01");
+        while ((int) $cursor->format('w') !== 0) {
+            $cursor->modify('+1 day');
+        }
+
+        while ((int) $cursor->format('Y') === (int) $year) {
+            $key = $cursor->format('Y-m-d');
+            if (!isset($niedziele[$key])) {
+                if ($cursor >= $advent1) {
+                    $week = (int) floor(($cursor->getTimestamp() - $advent1->getTimestamp()) / (7 * 86400)) + 1;
+                    $labels = array(
+                        1 => 'I Niedziela Adwentu',
+                        2 => 'II Niedziela Adwentu',
+                        3 => 'III Niedziela Adwentu',
+                        4 => 'IV Niedziela Adwentu',
+                    );
+                    $niedziele[$key] = $labels[$week] ?? 'Niedziela Adwentu';
+                } elseif ($cursor < $easter && $cursor >= (clone $easter)->modify('-42 days')) {
+                    $niedziele[$key] = 'Niedziela Wielkiego Postu';
+                } elseif ($cursor > $easter && $cursor < (clone $easter)->modify('+49 days')) {
+                    $niedziele[$key] = 'Niedziela Wielkanocna';
+                } else {
+                    $niedziele[$key] = 'Niedziela';
+                }
+            }
+            $cursor->modify('+7 days');
+        }
+
         return $niedziele;
     }
     

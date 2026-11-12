@@ -40,6 +40,27 @@ if (!defined('ABSPATH')) {
         </div>
     </div>
 
+    <div id="oc-changePasswordScreen" class="oc-login-screen" style="display: none;">
+        <div class="oc-login-container">
+            <div class="oc-login-header">
+                <h1>Zmiana hasła startowego</h1>
+                <p>Hasło administratora z dokumentacji trzeba zmienić, zanim przejdziesz do aplikacji.</p>
+            </div>
+            <form id="oc-changePasswordForm" class="oc-login-form">
+                <div class="oc-form-group">
+                    <label for="oc-newAdminPassword">Nowe hasło</label>
+                    <input type="password" id="oc-newAdminPassword" name="newPassword" required minlength="8" autocomplete="new-password">
+                </div>
+                <div class="oc-form-group">
+                    <label for="oc-confirmAdminPassword">Potwierdź hasło</label>
+                    <input type="password" id="oc-confirmAdminPassword" name="confirmPassword" required minlength="8" autocomplete="new-password">
+                </div>
+                <div id="oc-changePasswordError" class="oc-error" style="display: none;"></div>
+                <button type="submit" class="oc-btn oc-btn-primary">Zapisz nowe hasło</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Główna aplikacja -->
     <div id="oc-mainApp" style="display: none;">
         <header class="oc-header" id="oc-app-header">
@@ -63,7 +84,8 @@ if (!defined('ABSPATH')) {
                 <button type="button" class="oc-btn" id="oc-print-btn" aria-label="Drukuj kalendarz">Drukuj</button>
                 <button type="button" class="oc-btn" id="oc-create-year-btn" aria-label="Utwórz nowy rok kalendarzowy">Utwórz nowy rok</button>
                 <button type="button" class="oc-btn" id="oc-auto-assign-btn" aria-label="Automatycznie przypisz szafarzy do dyżurów">Auto-przypisz szafarzy</button>
-                <button type="button" class="oc-btn" id="oc-adwent-btn" title="Gdy Adwent jest w górnym menu: klik ukrywa zakładkę. Gdy jej nie ma: włącza Adwent." aria-label="Włącz lub wyłącz zakładkę Adwent w menu. Widok Adwentu otwierasz przyciskiem Adwent w górnym menu.">🕯️ Adwent</button>
+                <button type="button" class="oc-btn" id="oc-adwent-btn" title="Otwórz tabelę Adwentu na wybrany rok. Drugie kliknięcie zamknie rok i usunie wpisy." aria-label="Otwórz lub zamknij Adwent na wybrany rok">🕯️ Adwent</button>
+                <button type="button" class="oc-btn" id="oc-mojeDyzuryBtn" hidden aria-pressed="false" title="Pokaż tylko moje dyżury w wybranym roku" aria-label="Moje dyżury">Moje dyżury</button>
             </div>
             <div class="oc-year-select">
                 <label for="oc-wybierzRok">Wybierz rok:</label>
@@ -73,6 +95,7 @@ if (!defined('ABSPATH')) {
                     <option value="2028">2028</option>
                 </select>
             </div>
+            <p id="oc-mojeDyzuryPuste" class="oc-raport-empty-note" hidden>Nie masz dyżurów w wybranym roku.</p>
             <div class="oc-table-container">
                 <table id="oc-tabelaKalendarz" class="oc-table">
                     <thead>
@@ -126,6 +149,8 @@ if (!defined('ABSPATH')) {
             <div class="oc-buttons" id="oc-chorzy-buttons">
                 <button class="oc-btn" id="oc-drukujChorzyBtn" aria-label="Drukuj listę chorych">Drukuj</button>
                 <button class="oc-btn oc-btn-success" id="oc-dodajChoregoBtn" aria-label="Dodaj nowego chorego do listy">+ Dodaj chorego</button>
+                <button type="button" class="oc-btn oc-btn-success" id="oc-zapiszChorzyBtn" aria-label="Zapisz listę chorych">Zapisz</button>
+                <p id="oc-chorzySaveStatus" class="oc-save-status" aria-live="polite"></p>
             </div>
             <div class="oc-table-container">
                 <table id="oc-tabelaChorzy" class="oc-table">
@@ -152,6 +177,8 @@ if (!defined('ABSPATH')) {
             <div class="oc-buttons" id="oc-szafarze-buttons">
                 <button class="oc-btn" id="oc-drukujSzafarzeBtn" aria-label="Drukuj listę szafarzy">Drukuj</button>
                 <button class="oc-btn oc-btn-success" id="oc-dodajSzafarzaBtn" aria-label="Dodaj nowego szafarza do listy">+ Dodaj szafarza</button>
+                <button type="button" class="oc-btn oc-btn-success" id="oc-zapiszSzafarzeBtn" aria-label="Zapisz listę szafarzy">Zapisz</button>
+                <p id="oc-szafarzeSaveStatus" class="oc-save-status" aria-live="polite"></p>
             </div>
             <div class="oc-table-container">
                 <table id="oc-tabelaSzafarze" class="oc-table">
@@ -175,26 +202,22 @@ if (!defined('ABSPATH')) {
         <!-- Zakładka Raporty -->
         <div id="oc-raporty" class="oc-tab-content">
             <div class="oc-buttons" id="oc-raporty-buttons">
-                <button class="oc-btn" id="oc-drukujRaportBtn" aria-label="Drukuj raport miesięczny">Drukuj raport</button>
+                <button class="oc-btn" id="oc-drukujRaportBtn" aria-label="Drukuj raport">Drukuj raport</button>
+                <button class="oc-btn" id="oc-eksportujCSVBtn" aria-label="Pobierz raport jako plik CSV do Excela">Eksportuj CSV</button>
                 <button class="oc-btn" id="oc-eksportujPDFBtn" aria-label="Eksportuj raport do pliku PDF">Eksportuj do PDF</button>
                 <button class="oc-btn" id="oc-backupBtn" aria-label="Wykonaj kopię zapasową danych">Wykonaj kopię zapasową</button>
             </div>
             <div class="oc-raport-select">
-                <label for="oc-wybierzMiesiac">Wybierz miesiąc:</label>
-                <select id="oc-wybierzMiesiac">
-                    <option value="2025-01">Styczeń 2025</option>
-                    <option value="2025-02">Luty 2025</option>
-                    <option value="2025-03">Marzec 2025</option>
-                    <option value="2025-04">Kwiecień 2025</option>
-                    <option value="2025-05">Maj 2025</option>
-                    <option value="2025-06">Czerwiec 2025</option>
-                    <option value="2025-07">Lipiec 2025</option>
-                    <option value="2025-08">Sierpień 2025</option>
-                    <option value="2025-09">Wrzesień 2025</option>
-                    <option value="2025-10">Październik 2025</option>
-                    <option value="2025-11">Listopad 2025</option>
-                    <option value="2025-12">Grudzień 2025</option>
-                </select>
+                <span class="oc-raport-select-group">
+                    <label for="oc-wybierzRokRaport">Rok:</label>
+                    <select id="oc-wybierzRokRaport" aria-label="Wybierz rok raportu">
+                    </select>
+                </span>
+                <span class="oc-raport-select-group">
+                    <label for="oc-wybierzMiesiac">Miesiąc:</label>
+                    <select id="oc-wybierzMiesiac" aria-label="Wybierz miesiąc raportu albo cały rok">
+                    </select>
+                </span>
             </div>
             <div id="oc-raportContainer" class="oc-raport-container">
                 <!-- Raport będzie tutaj generowany -->
@@ -216,6 +239,7 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
             <div class="oc-modal-footer">
+                <button type="button" class="oc-btn oc-raport-revert" id="oc-raportPrzywrocBtn" hidden aria-label="Cofnij zapisany raport i przywróć status Zaplanowane">Przywróć jako zaplanowane</button>
                 <button class="oc-btn oc-btn-secondary oc-raport-cancel" aria-label="Anuluj i zamknij okno">Anuluj</button>
                 <button class="oc-btn oc-btn-primary" id="oc-raportZapiszBtn" aria-label="Zapisz raport odwiedzin">Zapisz raport</button>
             </div>

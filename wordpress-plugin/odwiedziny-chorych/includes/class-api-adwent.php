@@ -33,6 +33,13 @@ class OC_API_Adwent {
                 'methods' => WP_REST_Server::CREATABLE,
                 'callback' => array($this, 'save_items'),
                 'permission_callback' => array($this, 'check_permission'),
+                'args' => array(
+                    'rok' => array(
+                        'required' => false,
+                        'default' => date('Y'),
+                        'sanitize_callback' => 'absint',
+                    ),
+                ),
             ),
         ));
     }
@@ -41,53 +48,73 @@ class OC_API_Adwent {
      * Sprawdź uprawnienia
      */
     public function check_permission($request) {
-        $method = $request->get_method();
-        $write = in_array($method, array('POST', 'PUT', 'DELETE', 'PATCH'), true);
+        return OC_Auth::rest_permission($request);
+    }
+    
+    /**
+     * @return int[]
+     */
+    private function get_open_years() {
+        $years = get_option('oc_adwent_open_years', array());
+        if (!is_array($years)) {
+            return array();
+        }
+        return array_values(array_unique(array_map('intval', $years)));
+    }
 
-        // Nonce z frontendu dopuszcza tylko odczyt.
-        $nonce = $request->get_header('X-WP-Nonce');
-        $nonce_ok = $nonce && wp_verify_nonce($nonce, 'wp_rest');
-        if ($nonce_ok && !$write) {
+    /**
+     * @param int  $rok
+     * @param bool $open
+     */
+    private function set_year_open($rok, $open) {
+        $rok = (int) $rok;
+        $years = $this->get_open_years();
+        if ($open) {
+            if (!in_array($rok, $years, true)) {
+                $years[] = $rok;
+            }
+        } else {
+            $years = array_values(array_filter($years, function ($year) use ($rok) {
+                return (int) $year !== $rok;
+            }));
+        }
+        update_option('oc_adwent_open_years', $years, false);
+    }
+
+    /**
+     * @param int $rok
+     * @return bool
+     */
+    private function is_year_open($rok) {
+        $rok = (int) $rok;
+        if (in_array($rok, $this->get_open_years(), true)) {
             return true;
         }
-        
-        // Zapis zawsze wymaga sesji Bearer.
-        $auth_header = $request->get_header('Authorization');
-        if ($auth_header && strpos($auth_header, 'Bearer ') === 0) {
-            $token = substr($auth_header, 7);
-            return $this->verify_token($token);
+
+        global $wpdb;
+        $table_adwent = OC_Database::get_table_name('adwent');
+        $count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table_adwent WHERE rok = %d",
+            $rok
+        ));
+        if ($count > 0) {
+            $this->set_year_open($rok, true);
+            return true;
         }
-        
         return false;
     }
-    
+
     /**
-     * Weryfikuj token
+     * @param int $rok
+     * @return array<string,array<string,string>>
      */
-    private function verify_token($token) {
-        global $wpdb;
-        $table = OC_Database::get_table_name('sesje');
-        
-        $session = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table WHERE token = %s AND data_wygasniecia > NOW()",
-            $token
-        ));
-        
-        return $session !== null;
-    }
-    
-    /**
-     * Pobierz adwent dla roku
-     */
-    public function get_items($request) {
+    private function get_year_data($rok) {
         global $wpdb;
         $table_adwent = OC_Database::get_table_name('adwent');
         $table_szafarze = OC_Database::get_table_name('szafarze');
-        
-        $rok = $request->get_param('rok');
-        
+
         $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT a.*, 
+            "SELECT a.data,
                     og.imie as osoba_glowna_imie,
                     p.imie as pomocnik_imie
              FROM $table_adwent a
@@ -97,21 +124,30 @@ class OC_API_Adwent {
              ORDER BY a.data ASC",
             $rok
         ), ARRAY_A);
-        
+
         $adwent = array();
-        foreach ($results as $row) {
-            $dateKey = $row['data'];
-            $adwent[$dateKey] = array(
+        foreach ((array) $results as $row) {
+            $adwent[$row['data']] = array(
                 'osobaGlowna' => $row['osoba_glowna_imie'] ?? '',
                 'pomocnik' => $row['pomocnik_imie'] ?? '',
             );
         }
-        
-        return rest_ensure_response($adwent);
+        return $adwent;
+    }
+
+    /**
+     * Pobierz adwent dla roku
+     */
+    public function get_items($request) {
+        $rok = absint($request->get_param('rok')) ?: (int) date('Y');
+        return rest_ensure_response(array(
+            'open' => $this->is_year_open($rok),
+            'dane' => $this->get_year_data($rok),
+        ));
     }
     
     /**
-     * Zapisz adwent
+     * Zapisz / otwórz / zamknij adwent
      */
     public function save_items($request) {
         global $wpdb;
@@ -119,13 +155,36 @@ class OC_API_Adwent {
         $table_szafarze = OC_Database::get_table_name('szafarze');
         
         $params = $request->get_json_params();
-        $rok = $request->get_param('rok') ?: date('Y');
+        $rok = absint($request->get_param('rok')) ?: (int) date('Y');
         
         $action = $params['action'] ?? 'zapisz_adwent';
         $dane = $params['dane'] ?? array();
+
+        if ($action === 'otworz_adwent') {
+            $this->set_year_open($rok, true);
+            return rest_ensure_response(array(
+                'success' => true,
+                'open' => true,
+                'dane' => $this->get_year_data($rok),
+            ));
+        }
+
+        if ($action === 'zamknij_adwent') {
+            $wpdb->delete($table_adwent, array('rok' => $rok), array('%d'));
+            $this->set_year_open($rok, false);
+            return rest_ensure_response(array(
+                'success' => true,
+                'open' => false,
+                'dane' => array(),
+            ));
+        }
         
         if ($action !== 'zapisz_adwent') {
             return new WP_Error('invalid_action', 'Nieznana akcja', array('status' => 400));
+        }
+
+        if (!$this->is_year_open($rok)) {
+            return new WP_Error('adwent_closed', 'Adwent na ten rok jest zamknięty.', array('status' => 400));
         }
         
         $wpdb->query('START TRANSACTION');
