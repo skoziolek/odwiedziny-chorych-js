@@ -31,8 +31,10 @@
     let szafarze = [];
     let chorzy = [];
     let currentUser = null;
+    let showOnlyMyDuties = sessionStorage.getItem('oc_showOnlyMyDuties') === '1';
     let kalendarzData = {};
     let adwentData = {};
+    let adwentOpen = false;
     let historiaData = {}; // Przechowuje odwiedzonych chorych dla każdej daty
     let plannedData = {}; // Przechowuje zaplanowanych chorych dla każdej daty
     const visitPlanning = window.ocVisitPlanning;
@@ -103,6 +105,110 @@
         if (!dateStr) return '—';
         if (isOccasionalVisit(dateStr)) return 'Okazjonalne odwiedziny';
         return formatDate(dateStr);
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function cellInputHtml(field, value, label, extraClass = '') {
+        const classes = extraClass ? `oc-cell-input ${extraClass}` : 'oc-cell-input';
+        return `<input type="text" class="${classes}" data-field="${escapeHtml(field)}" value="${escapeHtml(value || '')}" aria-label="${escapeHtml(label)}">`;
+    }
+
+    function cellTextareaHtml(field, value, label, extraClass = '') {
+        const classes = extraClass ? `oc-cell-input oc-cell-textarea ${extraClass}` : 'oc-cell-input oc-cell-textarea';
+        return `<textarea class="${classes}" data-field="${escapeHtml(field)}" rows="2" aria-label="${escapeHtml(label)}">${escapeHtml(value || '')}</textarea>`;
+    }
+
+    function cellFieldValue(row, field) {
+        const el = row.querySelector(`[data-field="${field}"]`);
+        return el ? el.value.trim() : '';
+    }
+
+    function setTableSaveStatus(statusId, text, isError = false) {
+        const el = document.getElementById(statusId);
+        if (!el) {
+            return;
+        }
+        el.textContent = text || '';
+        el.classList.toggle('oc-save-status-error', !!isError);
+    }
+
+    function bindTableDirty(root, statusId) {
+        if (!root) {
+            return;
+        }
+        const clearStatus = () => setTableSaveStatus(statusId, '');
+        root.querySelectorAll('.oc-cell-input, .oc-szafarz-haslo-input, select.oc-status-select').forEach(el => {
+            el.addEventListener('input', clearStatus);
+            el.addEventListener('change', clearStatus);
+        });
+    }
+
+    function szafarzSelectOptions(selectedImie) {
+        return szafarze.map(s => {
+            const imie = escapeHtml(s.imie || '');
+            const selected = s.imie === selectedImie ? 'selected' : '';
+            return `<option value="${imie}" ${selected}>${imie}</option>`;
+        }).join('');
+    }
+
+    function getMyDutyNameKeys() {
+        const keys = new Set();
+        if (!currentUser || currentUser.role !== 'szafarz') {
+            return keys;
+        }
+        const add = (value) => {
+            const normalized = normalizeName(value);
+            if (normalized) {
+                keys.add(normalized);
+            }
+        };
+        add(currentUser.label);
+        const id = Number(currentUser.szafarzId);
+        const sz = id ? szafarze.find(s => Number(s.id) === id) : null;
+        if (sz) {
+            add(sz.imie);
+            add([sz.imie, sz.nazwisko].filter(Boolean).join(' '));
+        }
+        return keys;
+    }
+
+    function isMyDutyAssignment(osobaGlowna, pomocnik) {
+        const keys = getMyDutyNameKeys();
+        if (!keys.size) {
+            return false;
+        }
+        return keys.has(normalizeName(osobaGlowna)) || keys.has(normalizeName(pomocnik));
+    }
+
+    function syncMyDutiesButton() {
+        const btn = document.getElementById('oc-mojeDyzuryBtn');
+        if (!btn) return;
+        const on = !!(currentUser && currentUser.role === 'szafarz' && showOnlyMyDuties);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.classList.toggle('oc-btn-pressed', on);
+        btn.textContent = on ? 'Cały grafik' : 'Moje dyżury';
+        btn.title = on
+            ? 'Pokaż cały grafik tego roku'
+            : 'Pokaż tylko moje dyżury w wybranym roku';
+        btn.setAttribute('aria-label', btn.title);
+    }
+
+    function toggleMyDutiesFilter() {
+        if (!currentUser || currentUser.role !== 'szafarz') {
+            return;
+        }
+        showOnlyMyDuties = !showOnlyMyDuties;
+        sessionStorage.setItem('oc_showOnlyMyDuties', showOnlyMyDuties ? '1' : '0');
+        syncMyDutiesButton();
+        renderKalendarz();
     }
 
     function collectPlannedNamesFromCards(rootSelector = '#oc-raportListaChorych .oc-raport-card') {
@@ -279,7 +385,7 @@
         const sel = document.getElementById('oc-loginSzafarzSelect');
         if (!sel) return;
         try {
-            const response = await fetch(`${API_URL}/szafarze`, {
+            const response = await fetch(`${API_URL}/szafarze/login-list`, {
                 headers: { 'X-WP-Nonce': NONCE },
             });
             if (!response.ok) return;
@@ -306,6 +412,14 @@
         if (info) {
             info.textContent = currentUser && currentUser.label ? `Zalogowano jako: ${currentUser.label}` : '';
         }
+        const myDutiesBtn = document.getElementById('oc-mojeDyzuryBtn');
+        if (myDutiesBtn) {
+            myDutiesBtn.hidden = !isSzafarz;
+            if (!isSzafarz) {
+                showOnlyMyDuties = false;
+            }
+            syncMyDutiesButton();
+        }
         if (isSzafarz) {
             const active = document.querySelector('.oc-tab-button.active');
             if (active && (active.dataset.tab === 'szafarze' || active.dataset.tab === 'raporty')) {
@@ -322,7 +436,9 @@
         } finally {
             authToken = null;
             sessionStorage.removeItem('oc_authToken');
+            sessionStorage.removeItem('oc_showOnlyMyDuties');
             currentUser = null;
+            showOnlyMyDuties = false;
             showLoginScreen();
         }
     }
@@ -348,15 +464,19 @@
                 body: JSON.stringify(szafarze),
             });
             if (response.ok) {
-                showMessage('Szafarze zapisani');
                 document.querySelectorAll('.oc-szafarz-haslo-input').forEach(inp => {
                     inp.value = '';
                 });
                 await loadSzafarze();
                 renderSzafarze();
+                setTableSaveStatus('oc-szafarzeSaveStatus', 'Zapisano');
+            } else {
+                setTableSaveStatus('oc-szafarzeSaveStatus', 'Nie zapisano', true);
+                showMessage('Błąd zapisu szafarzy', 'error');
             }
         } catch (e) {
             debugError('Błąd zapisu szafarzy:', e);
+            setTableSaveStatus('oc-szafarzeSaveStatus', 'Nie zapisano', true);
             showMessage('Błąd zapisu szafarzy', 'error');
         }
     }
@@ -376,11 +496,11 @@
             const hasloInput = row.querySelector('.oc-szafarz-haslo-input');
             const noweHaslo = hasloInput ? hasloInput.value.trim() : '';
             const entry = {
-                imie: cells[0].textContent.trim(),
-                nazwisko: cells[1].textContent.trim(),
-                adres: cells[2].textContent.trim(),
-                email: cells[3].textContent.trim(),
-                telefon: cells[4].textContent.trim(),
+                imie: cellFieldValue(row, 'imie'),
+                nazwisko: cellFieldValue(row, 'nazwisko'),
+                adres: cellFieldValue(row, 'adres'),
+                email: cellFieldValue(row, 'email'),
+                telefon: cellFieldValue(row, 'telefon'),
             };
             if (id) {
                 entry.id = id;
@@ -403,11 +523,11 @@
             row.dataset.ocId = szafarz.id != null ? String(szafarz.id) : '';
             const hasloHint = szafarz.maHaslo ? '(hasło ustawione)' : '(brak hasła)';
             row.innerHTML = `
-                <td contenteditable="true">${szafarz.imie || ''}</td>
-                <td contenteditable="true">${szafarz.nazwisko || ''}</td>
-                <td contenteditable="true">${szafarz.adres || ''}</td>
-                <td contenteditable="true">${szafarz.email || ''}</td>
-                <td contenteditable="true">${szafarz.telefon || ''}</td>
+                <td>${cellInputHtml('imie', szafarz.imie, 'Imię')}</td>
+                <td>${cellInputHtml('nazwisko', szafarz.nazwisko, 'Nazwisko')}</td>
+                <td>${cellInputHtml('adres', szafarz.adres, 'Adres zamieszkania')}</td>
+                <td>${cellInputHtml('email', szafarz.email, 'Adres email')}</td>
+                <td>${cellInputHtml('telefon', szafarz.telefon, 'Numer telefonu')}</td>
                 <td class="oc-szafarz-haslo-cell">
                     <input type="password" class="oc-szafarz-haslo-input" autocomplete="new-password" placeholder="Nowe hasło" aria-label="Nowe hasło logowania szafarza">
                     <span class="oc-szafarz-haslo-status oc-muted">${hasloHint}</span>
@@ -417,26 +537,21 @@
                 </td>
             `;
 
-            row.querySelectorAll('[contenteditable]').forEach(cell => {
-                cell.addEventListener('blur', debounce(saveSzafarze, 1000));
-            });
-
-            const hasloInput = row.querySelector('.oc-szafarz-haslo-input');
-            if (hasloInput) {
-                hasloInput.addEventListener('blur', () => saveSzafarze());
-            }
-
             tbody.appendChild(row);
         });
+        bindTableDirty(tbody, 'oc-szafarzeSaveStatus');
     }
 
     function addSzafarz() {
+        syncSzafarzeFromDOM();
         szafarze.push({ imie: '', nazwisko: '', adres: '', email: '', telefon: '' });
         renderSzafarze();
+        setTableSaveStatus('oc-szafarzeSaveStatus', '');
     }
 
     async function deleteSzafarz(index) {
         if (!await confirm('Czy na pewno chcesz usunąć tego szafarza?')) return;
+        syncSzafarzeFromDOM();
         szafarze.splice(index, 1);
         renderSzafarze();
         await saveSzafarze();
@@ -463,12 +578,16 @@
                 body: JSON.stringify(chorzy),
             });
             if (response.ok) {
-                showMessage('Chorzy zapisani');
                 await loadChorzy();
                 renderChorzy();
+                setTableSaveStatus('oc-chorzySaveStatus', 'Zapisano');
+            } else {
+                setTableSaveStatus('oc-chorzySaveStatus', 'Nie zapisano', true);
+                showMessage('Błąd zapisu chorych', 'error');
             }
         } catch (e) {
             debugError('Błąd zapisu chorych:', e);
+            setTableSaveStatus('oc-chorzySaveStatus', 'Nie zapisano', true);
             showMessage('Błąd zapisu chorych', 'error');
         }
     }
@@ -489,10 +608,10 @@
             const prev = id ? chorzy.find(c => c.id === id) : null;
             newChorzy.push({
                 id: id || undefined,
-                imieNazwisko: cells[1].textContent.trim(),
-                adres: cells[2].textContent.trim(),
-                telefon: cells[3].textContent.trim(),
-                uwagi: cells[4].textContent.trim(),
+                imieNazwisko: cellFieldValue(row, 'imieNazwisko'),
+                adres: cellFieldValue(row, 'adres'),
+                telefon: cellFieldValue(row, 'telefon'),
+                uwagi: cellFieldValue(row, 'uwagi'),
                 status: select ? select.value : 'TAK',
                 nastepnaWizyta: prev ? prev.nastepnaWizyta : undefined,
                 uwagiOstatnioPrzez: prev ? prev.uwagiOstatnioPrzez : undefined,
@@ -517,20 +636,20 @@
         });
 
         sorted.forEach((chory, index) => {
-            const originalIndex = chorzy.indexOf(chory);
             const row = document.createElement('tr');
             row.className = chory.status === 'TAK' ? 'status-tak' : 'status-nie';
             row.dataset.ocId = chory.id != null ? String(chory.id) : '';
 
             const nastepnaWizytaText = formatNextVisitDisplay(chory.nastepnaWizyta);
 
+            const idJs = chory.id != null ? String(chory.id) : 'null';
             row.innerHTML = `
                 <td class="oc-lp-cell">${index + 1}</td>
-                <td contenteditable="true">${chory.imieNazwisko || ''}</td>
-                <td contenteditable="true">${chory.adres || ''}</td>
-                <td contenteditable="true">${chory.telefon || ''}</td>
-                <td contenteditable="true" class="oc-chorzy-uwagi">${chory.uwagi || ''}</td>
-                <td class="oc-nastepna-wizyta">${nastepnaWizytaText}</td>
+                <td>${cellInputHtml('imieNazwisko', chory.imieNazwisko, 'Imię i nazwisko')}</td>
+                <td>${cellInputHtml('adres', chory.adres, 'Adres')}</td>
+                <td>${cellInputHtml('telefon', chory.telefon, 'Telefon')}</td>
+                <td class="oc-chorzy-uwagi">${cellTextareaHtml('uwagi', chory.uwagi, 'Uwagi')}</td>
+                <td class="oc-nastepna-wizyta">${escapeHtml(nastepnaWizytaText)}</td>
                 <td>
                     <select class="oc-status-select ${chory.status === 'TAK' ? 'status-tak' : 'status-nie'}" aria-label="Status chorego: aktywny lub nieaktywny">
                         <option value="TAK" ${chory.status === 'TAK' ? 'selected' : ''}>AKTYWNY</option>
@@ -538,20 +657,14 @@
                     </select>
                 </td>
                 <td>
-                    <button class="oc-btn oc-btn-danger oc-btn-small" onclick="ocApp.deleteChory(${originalIndex})">Usuń</button>
+                    <button class="oc-btn oc-btn-danger oc-btn-small" onclick="ocApp.deleteChory(${idJs}, ${index})">Usuń</button>
                 </td>
             `;
 
-            // Zapisz przy zmianie
-            row.querySelectorAll('[contenteditable]').forEach(cell => {
-                cell.addEventListener('blur', debounce(saveChorzy, 1000));
-            });
-
             const select = row.querySelector('select');
             select.addEventListener('change', () => {
-                chory.status = select.value;
-                saveChorzy();
-                renderChorzy();
+                row.className = select.value === 'TAK' ? 'status-tak' : 'status-nie';
+                select.className = `oc-status-select ${select.value === 'TAK' ? 'status-tak' : 'status-nie'}`;
             });
 
             const uwagiCell = row.querySelector('.oc-chorzy-uwagi');
@@ -561,18 +674,46 @@
 
             tbody.appendChild(row);
         });
+        bindTableDirty(tbody, 'oc-chorzySaveStatus');
     }
 
     function addChory() {
+        syncChorzyFromDOM();
         chorzy.push({ imieNazwisko: '', adres: '', telefon: '', uwagi: '', status: 'TAK' });
         renderChorzy();
+        setTableSaveStatus('oc-chorzySaveStatus', '');
     }
 
-    async function deleteChory(index) {
+    async function deleteChory(id, sortedIndex) {
         if (!await confirm('Czy na pewno chcesz usunąć tego chorego?')) return;
+        syncChorzyFromDOM();
+        let index = typeof sortedIndex === 'number' ? sortedIndex : -1;
+        if (id) {
+            const byId = chorzy.findIndex(c => Number(c.id) === Number(id));
+            if (byId >= 0) {
+                index = byId;
+            }
+        }
+        const chory = chorzy[index];
+        if (!chory) return;
+
+        if (chory.id) {
+            try {
+                const response = await apiCall(`/chorzy/${chory.id}`, { method: 'DELETE' });
+                if (!response.ok) {
+                    showMessage('Błąd usuwania chorego', 'error');
+                    return;
+                }
+            } catch (e) {
+                debugError('Błąd usuwania chorego:', e);
+                showMessage('Błąd usuwania chorego', 'error');
+                return;
+            }
+        }
+
         chorzy.splice(index, 1);
         renderChorzy();
-        await saveChorzy();
+        showMessage('Chory usunięty');
     }
 
     // ==================== KALENDARZ ====================
@@ -637,6 +778,9 @@
         if (!row) {
             return;
         }
+        if (window.matchMedia('(max-width: 768px)').matches) {
+            return;
+        }
         
         const cells = row.querySelectorAll('td');
         if (cells.length === 0) {
@@ -666,7 +810,8 @@
         });
     }
 
-    function renderKalendarz() {
+    function renderKalendarz(options) {
+        const skipScroll = !!(options && options.skipScroll);
         const tbody = document.getElementById('oc-tabelaKalendarzBody');
         if (!tbody) return;
 
@@ -690,6 +835,8 @@
             const dateStr = formatDateForAPI(date);
             const data = kalendarzData[dateStr] || {};
             const swietoName = getSwietoName(date) || 'Niedziela';
+            const mine = isMyDutyAssignment(data.osobaGlowna, data.pomocnik);
+            const filterMine = !!(currentUser && currentUser.role === 'szafarz' && showOnlyMyDuties);
             
             // Sprawdź czy są odwiedzeni chorzy dla tej daty
             const hasSavedVisitReport = Object.prototype.hasOwnProperty.call(historiaData, dateStr);
@@ -701,10 +848,13 @@
 
             const row = document.createElement('tr');
             if (isSwieto) row.classList.add('swieto-row');
+            if (mine) row.classList.add('oc-my-duty-row');
+            if (filterMine && !mine) row.classList.add('oc-duty-filtered-out');
 
             // Sprawdź czy to najbliższy dyżur PRZED renderowaniem HTML
             const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            const isNextDuty = !nextDutyRow && dateOnly >= today && currentYear === today.getFullYear().toString();
+            const countsForNextDuty = !filterMine || mine;
+            const isNextDuty = countsForNextDuty && !nextDutyRow && dateOnly >= today && currentYear === today.getFullYear().toString();
             
             // Jeśli to najbliższy dyżur, ustaw nextDutyRow
             if (isNextDuty) {
@@ -713,35 +863,31 @@
             }
 
             // Osobne listy opcji — selected musi być od osoby głównej vs pomocnika (wspólny szablon zawsze podświetlał główną w obu)
-            const szafarzeOptionsOsoba = szafarze.map(s =>
-                `<option value="${s.imie}" ${data.osobaGlowna === s.imie ? 'selected' : ''}>${s.imie}</option>`
-            ).join('');
-            const szafarzeOptionsPomocnik = szafarze.map(s =>
-                `<option value="${s.imie}" ${data.pomocnik === s.imie ? 'selected' : ''}>${s.imie}</option>`
-            ).join('');
+            const szafarzeOptionsOsoba = szafarzSelectOptions(data.osobaGlowna);
+            const szafarzeOptionsPomocnik = szafarzSelectOptions(data.pomocnik);
 
-            // Jeśli to najbliższy dyżur, dodaj style inline do wszystkich komórek
-            const borderStyle = isNextDuty ? 'style="border: 3px solid #ffc107 !important;"' : '';
-            const borderStyleInline = isNextDuty ? 'border: 3px solid #ffc107 !important;' : '';
+            const isNarrow = window.matchMedia('(max-width: 768px)').matches;
+            const borderStyle = isNextDuty && !isNarrow ? 'style="border: 3px solid #ffc107 !important;"' : '';
+            const borderStyleInline = isNextDuty && !isNarrow ? 'border: 3px solid #ffc107 !important;' : '';
             
             row.innerHTML = `
-                <td ${borderStyle}>${formatDate(date)}</td>
-                <td style="white-space: normal; word-wrap: break-word; ${borderStyleInline}">${swietoName}</td>
-                <td ${borderStyle}>
-                    <select class="osoba-glowna-select">
+                <td class="oc-cal-date" data-label="Data" ${borderStyle}>${escapeHtml(formatDate(date))}</td>
+                <td class="oc-cal-name" data-label="Dzień" style="white-space: normal; word-wrap: break-word; ${borderStyleInline}">${escapeHtml(swietoName)}</td>
+                <td class="oc-cal-osoba" data-label="Osoba główna" ${borderStyle}>
+                    <select class="osoba-glowna-select" aria-label="Osoba główna">
                         <option value="" ${!data.osobaGlowna ? 'selected' : ''}>-- Wybierz --</option>
                         ${szafarzeOptionsOsoba}
                     </select>
                 </td>
-                <td ${borderStyle}>
-                    <select class="pomocnik-select">
+                <td class="oc-cal-pomocnik" data-label="Pomocnik" ${borderStyle}>
+                    <select class="pomocnik-select" aria-label="Pomocnik">
                         <option value="" ${!data.pomocnik ? 'selected' : ''}>-- Wybierz --</option>
                         ${szafarzeOptionsPomocnik}
                     </select>
                 </td>
-                <td contenteditable="true" ${borderStyle}>${data.uwagi || ''}</td>
-                <td ${borderStyle}>
-                    <button class="${buttonClass}" onclick="ocApp.openVisitModal('${dateStr}')" data-date="${dateStr}">${buttonText}</button>
+                <td class="oc-cal-uwagi" data-label="Uwagi" contenteditable="true" ${borderStyle}>${escapeHtml(data.uwagi || '')}</td>
+                <td class="oc-cal-raport" data-label="Raport" ${borderStyle}>
+                    <button class="${escapeHtml(buttonClass)}" onclick="ocApp.openVisitModal('${escapeHtml(dateStr)}')" data-date="${escapeHtml(dateStr)}">${escapeHtml(buttonText)}</button>
                 </td>
             `;
             
@@ -765,6 +911,13 @@
             tbody.appendChild(row);
         }
 
+        const emptyNote = document.getElementById('oc-mojeDyzuryPuste');
+        if (emptyNote) {
+            const filterMine = !!(currentUser && currentUser.role === 'szafarz' && showOnlyMyDuties);
+            const hasMine = !!tbody.querySelector('.oc-my-duty-row');
+            emptyNote.hidden = !filterMine || hasMine;
+        }
+
         // Podświetl najbliższy dyżur
         if (nextDutyRow) {
             nextDutyRow.classList.add('next-duty-row');
@@ -774,65 +927,97 @@
             setTimeout(() => {
                 applyNextDutyRowStyles(nextDutyRow);
             }, 50);
-            
-            setTimeout(() => {
-                nextDutyRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
+
+            if (!skipScroll) {
+                setTimeout(() => {
+                    nextDutyRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        } else if (!skipScroll && currentUser && currentUser.role === 'szafarz' && showOnlyMyDuties) {
+            const firstMine = tbody.querySelector('.oc-my-duty-row');
+            if (firstMine) {
+                setTimeout(() => {
+                    firstMine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
         }
     }
 
-    async function createNewYear() {
-        const nextYear = (parseInt(currentYear) + 1).toString();
-        
-        // Sprawdź czy rok już istnieje w dropdown
-        const rokSelect = document.getElementById('oc-wybierzRok');
-        if (rokSelect) {
-            const existingOption = rokSelect.querySelector(`option[value="${nextYear}"]`);
-            if (existingOption) {
-                showMessage(`Rok ${nextYear} już istnieje! Wybierz go z listy rozwijalnej.`, 'error');
-                return;
-            }
+    function ensureYearOption(select, year) {
+        if (!select || !year) return;
+        const value = String(year);
+        if (select.querySelector(`option[value="${value}"]`)) return;
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        const insertBefore = Array.from(select.options).find(opt => parseInt(opt.value, 10) > parseInt(value, 10));
+        if (insertBefore) {
+            select.insertBefore(option, insertBefore);
+        } else {
+            select.appendChild(option);
         }
+    }
 
-        if (!await confirm(`Czy na pewno chcesz utworzyć nowy rok ${nextYear}? To wygeneruje kalendarz na kolejny rok na podstawie obecnego.`)) {
-            return;
-        }
+    function fillYearSelects() {
+        const nowY = new Date().getFullYear();
+        const ids = ['oc-wybierzRok', 'oc-wybierzRokAdwent'];
+        ids.forEach(id => {
+            const select = document.getElementById(id);
+            if (!select) return;
+            const selected = select.value;
+            for (let year = nowY - 1; year <= nowY + 4; year++) {
+                ensureYearOption(select, year);
+            }
+            if (selected && select.querySelector(`option[value="${selected}"]`)) {
+                select.value = selected;
+            }
+        });
+    }
+
+    async function createNewYear() {
+        const nextYear = (parseInt(currentYear, 10) + 1).toString();
+        const rokSelect = document.getElementById('oc-wybierzRok');
 
         try {
-            // Pobierz dane z aktualnego roku
+            const existingResponse = await apiCall(`/kalendarz?rok=${nextYear}`);
+            const existingData = existingResponse.ok ? await existingResponse.json() : {};
+            const hasAssignments = Object.values(existingData || {}).some(row =>
+                (row && (row.osobaGlowna || row.pomocnik))
+            );
+
+            const question = hasAssignments
+                ? `Rok ${nextYear} ma już wpisane osoby. Czy nadpisać grafik nowym, wyliczonym z roku ${currentYear}?`
+                : `Utworzyć kalendarz na rok ${nextYear} na podstawie roku ${currentYear}?`;
+            if (!await confirm(question)) {
+                return;
+            }
+
             const response = await apiCall(`/kalendarz?rok=${currentYear}`);
             if (!response.ok) throw new Error('Błąd wczytywania danych aktualnego roku');
-            
+
             const currentYearData = await response.json();
-            
-            // Wygeneruj nowe przypisania dla nowego roku
             const newYearData = generateNewYearData(nextYear, currentYearData);
-            
-            // Zapisz nowy rok
+
             const saveResponse = await apiCall(`/kalendarz?rok=${nextYear}`, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'zapisz_kalendarz', dane: newYearData }),
             });
 
             if (!saveResponse.ok) throw new Error('Błąd zapisu nowego roku');
-            
-            // Dodaj nowy rok do dropdown
-            if (rokSelect) {
-                const option = document.createElement('option');
-                option.value = nextYear;
-                option.textContent = nextYear;
-                rokSelect.appendChild(option);
-                rokSelect.value = nextYear;
-            }
-            
-            // Przełącz na nowy rok
+
+            ensureYearOption(rokSelect, nextYear);
+            ensureYearOption(document.getElementById('oc-wybierzRokAdwent'), nextYear);
+            if (rokSelect) rokSelect.value = nextYear;
+
             currentYear = nextYear;
             kalendarzData = newYearData;
-            await loadKalendarz();
+            await Promise.all([
+                loadKalendarz(),
+                loadHistoriaForYear(currentYear),
+            ]);
             renderKalendarz();
-            
-            showMessage(`Nowy rok ${nextYear} został utworzony i załadowany!`, 'success');
-            
+
+            showMessage(`Kalendarz na rok ${nextYear} jest gotowy.`, 'success');
         } catch (error) {
             debugError('Błąd podczas tworzenia nowego roku:', error);
             showMessage('Wystąpił błąd podczas tworzenia nowego roku: ' + error.message, 'error');
@@ -1284,26 +1469,170 @@
         '2028-12-31': 'Święto Świętej Rodziny Jezusa, Maryi i Józefa',
     };
 
+    function addDaysLocal(date, days) {
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+    }
+
+    function calculateEasterDate(year) {
+        const a = year % 19;
+        const b = Math.floor(year / 100);
+        const c = year % 100;
+        const d = Math.floor(b / 4);
+        const e = b % 4;
+        const f = Math.floor((b + 8) / 25);
+        const g = Math.floor((b - f + 1) / 3);
+        const h = (19 * a + b - d - g + 15) % 30;
+        const i = Math.floor(c / 4);
+        const k = c % 4;
+        const l = (32 + 2 * e + 2 * i - h - k) % 7;
+        const m = Math.floor((a + 11 * h + 22 * l) / 451);
+        const month = Math.floor((h + l - 7 * m + 114) / 31);
+        const day = ((h + l - 7 * m + 114) % 31) + 1;
+        return new Date(year, month - 1, day);
+    }
+
+    function generateHolyDaysForYear(year) {
+        const easter = calculateEasterDate(year);
+        const ymd = (d) => formatDateForAPI(d);
+        const map = {};
+        const put = (key, name) => { map[key] = name; };
+        put(ymd(new Date(year, 0, 1)), 'Uroczystość Świętej Bożej Rodzicielki Maryi');
+        put(ymd(new Date(year, 0, 6)), 'Objawienie Pańskie (Trzech Króli)');
+        put(ymd(easter), 'Niedziela Zmartwychwstania Pańskiego');
+        put(ymd(addDaysLocal(easter, 1)), 'Poniedziałek Wielkanocny');
+        put(ymd(addDaysLocal(easter, 42)), 'Uroczystość Wniebowstąpienia Pańskiego');
+        put(ymd(addDaysLocal(easter, 49)), 'Uroczystość Zesłania Ducha Świętego');
+        put(ymd(addDaysLocal(easter, 60)), 'Boże Ciało');
+        put(ymd(new Date(year, 7, 15)), 'Wniebowzięcie NMP');
+        put(ymd(new Date(year, 10, 1)), 'Uroczystość Wszystkich Świętych');
+        put(ymd(new Date(year, 11, 25)), 'Boże Narodzenie');
+        put(ymd(new Date(year, 11, 26)), 'Drugi Dzień Bożego Narodzenia');
+        return map;
+    }
+
+    function toRomanLiturgy(num) {
+        const map = [[50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+        let n = num;
+        let out = '';
+        map.forEach(([value, glyph]) => {
+            while (n >= value) {
+                out += glyph;
+                n -= value;
+            }
+        });
+        return out;
+    }
+
+    function generateSundayNamesForYear(year) {
+        const names = { ...generateHolyDaysForYear(year) };
+        const easter = calculateEasterDate(year);
+        const advent1 = (() => {
+            const d = new Date(year, 10, 27);
+            while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
+            return d;
+        })();
+        const christKing = addDaysLocal(advent1, -7);
+        const lent1 = addDaysLocal(easter, -42);
+        const palm = addDaysLocal(easter, -7);
+        const trinity = addDaysLocal(easter, 56);
+        const epiphany = new Date(year, 0, 6);
+        const baptism = addDaysLocal(epiphany, (7 - epiphany.getDay()) % 7 || 7);
+        const christmas = new Date(year, 11, 25);
+        const holyFamily = christmas.getDay() === 0
+            ? new Date(year, 11, 30)
+            : addDaysLocal(christmas, (7 - christmas.getDay()) % 7);
+
+        const firstSunday = new Date(year, 0, 1);
+        while (firstSunday.getDay() !== 0) firstSunday.setDate(firstSunday.getDate() + 1);
+
+        let ordinaryBefore = 2;
+        const postTrinity = [];
+
+        for (let d = new Date(firstSunday); d.getFullYear() === year; d = addDaysLocal(d, 7)) {
+            const key = formatDateForAPI(d);
+            const t = d.getTime();
+            if (names[key]) continue;
+            if (t === holyFamily.getTime()) {
+                names[key] = 'Święto Świętej Rodziny Jezusa, Maryi i Józefa';
+                continue;
+            }
+            if (t === baptism.getTime()) {
+                names[key] = 'Niedziela Chrztu Pańskiego';
+                continue;
+            }
+            if (t >= advent1.getTime()) {
+                const week = Math.round((t - advent1.getTime()) / (7 * 86400000)) + 1;
+                names[key] = ['I Niedziela Adwentu', 'II Niedziela Adwentu', 'III Niedziela Adwentu', 'IV Niedziela Adwentu'][week - 1] || 'Niedziela Adwentu';
+                continue;
+            }
+            if (t === christKing.getTime()) {
+                names[key] = 'Uroczystość Jezusa Chrystusa Króla Wszechświata';
+                continue;
+            }
+            if (t === palm.getTime()) {
+                names[key] = 'Niedziela Palmowa';
+                continue;
+            }
+            if (t >= lent1.getTime() && t < easter.getTime()) {
+                const week = Math.round((t - lent1.getTime()) / (7 * 86400000)) + 1;
+                names[key] = `${toRomanLiturgy(week)} Niedziela Wielkiego Postu`;
+                continue;
+            }
+            if (t > easter.getTime() && t < addDaysLocal(easter, 49).getTime()) {
+                const week = Math.round((t - easter.getTime()) / (7 * 86400000)) + 1;
+                names[key] = week === 2
+                    ? 'II Niedziela Wielkanocna (Miłosierdzia Bożego)'
+                    : `${toRomanLiturgy(week)} Niedziela Wielkanocna`;
+                continue;
+            }
+            if (t === trinity.getTime()) {
+                names[key] = 'Uroczystość Najświętszej Trójcy';
+                continue;
+            }
+            if (t > baptism.getTime() && t < lent1.getTime()) {
+                names[key] = `${toRomanLiturgy(ordinaryBefore)} Niedziela zwykła`;
+                ordinaryBefore += 1;
+                continue;
+            }
+            if (t > trinity.getTime() && t < christKing.getTime()) {
+                postTrinity.push(key);
+                continue;
+            }
+            if (t < baptism.getTime()) {
+                names[key] = 'Niedziela po Narodzeniu Pańskim';
+            }
+        }
+
+        postTrinity.forEach((key, idx) => {
+            const num = 33 - (postTrinity.length - 1 - idx);
+            names[key] = `${toRomanLiturgy(num)} Niedziela zwykła`;
+        });
+
+        return names;
+    }
+
+    const generatedSundayNames = {};
+
+    function sundayNamesForYear(year) {
+        if (!generatedSundayNames[year]) {
+            generatedSundayNames[year] = generateSundayNamesForYear(year);
+        }
+        return generatedSundayNames[year];
+    }
+
     function isSwietoNakazane(date) {
         const dateStr = formatDateForAPI(date);
-        return swietaNakazane[dateStr] !== undefined;
+        if (swietaNakazane[dateStr]) return true;
+        const year = date instanceof Date ? date.getFullYear() : parseInt(String(dateStr).slice(0, 4), 10);
+        return !!generateHolyDaysForYear(year)[dateStr];
     }
 
     function getSwietoName(date) {
         const dateStr = formatDateForAPI(date);
-        
-        // Najpierw sprawdź święta nakazane
-        if (swietaNakazane[dateStr]) {
-            return swietaNakazane[dateStr];
-        }
-        
-        // Potem sprawdź niedziele liturgiczne
-        if (niedzieleLiturgiczne[dateStr]) {
-            return niedzieleLiturgiczne[dateStr];
-        }
-        
-        // Dla zwykłych niedziel (które nie mają nazwy w kalendarzu)
-        return 'Niedziela';
+        if (swietaNakazane[dateStr]) return swietaNakazane[dateStr];
+        if (niedzieleLiturgiczne[dateStr]) return niedzieleLiturgiczne[dateStr];
+        const year = date instanceof Date ? date.getFullYear() : parseInt(String(dateStr).slice(0, 4), 10);
+        return sundayNamesForYear(year)[dateStr] || 'Niedziela';
     }
 
     // ==================== TERMINY KOLEJNYCH WIZYT ====================
@@ -1358,18 +1687,67 @@
         return weekdays;
     }
 
+    function applyAdwentPayload(payload) {
+        if (payload && typeof payload === 'object' && Object.prototype.hasOwnProperty.call(payload, 'open')) {
+            adwentOpen = !!payload.open;
+            adwentData = payload.dane && typeof payload.dane === 'object' ? payload.dane : {};
+            return;
+        }
+        adwentData = payload && typeof payload === 'object' ? payload : {};
+        adwentOpen = Object.keys(adwentData).length > 0;
+    }
+
+    function updateAdwentToolbarButton() {
+        const btn = document.getElementById('oc-adwent-btn');
+        if (!btn) return;
+        if (adwentOpen) {
+            btn.title = `Zamknij Adwent na rok ${currentYear}. Tabela zniknie, a wszystkie wpisy adwentowe tego roku zostaną usunięte.`;
+            btn.setAttribute('aria-label', `Zamknij Adwent na rok ${currentYear} i usuń wpisy`);
+        } else {
+            btn.title = `Otwórz tabelę Adwentu na rok ${currentYear}. Drugie kliknięcie zamknie rok i usunie wpisy.`;
+            btn.setAttribute('aria-label', `Otwórz Adwent na rok ${currentYear}`);
+        }
+    }
+
+    function syncYearSelectsToCurrent() {
+        ['oc-wybierzRok', 'oc-wybierzRokAdwent'].forEach(id => {
+            const select = document.getElementById(id);
+            if (!select) return;
+            ensureYearOption(select, currentYear);
+            select.value = currentYear;
+        });
+    }
+
+    function showAdwentInMenu() {
+        const adwentTabBtn = document.getElementById('oc-adwentTabBtn');
+        if (adwentTabBtn) {
+            adwentTabBtn.style.display = 'inline-block';
+        }
+        updateAdwentToolbarButton();
+    }
+
+    function syncAdwentTabForYear() {
+        if (adwentOpen) {
+            showAdwentInMenu();
+        } else {
+            hideAdwentFromMenu();
+        }
+    }
+
     async function loadAdwent() {
         try {
             const response = await apiCall(`/adwent?rok=${currentYear}`);
             if (response.ok) {
-                adwentData = await response.json();
+                applyAdwentPayload(await response.json());
             }
         } catch (e) {
             debugError('Błąd ładowania adwentu:', e);
         }
+        updateAdwentToolbarButton();
     }
 
     async function saveAdwent() {
+        if (!adwentOpen) return;
         try {
             syncAdwentFromDOM();
             const response = await apiCall(`/adwent?rok=${currentYear}`, {
@@ -1378,9 +1756,12 @@
             });
             if (response.ok) {
                 showMessage('Adwent zapisany');
+            } else {
+                showMessage('Błąd zapisu Adwentu', 'error');
             }
         } catch (e) {
             debugError('Błąd zapisu adwentu:', e);
+            showMessage('Błąd zapisu Adwentu', 'error');
         }
     }
 
@@ -1422,26 +1803,23 @@
             const dateStr = formatDateForAPI(day.date);
             const data = adwentData[dateStr] || {};
 
-            const szafarzeOptionsOsoba = szafarze.map(s =>
-                `<option value="${s.imie}" ${data.osobaGlowna === s.imie ? 'selected' : ''}>${s.imie}</option>`
-            ).join('');
-            const szafarzeOptionsPomocnik = szafarze.map(s =>
-                `<option value="${s.imie}" ${data.pomocnik === s.imie ? 'selected' : ''}>${s.imie}</option>`
-            ).join('');
+            const szafarzeOptionsOsoba = szafarzSelectOptions(data.osobaGlowna);
+            const szafarzeOptionsPomocnik = szafarzSelectOptions(data.pomocnik);
 
+            const weekName = ['', 'I Tydzień Adwentu', 'II Tydzień Adwentu', 'III Tydzień Adwentu', 'IV Tydzień Adwentu'][day.weekNumber] || '';
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${formatDate(day.date)}</td>
-                <td>${day.dayName}</td>
-                <td>${['', 'I Tydzień Adwentu', 'II Tydzień Adwentu', 'III Tydzień Adwentu', 'IV Tydzień Adwentu'][day.weekNumber]}</td>
-                <td>
-                    <select>
+                <td class="oc-cal-date" data-label="Data">${escapeHtml(formatDate(day.date))}</td>
+                <td class="oc-cal-name" data-label="Dzień">${escapeHtml(day.dayName)}</td>
+                <td class="oc-adv-week" data-label="Tydzień Adwentu">${escapeHtml(weekName)}</td>
+                <td class="oc-cal-osoba" data-label="Osoba główna">
+                    <select class="osoba-glowna-select" aria-label="Osoba główna">
                         <option value="" ${!data.osobaGlowna ? 'selected' : ''}>-- Wybierz --</option>
                         ${szafarzeOptionsOsoba}
                     </select>
                 </td>
-                <td>
-                    <select>
+                <td class="oc-cal-pomocnik" data-label="Pomocnik">
+                    <select class="pomocnik-select" aria-label="Pomocnik">
                         <option value="" ${!data.pomocnik ? 'selected' : ''}>-- Wybierz --</option>
                         ${szafarzeOptionsPomocnik}
                     </select>
@@ -1456,7 +1834,7 @@
         });
     }
 
-    /** Przełącza główne menu na wybraną zakładkę (Kalendarz, Adwent, …). Adwent nigdy nie wyłącza się stąd — tylko otwiera widok. */
+    /** Przełącza główne menu na wybraną zakładkę (Kalendarz, Adwent, …). Adwent w menu tylko otwiera widok; zamknięcie jest z paska Kalendarza. */
     function activateTab(tab) {
         if (!tab) return;
 
@@ -1478,10 +1856,26 @@
         }
 
         if (tab === 'adwent' && adwentTabBtn) {
+            if (!adwentOpen) {
+                activateTab('kalendarz');
+                return;
+            }
             adwentTabBtn.style.display = 'inline-block';
-            loadAdwent().then(() => renderAdwent()).catch(err => {
+            loadAdwent().then(() => {
+                if (adwentOpen) {
+                    renderAdwent();
+                } else {
+                    syncAdwentTabForYear();
+                }
+            }).catch(err => {
                 debugError('Błąd ładowania Adwentu:', err);
             });
+        }
+
+        if (tab === 'raporty') {
+            fillRaportYearSelect();
+            fillRaportMonthSelect();
+            loadCurrentRaport();
         }
     }
 
@@ -1489,42 +1883,76 @@
         activateTab('adwent');
     }
 
-    function isAdwentTabInMainNav() {
-        const adwentTabBtn = document.getElementById('oc-adwentTabBtn');
-        if (!adwentTabBtn) return false;
-        return window.getComputedStyle(adwentTabBtn).display !== 'none';
-    }
-
     /**
-     * Wyłącznik Adwentu wyłącznie z paska Kalendarza: gdy zakładki nie ma w menu — włącza widok;
-     * gdy jest w menu — ukrywa ją (jedyna dezaktywacja; główne menu „Adwent” tylko otwiera widok).
+     * Przycisk Adwent w pasku Kalendarza: pierwsze kliknięcie otwiera tabelę na wybrany rok,
+     * drugie zamyka rok i kasuje wpisy adwentowe.
      */
-    function onToolbarAdwentClick() {
-        if (isAdwentTabInMainNav()) {
-            hideAdwentFromMenu();
-        } else {
+    async function onToolbarAdwentClick() {
+        if (adwentOpen) {
+            const ok = await confirm(
+                `Zamknąć Adwent na rok ${currentYear}? Tabela zniknie, a wszystkie wpisy adwentowe tego roku zostaną usunięte. Adwent na ten rok będzie można otworzyć ponownie od nowa.`
+            );
+            if (!ok) return;
+            try {
+                const response = await apiCall(`/adwent?rok=${currentYear}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'zamknij_adwent' }),
+                });
+                if (!response.ok) {
+                    showMessage('Nie udało się zamknąć Adwentu', 'error');
+                    return;
+                }
+                applyAdwentPayload(await response.json());
+                syncAdwentTabForYear();
+                showMessage(`Adwent ${currentYear} zamknięty. Wpisy usunięte.`);
+            } catch (e) {
+                debugError('Błąd zamykania Adwentu:', e);
+                showMessage('Nie udało się zamknąć Adwentu', 'error');
+            }
+            return;
+        }
+
+        try {
+            const response = await apiCall(`/adwent?rok=${currentYear}`, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'otworz_adwent' }),
+            });
+            if (!response.ok) {
+                showMessage('Nie udało się otworzyć Adwentu', 'error');
+                return;
+            }
+            applyAdwentPayload(await response.json());
+            syncAdwentTabForYear();
             navigateToAdwent();
+        } catch (e) {
+            debugError('Błąd otwierania Adwentu:', e);
+            showMessage('Nie udało się otworzyć Adwentu', 'error');
         }
     }
 
-    /** Usuwa „Adwent” z głównego menu i wraca do widoku Kalendarza. */
+    /** Usuwa „Adwent” z głównego menu. Gdy aktywna była zakładka Adwent, wraca do Kalendarza. */
     function hideAdwentFromMenu() {
         const adwentTabBtn = document.getElementById('oc-adwentTabBtn');
         const adwentContent = document.getElementById('oc-adwent');
         if (!adwentTabBtn || !adwentContent) return;
 
+        const wasOnAdwent = adwentTabBtn.classList.contains('active') || adwentContent.classList.contains('active');
+
         adwentTabBtn.style.display = 'none';
         adwentTabBtn.classList.remove('active');
         adwentContent.classList.remove('active');
 
-        const kalendarzBtn = document.querySelector('.oc-tab-button[data-tab="kalendarz"]');
-        const kalendarzContent = document.getElementById('oc-kalendarz');
-        if (kalendarzBtn && kalendarzContent) {
-            document.querySelectorAll('.oc-tab-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.oc-tab-content').forEach(c => c.classList.remove('active'));
-            kalendarzBtn.classList.add('active');
-            kalendarzContent.classList.add('active');
+        if (wasOnAdwent) {
+            const kalendarzBtn = document.querySelector('.oc-tab-button[data-tab="kalendarz"]');
+            const kalendarzContent = document.getElementById('oc-kalendarz');
+            if (kalendarzBtn && kalendarzContent) {
+                document.querySelectorAll('.oc-tab-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.oc-tab-content').forEach(c => c.classList.remove('active'));
+                kalendarzBtn.classList.add('active');
+                kalendarzContent.classList.add('active');
+            }
         }
+        updateAdwentToolbarButton();
     }
 
     // ==================== VISIT MODAL ====================
@@ -1646,12 +2074,13 @@
 
     function buildVisitCardMarkup(name, isVisited, defaultDate, optionsHtml, selectId, removable) {
         const occasionalSelected = defaultDate === OCCASIONAL_VISIT_MARKER ? 'selected' : '';
+        const safeName = escapeHtml(name);
         const removeBtn = removable
-            ? `<button type="button" class="oc-raport-remove" aria-label="Usuń ${name} z listy tego dnia">Usuń</button>`
+            ? `<button type="button" class="oc-raport-remove" aria-label="Usuń ${safeName} z listy tego dnia">Usuń</button>`
             : '';
         return `
             <div class="oc-raport-top">
-                <span class="oc-raport-name"><span class="oc-raport-lp"></span> ${name}</span>
+                <span class="oc-raport-name"><span class="oc-raport-lp"></span> ${safeName}</span>
                 <div class="oc-raport-top-actions">
                     <label class="oc-raport-status">
                         <input type="checkbox" class="oc-raport-odwiedzona" ${isVisited ? 'checked' : ''}>
@@ -1770,7 +2199,7 @@
                 <select class="oc-raport-next-select" id="oc-raportOccasionalSelect">
                     <option value="">— wybierz osobę —</option>
                     ${occasionalToAdd.map(ch => {
-                        const name = normalizeName(ch.imieNazwisko);
+                        const name = escapeHtml(normalizeName(ch.imieNazwisko));
                         return `<option value="${name}">${name}</option>`;
                     }).join('')}
                 </select>
@@ -2141,16 +2570,184 @@
 
     // ==================== RAPORTY ====================
 
+    const RAPORT_MONTH_NAMES = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+        'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
+
+    let lastRaportView = null;
+
+    function formatRaportMonthName(miesiac) {
+        const [year, month] = String(miesiac || '').split('-');
+        const monthIndex = parseInt(month, 10) - 1;
+        if (!year || monthIndex < 0 || monthIndex > 11) {
+            return miesiac || '';
+        }
+        return `${RAPORT_MONTH_NAMES[monthIndex]} ${year}`;
+    }
+
+    function raportYearRange() {
+        const now = new Date();
+        const currentY = now.getFullYear();
+        return {
+            startY: Math.min(2025, currentY - 1),
+            endY: currentY + 1,
+            currentY,
+        };
+    }
+
+    function fillRaportMonthSelect() {
+        const select = document.getElementById('oc-wybierzMiesiac');
+        if (!select) return '';
+
+        const previous = select.value;
+        const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+
+        select.innerHTML = '';
+
+        const yearOption = document.createElement('option');
+        yearOption.value = 'rok';
+        yearOption.textContent = 'Cały rok';
+        select.appendChild(yearOption);
+
+        RAPORT_MONTH_NAMES.forEach((name, index) => {
+            const value = String(index + 1).padStart(2, '0');
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = name;
+            select.appendChild(option);
+        });
+
+        const preferred = previous || currentMonth;
+        select.value = select.querySelector(`option[value="${preferred}"]`) ? preferred : currentMonth;
+        return select.value;
+    }
+
+    function fillRaportYearSelect() {
+        const select = document.getElementById('oc-wybierzRokRaport');
+        if (!select) return '';
+
+        const { startY, endY, currentY } = raportYearRange();
+        const previous = select.value;
+        select.innerHTML = '';
+        for (let year = startY; year <= endY; year++) {
+            const option = document.createElement('option');
+            option.value = String(year);
+            option.textContent = String(year);
+            select.appendChild(option);
+        }
+        const preferred = previous || String(currentY);
+        select.value = select.querySelector(`option[value="${preferred}"]`) ? preferred : String(currentY);
+        return select.value;
+    }
+
+    function selectedRaportMonth() {
+        const yearSelect = document.getElementById('oc-wybierzRokRaport');
+        const monthSelect = document.getElementById('oc-wybierzMiesiac');
+        const rok = (yearSelect && yearSelect.value) || fillRaportYearSelect();
+        const miesiac = (monthSelect && monthSelect.value) || fillRaportMonthSelect();
+        if (!rok || !miesiac) return '';
+        return `${rok}-${miesiac}`;
+    }
+
+    function loadCurrentRaport() {
+        const yearSelect = document.getElementById('oc-wybierzRokRaport');
+        const monthSelect = document.getElementById('oc-wybierzMiesiac');
+        const rok = (yearSelect && yearSelect.value) || fillRaportYearSelect();
+        const miesiac = (monthSelect && monthSelect.value) || fillRaportMonthSelect();
+        if (miesiac === 'rok') {
+            return loadRaportRoczny(rok);
+        }
+        return loadRaport(selectedRaportMonth());
+    }
+
     async function loadRaport(miesiac) {
+        const container = document.getElementById('oc-raportContainer');
+        if (!miesiac) {
+            lastRaportView = null;
+            if (container) {
+                container.innerHTML = '<p class="oc-raport-empty-note">Wybierz miesiąc, aby zobaczyć statystyki.</p>';
+            }
+            return;
+        }
         try {
-            const response = await apiCall(`/raporty/miesieczny?miesiac=${miesiac}`);
+            if (container) {
+                container.innerHTML = '<p class="oc-raport-empty-note">Ładowanie raportu…</p>';
+            }
+            const response = await apiCall(`/raporty/miesieczny?miesiac=${encodeURIComponent(miesiac)}`);
             if (response.ok) {
                 const data = await response.json();
+                lastRaportView = { type: 'miesiac', key: miesiac, data };
                 renderRaport(data, miesiac);
+                return;
             }
+            const errBody = await response.json().catch(() => ({}));
+            throw new Error(errBody.message || `Błąd ładowania raportu (${response.status})`);
         } catch (e) {
+            lastRaportView = null;
             debugError('Błąd ładowania raportu:', e);
+            if (container) {
+                container.innerHTML = `<p class="oc-raport-error">Nie udało się wczytać statystyk: ${escapeHtml(e.message || 'nieznany błąd')}</p>`;
+            }
         }
+    }
+
+    async function loadRaportRoczny(rok) {
+        const container = document.getElementById('oc-raportContainer');
+        if (!rok) {
+            lastRaportView = null;
+            if (container) {
+                container.innerHTML = '<p class="oc-raport-empty-note">Wybierz rok, aby zobaczyć zestawienie.</p>';
+            }
+            return;
+        }
+        try {
+            if (container) {
+                container.innerHTML = '<p class="oc-raport-empty-note">Ładowanie raportu rocznego…</p>';
+            }
+            const response = await apiCall(`/raporty/roczny?rok=${encodeURIComponent(rok)}`);
+            if (response.ok) {
+                const data = await response.json();
+                lastRaportView = { type: 'rok', key: String(rok), data };
+                renderRaportRoczny(data, rok);
+                return;
+            }
+            const errBody = await response.json().catch(() => ({}));
+            throw new Error(errBody.message || `Błąd ładowania raportu rocznego (${response.status})`);
+        } catch (e) {
+            lastRaportView = null;
+            debugError('Błąd ładowania raportu rocznego:', e);
+            if (container) {
+                container.innerHTML = `<p class="oc-raport-error">Nie udało się wczytać raportu rocznego: ${escapeHtml(e.message || 'nieznany błąd')}</p>`;
+            }
+        }
+    }
+
+    function renderRaportCalendarRows(kalendarz, historiaByDate) {
+        const dates = Array.from(new Set([
+            ...Object.keys(kalendarz || {}),
+            ...Object.keys(historiaByDate),
+        ])).sort();
+
+        if (dates.length === 0) {
+            return '<tr><td class="oc-raport-empty-cell" colspan="5">Brak dyżurów w kalendarzu dla wybranego zakresu.</td></tr>';
+        }
+
+        return dates.map(dateStr => {
+            const dane = kalendarz[dateStr] || {};
+            const odwiedziny = historiaByDate[dateStr];
+            const chorzyText = odwiedziny && odwiedziny.chorzy && odwiedziny.chorzy.length
+                ? odwiedziny.chorzy.join(', ')
+                : '—';
+            const uwagiText = (dane.uwagi || '').trim() || (odwiedziny && odwiedziny.uwagi ? String(odwiedziny.uwagi).trim() : '');
+            return `
+                <tr>
+                    <td class="oc-cal-date" data-label="Data">${escapeHtml(formatDate(dateStr))}</td>
+                    <td class="oc-cal-osoba" data-label="Osoba główna">${escapeHtml(dane.osobaGlowna || '')}</td>
+                    <td class="oc-cal-pomocnik" data-label="Pomocnik">${escapeHtml(dane.pomocnik || '')}</td>
+                    <td class="oc-cal-uwagi" data-label="Uwagi">${escapeHtml(uwagiText)}</td>
+                    <td class="oc-rap-chorzy" data-label="Odwiedzeni chorzy">${escapeHtml(chorzyText)}</td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function renderRaport(data, miesiac) {
@@ -2158,23 +2755,250 @@
         if (!container) return;
 
         const stats = data.statystyki || {};
-        const monthNames = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 
-                           'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
-        const [year, month] = miesiac.split('-');
-        const monthName = monthNames[parseInt(month) - 1] + ' ' + year;
+        const kalendarz = data.kalendarz || {};
+        const historia = Array.isArray(data.historia) ? data.historia : [];
+        const historiaByDate = {};
+        historia.forEach(entry => {
+            if (entry && entry.data) {
+                historiaByDate[entry.data] = entry;
+            }
+        });
+
+        const visitCount = Number(stats.lacznaLiczbaOdwiedzinWMiesiacu) || 0;
+        const visitedCount = Number(stats.odwiedzeniChorzyWMiesiacu) || 0;
+        const yearCount = Number(stats.lacznaLiczbaChorychOdPoczatkuRoku) || 0;
+        const szafarzeText = (stats.szafarze || []).filter(Boolean).join(', ') || 'Brak';
 
         container.innerHTML = `
-            <h2>Raport miesięczny - ${monthName}</h2>
+            <h2>Raport miesięczny — ${escapeHtml(formatRaportMonthName(miesiac))}</h2>
             <div class="oc-raport-stats">
                 <h3>Statystyki</h3>
                 <ul>
-                    <li>Liczba odwiedzin w miesiącu: <strong>${stats.lacznaLiczbaOdwiedzinWMiesiacu || 0}</strong></li>
-                    <li>Odwiedzeni chorzy w miesiącu: <strong>${stats.odwiedzeniChorzyWMiesiacu || 0}</strong></li>
-                    <li>Łączna liczba chorych (od początku roku): <strong>${stats.lacznaLiczbaChorychOdPoczatkuRoku || 0}</strong></li>
-                    <li>Szafarze: <strong>${(stats.szafarze || []).join(', ') || 'Brak'}</strong></li>
+                    <li>Liczba zapisanych odwiedzin w miesiącu: <strong>${visitCount}</strong></li>
+                    <li>Odwiedzeni chorzy w miesiącu: <strong>${visitedCount}</strong></li>
+                    <li>Łączna liczba odwiedzonych chorych (od początku roku): <strong>${yearCount}</strong></li>
+                    <li>Szafarze w tym miesiącu: <strong>${escapeHtml(szafarzeText)}</strong></li>
                 </ul>
             </div>
+            <div class="oc-raport-kalendarz">
+                <h3>Kalendarz odwiedzin</h3>
+                <div class="oc-table-container">
+                    <table class="oc-table oc-raport-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Osoba Główna</th>
+                                <th>Pomocnik</th>
+                                <th>Uwagi</th>
+                                <th>Odwiedzeni chorzy</th>
+                            </tr>
+                        </thead>
+                        <tbody>${renderRaportCalendarRows(kalendarz, historiaByDate)}</tbody>
+                    </table>
+                </div>
+            </div>
         `;
+    }
+
+    function renderRaportRoczny(data, rok) {
+        const container = document.getElementById('oc-raportContainer');
+        if (!container) return;
+
+        const stats = data.statystyki || {};
+        const kalendarz = data.kalendarz || {};
+        const historia = Array.isArray(data.historia) ? data.historia : [];
+        const miesiace = Array.isArray(data.miesiace) ? data.miesiace : [];
+        const historiaByDate = {};
+        historia.forEach(entry => {
+            if (entry && entry.data) {
+                historiaByDate[entry.data] = entry;
+            }
+        });
+
+        const visitCount = Number(stats.lacznaLiczbaOdwiedzinWRoku) || 0;
+        const visitedCount = Number(stats.odwiedzeniChorzyWRoku) || 0;
+        const szafarzeText = (stats.szafarze || []).filter(Boolean).join(', ') || 'Brak';
+        const monthRows = miesiace.map(row => `
+            <tr>
+                <td class="oc-cal-date" data-label="Miesiąc">${escapeHtml(formatRaportMonthName(row.miesiac))}</td>
+                <td class="oc-rap-stat" data-label="Odwiedziny">${Number(row.liczbaOdwiedzin) || 0}</td>
+                <td class="oc-rap-stat" data-label="Odwiedzeni chorzy">${Number(row.odwiedzeniChorzy) || 0}</td>
+            </tr>
+        `).join('');
+
+        container.innerHTML = `
+            <h2>Raport roczny — ${escapeHtml(String(rok))}</h2>
+            <div class="oc-raport-stats">
+                <h3>Statystyki</h3>
+                <ul>
+                    <li>Liczba zapisanych odwiedzin w roku: <strong>${visitCount}</strong></li>
+                    <li>Odwiedzeni chorzy w roku: <strong>${visitedCount}</strong></li>
+                    <li>Szafarze w tym roku: <strong>${escapeHtml(szafarzeText)}</strong></li>
+                </ul>
+            </div>
+            <div class="oc-raport-miesiace">
+                <h3>Zestawienie miesięczne</h3>
+                <div class="oc-table-container">
+                    <table class="oc-table oc-raport-table">
+                        <thead>
+                            <tr>
+                                <th>Miesiąc</th>
+                                <th>Odwiedziny</th>
+                                <th>Odwiedzeni chorzy</th>
+                            </tr>
+                        </thead>
+                        <tbody>${monthRows || '<tr><td colspan="3">Brak danych.</td></tr>'}</tbody>
+                        <tfoot>
+                            <tr>
+                                <th class="oc-cal-date" scope="row" data-label="Zakres">Cały rok</th>
+                                <td class="oc-rap-stat" data-label="Odwiedziny">${visitCount}</td>
+                                <td class="oc-rap-stat" data-label="Odwiedzeni chorzy">${visitedCount}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="oc-raport-kalendarz">
+                <h3>Kalendarz odwiedzin</h3>
+                <div class="oc-table-container">
+                    <table class="oc-table oc-raport-table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Osoba Główna</th>
+                                <th>Pomocnik</th>
+                                <th>Uwagi</th>
+                                <th>Odwiedzeni chorzy</th>
+                            </tr>
+                        </thead>
+                        <tbody>${renderRaportCalendarRows(kalendarz, historiaByDate)}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    function csvCell(value) {
+        const text = String(value ?? '');
+        if (/[;"\n\r]/.test(text)) {
+            return `"${text.replace(/"/g, '""')}"`;
+        }
+        return text;
+    }
+
+    function downloadCsv(filename, rows) {
+        const body = rows.map(row => row.map(csvCell).join(';')).join('\r\n');
+        const blob = new Blob(['\uFEFF' + body], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function buildRaportCsvRows(view) {
+        const data = view.data || {};
+        const stats = data.statystyki || {};
+        const kalendarz = data.kalendarz || {};
+        const historia = Array.isArray(data.historia) ? data.historia : [];
+        const historiaByDate = {};
+        historia.forEach(entry => {
+            if (entry && entry.data) {
+                historiaByDate[entry.data] = entry;
+            }
+        });
+        const szafarzeText = (stats.szafarze || []).filter(Boolean).join(', ') || 'Brak';
+        const rows = [];
+
+        if (view.type === 'rok') {
+            rows.push(['Raport', `Roczny ${view.key}`]);
+            rows.push(['Liczba odwiedzin', Number(stats.lacznaLiczbaOdwiedzinWRoku) || 0]);
+            rows.push(['Odwiedzeni chorzy', Number(stats.odwiedzeniChorzyWRoku) || 0]);
+            rows.push(['Szafarze', szafarzeText]);
+            rows.push([]);
+            rows.push(['Miesiąc', 'Odwiedziny', 'Odwiedzeni chorzy']);
+            (data.miesiace || []).forEach(row => {
+                rows.push([
+                    formatRaportMonthName(row.miesiac),
+                    Number(row.liczbaOdwiedzin) || 0,
+                    Number(row.odwiedzeniChorzy) || 0,
+                ]);
+            });
+            rows.push([
+                'Cały rok',
+                Number(stats.lacznaLiczbaOdwiedzinWRoku) || 0,
+                Number(stats.odwiedzeniChorzyWRoku) || 0,
+            ]);
+        } else {
+            rows.push(['Raport', `Miesięczny ${formatRaportMonthName(view.key)}`]);
+            rows.push(['Liczba odwiedzin', Number(stats.lacznaLiczbaOdwiedzinWMiesiacu) || 0]);
+            rows.push(['Odwiedzeni chorzy', Number(stats.odwiedzeniChorzyWMiesiacu) || 0]);
+            rows.push(['Odwiedzeni od początku roku', Number(stats.lacznaLiczbaChorychOdPoczatkuRoku) || 0]);
+            rows.push(['Szafarze', szafarzeText]);
+        }
+
+        rows.push([]);
+        rows.push(['Data', 'Osoba główna', 'Pomocnik', 'Odwiedzeni chorzy', 'Uwagi']);
+        const dates = Array.from(new Set([
+            ...Object.keys(kalendarz),
+            ...Object.keys(historiaByDate),
+        ])).sort();
+        dates.forEach(dateStr => {
+            const dane = kalendarz[dateStr] || {};
+            const odwiedziny = historiaByDate[dateStr];
+            rows.push([
+                formatDate(dateStr),
+                dane.osobaGlowna || '',
+                dane.pomocnik || '',
+                odwiedziny && odwiedziny.chorzy ? odwiedziny.chorzy.join(', ') : '',
+                dane.uwagi || (odwiedziny && odwiedziny.uwagi) || '',
+            ]);
+        });
+        return rows;
+    }
+
+    function exportCurrentRaportCsv() {
+        if (!lastRaportView) {
+            showMessage('Najpierw wczytaj raport, potem eksportuj CSV.', 'error');
+            return;
+        }
+        const stamp = lastRaportView.type === 'rok'
+            ? lastRaportView.key
+            : lastRaportView.key;
+        downloadCsv(`raport-odwiedziny-${stamp}.csv`, buildRaportCsvRows(lastRaportView));
+        showMessage('Pobrano plik CSV.', 'success');
+    }
+
+    async function downloadBackup() {
+        try {
+            const response = await apiCall('/backup');
+            if (response.status === 403) {
+                showMessage('Kopię zapasową pobiera administrator.', 'error');
+                return;
+            }
+            if (!response.ok) {
+                showMessage('Nie udało się pobrać kopii zapasowej.', 'error');
+                return;
+            }
+            const data = await response.json();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            const stamp = new Date().toISOString().slice(0, 10);
+            link.download = `odwiedziny-chorych-kopia-${stamp}.json`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+            showMessage('Pobrano kopię zapasową.');
+        } catch (e) {
+            debugError('Błąd kopii zapasowej:', e);
+            showMessage('Nie udało się pobrać kopii zapasowej.', 'error');
+        }
     }
 
     // ==================== UI ====================
@@ -2182,6 +3006,7 @@
     function showLoginScreen() {
         document.getElementById('oc-loginScreen').style.display = 'flex';
         document.getElementById('oc-mainApp').style.display = 'none';
+        hideChangePasswordScreen();
         const info = document.getElementById('oc-sessionInfo');
         if (info) info.textContent = '';
         fillLoginSzafarzeSelect();
@@ -2190,6 +3015,23 @@
     function showMainApp() {
         document.getElementById('oc-loginScreen').style.display = 'none';
         document.getElementById('oc-mainApp').style.display = 'block';
+        hideChangePasswordScreen();
+    }
+
+    function showChangePasswordScreen() {
+        document.getElementById('oc-loginScreen').style.display = 'none';
+        document.getElementById('oc-mainApp').style.display = 'none';
+        const screen = document.getElementById('oc-changePasswordScreen');
+        if (screen) screen.style.display = 'flex';
+    }
+
+    function hideChangePasswordScreen() {
+        const screen = document.getElementById('oc-changePasswordScreen');
+        if (screen) screen.style.display = 'none';
+    }
+
+    function needsPasswordChange() {
+        return !!(currentUser && currentUser.role === 'admin' && currentUser.mustChangePassword);
     }
 
     function setupTabs() {
@@ -2238,10 +3080,46 @@
                         await login({ szafarzId: sid, password });
                     }
                     errorEl.style.display = 'none';
-                    await initApp();
+                    if (needsPasswordChange()) {
+                        showChangePasswordScreen();
+                    } else {
+                        await initApp();
+                    }
                 } catch (error) {
                     errorEl.textContent = error.message || 'Nieprawidłowe hasło';
                     errorEl.style.display = 'block';
+                }
+            });
+        }
+
+        const changePasswordForm = document.getElementById('oc-changePasswordForm');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const errorEl = document.getElementById('oc-changePasswordError');
+                const newPassword = document.getElementById('oc-newAdminPassword')?.value || '';
+                const confirmPassword = document.getElementById('oc-confirmAdminPassword')?.value || '';
+                try {
+                    const response = await apiCall('/auth/change-password', {
+                        method: 'POST',
+                        body: JSON.stringify({ newPassword, confirmPassword }),
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'Nie udało się zmienić hasła.');
+                    }
+                    if (data.user) {
+                        currentUser = data.user;
+                    } else if (currentUser) {
+                        currentUser.mustChangePassword = false;
+                    }
+                    if (errorEl) errorEl.style.display = 'none';
+                    await initApp();
+                } catch (error) {
+                    if (errorEl) {
+                        errorEl.textContent = error.message || 'Nie udało się zmienić hasła.';
+                        errorEl.style.display = 'block';
+                    }
                 }
             });
         }
@@ -2257,11 +3135,14 @@
         if (rokSelect) {
             rokSelect.addEventListener('change', async (e) => {
                 currentYear = e.target.value;
+                syncYearSelectsToCurrent();
                 await Promise.all([
                     loadKalendarz(),
-                    loadHistoriaForYear(currentYear)
+                    loadHistoriaForYear(currentYear),
+                    loadAdwent(),
                 ]);
                 renderKalendarz();
+                syncAdwentTabForYear();
             });
         }
 
@@ -2270,16 +3151,26 @@
         if (rokAdwentSelect) {
             rokAdwentSelect.addEventListener('change', async (e) => {
                 currentYear = e.target.value;
+                syncYearSelectsToCurrent();
                 await loadAdwent();
-                renderAdwent();
+                syncAdwentTabForYear();
+                if (adwentOpen) {
+                    renderAdwent();
+                }
             });
         }
 
-        // Miesiąc select
         const miesiacSelect = document.getElementById('oc-wybierzMiesiac');
         if (miesiacSelect) {
-            miesiacSelect.addEventListener('change', (e) => {
-                loadRaport(e.target.value);
+            miesiacSelect.addEventListener('change', () => {
+                loadCurrentRaport();
+            });
+        }
+
+        const rokRaportSelect = document.getElementById('oc-wybierzRokRaport');
+        if (rokRaportSelect) {
+            rokRaportSelect.addEventListener('change', () => {
+                loadCurrentRaport();
             });
         }
 
@@ -2288,17 +3179,40 @@
         if (dodajSzafarzaBtn) {
             dodajSzafarzaBtn.addEventListener('click', addSzafarz);
         }
+        document.getElementById('oc-zapiszSzafarzeBtn')?.addEventListener('click', saveSzafarze);
 
         // Dodaj chorego
         const dodajChoregoBtn = document.getElementById('oc-dodajChoregoBtn');
         if (dodajChoregoBtn) {
             dodajChoregoBtn.addEventListener('click', addChory);
         }
+        document.getElementById('oc-zapiszChorzyBtn')?.addEventListener('click', saveChorzy);
 
         // Adwent w pasku Kalendarza: jedyna dezaktywacja (ukrycie zakładki w menu); włączenie gdy zakładki jeszcze nie ma
         const adwentBtn = document.getElementById('oc-adwent-btn');
         if (adwentBtn) {
             adwentBtn.addEventListener('click', onToolbarAdwentClick);
+        }
+
+        const mojeDyzuryBtn = document.getElementById('oc-mojeDyzuryBtn');
+        if (mojeDyzuryBtn) {
+            mojeDyzuryBtn.addEventListener('click', toggleMyDutiesFilter);
+        }
+
+        if (window.matchMedia) {
+            const calendarLayoutMq = window.matchMedia('(max-width: 768px)');
+            const onCalendarLayoutChange = () => {
+                const tbody = document.getElementById('oc-tabelaKalendarzBody');
+                if (!tbody || !tbody.children.length) {
+                    return;
+                }
+                renderKalendarz({ skipScroll: true });
+            };
+            if (typeof calendarLayoutMq.addEventListener === 'function') {
+                calendarLayoutMq.addEventListener('change', onCalendarLayoutChange);
+            } else if (typeof calendarLayoutMq.addListener === 'function') {
+                calendarLayoutMq.addListener(onCalendarLayoutChange);
+            }
         }
 
         // Modal raportu odwiedzin
@@ -2318,6 +3232,12 @@
         document.getElementById('oc-drukujChorzyBtn')?.addEventListener('click', () => window.print());
         document.getElementById('oc-drukujAdwentBtn')?.addEventListener('click', () => window.print());
         document.getElementById('oc-drukujRaportBtn')?.addEventListener('click', () => window.print());
+        document.getElementById('oc-eksportujCSVBtn')?.addEventListener('click', exportCurrentRaportCsv);
+        document.getElementById('oc-eksportujPDFBtn')?.addEventListener('click', () => {
+            showMessage('W oknie drukowania wybierz „Zapisz jako PDF”.', 'success');
+            window.print();
+        });
+        document.getElementById('oc-backupBtn')?.addEventListener('click', downloadBackup);
 
         // Create year button
         const createYearBtn = document.getElementById('oc-create-year-btn');
@@ -2360,6 +3280,7 @@
         setupTabs();
 
         // Ustaw currentYear na wartość z selecta (jeśli istnieje)
+        fillYearSelects();
         const rokSelect = document.getElementById('oc-wybierzRok');
         if (rokSelect && rokSelect.value) {
             currentYear = rokSelect.value;
@@ -2371,9 +3292,11 @@
             loadChorzy(),
             loadKalendarz(),
             loadHistoriaForYear(currentYear),
+            loadAdwent(),
         ]);
 
         applyRoleUI();
+        syncAdwentTabForYear();
 
         // Renderuj
         renderSzafarze();
@@ -2381,13 +3304,9 @@
         renderKalendarz();
         scheduleNextDutyStyleRefreshes();
 
-        // Załaduj domyślny raport
-        const currentMonth = new Date().toISOString().slice(0, 7);
-        const miesiacSelect = document.getElementById('oc-wybierzMiesiac');
-        if (miesiacSelect) {
-            miesiacSelect.value = currentMonth;
-            loadRaport(currentMonth);
-        }
+        fillRaportYearSelect();
+        fillRaportMonthSelect();
+        loadCurrentRaport();
         
         // Przycisk wylogowania jest teraz w menu przycisków
     }
@@ -2398,7 +3317,11 @@
 
         const isLoggedIn = await checkAuth();
         if (isLoggedIn) {
-            await initApp();
+            if (needsPasswordChange()) {
+                showChangePasswordScreen();
+            } else {
+                await initApp();
+            }
         } else {
             showLoginScreen();
         }
@@ -2460,7 +3383,6 @@
         
         // Przycisk wylogowania jest teraz w menu zakładek (.oc-tabs), nie w headerze
         
-        // Ukryj też header, który jest przed .oc-container
         const ocContainer = document.querySelector('.oc-container');
         if (ocContainer) {
             let prevSibling = ocContainer.previousElementSibling;
@@ -2473,7 +3395,20 @@
                 }
                 prevSibling = prevSibling.previousElementSibling;
             }
+
+            let nextSibling = ocContainer.nextElementSibling;
+            while (nextSibling) {
+                nextSibling.style.display = 'none';
+                nextSibling = nextSibling.nextElementSibling;
+            }
         }
+
+        document.querySelectorAll('footer, .site-footer, .wp-block-template-part[data-area="footer"]').forEach(el => {
+            if (!el.closest('#oc-app, .oc-container')) {
+                el.style.display = 'none';
+                el.style.visibility = 'hidden';
+            }
+        });
     }
     
     function startWordPressHeaderHider() {

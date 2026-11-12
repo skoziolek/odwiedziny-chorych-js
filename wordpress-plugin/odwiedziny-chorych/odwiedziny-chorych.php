@@ -3,7 +3,7 @@
  * Plugin Name: Odwiedziny Chorych
  * Plugin URI: https://example.com/odwiedziny-chorych
  * Description: System zarządzania odwiedzinami chorych - kalendarz, szafarze, raporty
- * Version: 1.2.22
+ * Version: 1.2.23
  * Author: Administrator
  * Author URI: https://example.com
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Stałe pluginu
-define('OC_PLUGIN_VERSION', '1.2.22');
+define('OC_PLUGIN_VERSION', '1.2.23');
 define('OC_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('OC_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('OC_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -69,6 +69,7 @@ class OdwiedzinyChorych {
         require_once OC_PLUGIN_DIR . 'includes/class-api-raporty.php';
         require_once OC_PLUGIN_DIR . 'includes/class-shortcode.php';
         require_once OC_PLUGIN_DIR . 'includes/class-email-notifications.php';
+        require_once OC_PLUGIN_DIR . 'includes/class-oc-backup.php';
     }
     
     /**
@@ -89,18 +90,21 @@ class OdwiedzinyChorych {
         
         // Menu admina
         add_action('admin_menu', array($this, 'admin_menu'));
+        add_action('admin_init', array($this, 'redirect_legacy_settings'));
         
         // Ukryj WordPress admin bar dla użytkowników końcowych (pokazuj tylko administratorom WordPress)
         add_filter('show_admin_bar', array($this, 'hide_admin_bar_for_guests'));
         
         // Dodaj inline style do ukrycia WordPress header
         add_action('wp_head', array($this, 'hide_wordpress_header_styles'), 999);
+        add_filter('body_class', array($this, 'add_app_body_class'));
         
         // Dodaj viewport meta tag dla responsywności
         add_action('wp_head', array($this, 'add_viewport_meta'), 1);
         
         // Cron job dla emaili
         add_action('oc_daily_email_reminders', array('OC_Email_Notifications', 'check_and_send_reminders'));
+        OC_Backup::register_hooks();
     }
     
     /**
@@ -109,6 +113,7 @@ class OdwiedzinyChorych {
     public function activate() {
         // Utwórz tabele w bazie danych
         OC_Database::create_tables();
+        OC_Database::maybe_upgrade();
         
         // Załaduj klasę emaili (jeśli jeszcze nie załadowana)
         if (!class_exists('OC_Email_Notifications')) {
@@ -117,6 +122,7 @@ class OdwiedzinyChorych {
         
         // Zaplanuj cron job dla emaili
         OC_Email_Notifications::schedule_cron();
+        OC_Email_Notifications::get_cron_token();
         
         // Utwórz domyślne opcje
         $this->create_default_options();
@@ -160,6 +166,7 @@ class OdwiedzinyChorych {
      */
     public function init() {
         OC_Database::maybe_upgrade();
+        OC_Email_Notifications::maybe_handle_cron_request();
         OC_Email_Notifications::maybe_reschedule_cron();
 
         // Załaduj tłumaczenia
@@ -279,19 +286,21 @@ class OdwiedzinyChorych {
             __('Odwiedziny Chorych', 'odwiedziny-chorych'),
             'manage_options',
             'odwiedziny-chorych',
-            array($this, 'admin_page'),
+            array($this, 'settings_page'),
             'dashicons-heart',
             30
         );
-        
-        add_submenu_page(
-            'odwiedziny-chorych',
-            __('Ustawienia', 'odwiedziny-chorych'),
-            __('Ustawienia', 'odwiedziny-chorych'),
-            'manage_options',
-            'odwiedziny-chorych-settings',
-            array($this, 'settings_page')
-        );
+    }
+
+    /**
+     * Stary sluga „Ustawienia” prowadzi do jedynego panelu.
+     */
+    public function redirect_legacy_settings() {
+        if (!isset($_GET['page']) || $_GET['page'] !== 'odwiedziny-chorych-settings') {
+            return;
+        }
+        wp_safe_redirect(admin_url('admin.php?page=odwiedziny-chorych'));
+        exit;
     }
     
     /**
@@ -334,7 +343,13 @@ class OdwiedzinyChorych {
             body .site-header-wrapper,
             body #masthead:not(.oc-header),
             body #header:not(.oc-header),
-            body .header:not(.oc-header) {
+            body .header:not(.oc-header),
+            body.oc-app-page footer,
+            body.oc-app-page .site-footer,
+            body.oc-app-page .wp-site-blocks > footer,
+            body.oc-app-page .wp-block-template-part[data-area="footer"],
+            body.oc-app-page .site-info,
+            body.oc-app-page .oc-container ~ * {
                 display: none !important;
                 visibility: hidden !important;
                 height: 0 !important;
@@ -388,6 +403,17 @@ class OdwiedzinyChorych {
         <?php
     }
     
+    /**
+     * Klasa body na stronie z aplikacją — do ukrycia stopki motywu.
+     */
+    public function add_app_body_class($classes) {
+        global $post;
+        if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'odwiedziny_chorych')) {
+            $classes[] = 'oc-app-page';
+        }
+        return $classes;
+    }
+
     /**
      * Strona administratora
      */

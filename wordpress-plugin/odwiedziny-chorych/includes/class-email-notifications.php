@@ -51,6 +51,7 @@ class OC_Email_Notifications {
 
         $merged = array();
         foreach ((array) $scheduled as $row) {
+            $row = OC_Database::decrypt_chory_row($row);
             $merged[(int) $row['id']] = $row;
         }
 
@@ -73,6 +74,7 @@ class OC_Email_Notifications {
                     ORDER BY imie_nazwisko ASC";
             $planned_rows = $wpdb->get_results($wpdb->prepare($sql, ...$planned_ids), ARRAY_A);
             foreach ((array) $planned_rows as $row) {
+                $row = OC_Database::decrypt_chory_row($row);
                 $merged[(int) $row['id']] = $row;
             }
         }
@@ -131,20 +133,213 @@ class OC_Email_Notifications {
 
         return $fallback;
     }
+
+    /**
+     * @return DateTimeZone
+     */
+    public static function get_wp_timezone() {
+        if (function_exists('wp_timezone')) {
+            return wp_timezone();
+        }
+
+        $string = get_option('timezone_string');
+        if (is_string($string) && $string !== '') {
+            try {
+                return new DateTimeZone($string);
+            } catch (Exception $e) {
+                // fallback poniżej
+            }
+        }
+
+        $offset = (float) get_option('gmt_offset');
+        $hours = (int) $offset;
+        $minutes = (int) round(abs($offset - $hours) * 60);
+        $sign = $offset < 0 ? '-' : '+';
+        return new DateTimeZone(sprintf('%s%02d:%02d', $sign, abs($hours), $minutes));
+    }
+
+    /**
+     * @return string
+     */
+    public static function get_timezone_label() {
+        if (function_exists('wp_timezone_string')) {
+            $label = wp_timezone_string();
+            if (is_string($label) && $label !== '') {
+                return $label;
+            }
+        }
+        $string = get_option('timezone_string');
+        if (is_string($string) && $string !== '') {
+            return $string;
+        }
+        $offset = (float) get_option('gmt_offset');
+        $sign = $offset < 0 ? '-' : '+';
+        return sprintf('UTC%s%s', $sign, number_format(abs($offset), 1, '.', ''));
+    }
+
+    /**
+     * @param string $format
+     * @return string
+     */
+    public static function now_in_wp($format = 'Y-m-d H:i:s') {
+        return (new DateTimeImmutable('now', self::get_wp_timezone()))->format($format);
+    }
+
+    /**
+     * Jutrzejsza data kalendarzowa w strefie WordPressa.
+     *
+     * @return string Y-m-d
+     */
+    public static function get_tomorrow_date() {
+        return (new DateTimeImmutable('now', self::get_wp_timezone()))
+            ->modify('+1 day')
+            ->format('Y-m-d');
+    }
+
+    /**
+     * @return bool
+     */
+    public static function is_at_or_after_reminder_hour() {
+        $now = new DateTimeImmutable('now', self::get_wp_timezone());
+        return ((int) $now->format('G')) >= self::get_reminder_hour();
+    }
+
+    /**
+     * @return string
+     */
+    public static function get_cron_token() {
+        $token = get_option('oc_cron_token', '');
+        if (!is_string($token) || strlen($token) < 20) {
+            $token = self::regenerate_cron_token();
+        }
+        return $token;
+    }
+
+    /**
+     * @return string
+     */
+    public static function regenerate_cron_token() {
+        $token = wp_generate_password(40, false, false);
+        update_option('oc_cron_token', $token, false);
+        return $token;
+    }
+
+    /**
+     * Adres, który hosting ma odpalać codziennie o godzinie przypomnienia.
+     *
+     * @return string
+     */
+    public static function get_cron_url() {
+        return add_query_arg('oc_cron', self::get_cron_token(), home_url('/'));
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public static function get_last_run() {
+        $last = get_option('oc_cron_last_run', array());
+        return is_array($last) ? $last : array();
+    }
+
+    /**
+     * @param string               $source
+     * @param array<string,mixed>  $result
+     */
+    private static function store_last_run($source, $result) {
+        update_option('oc_cron_last_run', array(
+            'at' => self::now_in_wp(),
+            'source' => $source,
+            'status' => $result['status'] ?? '',
+            'tomorrow' => $result['tomorrow'] ?? '',
+            'duties' => isset($result['duties']) ? (int) $result['duties'] : 0,
+            'sent' => isset($result['sent']) ? (int) $result['sent'] : 0,
+            'failed' => isset($result['failed']) ? (int) $result['failed'] : 0,
+            'timezone' => self::get_timezone_label(),
+        ), false);
+    }
+
+    /**
+     * @param array<string,mixed> $result
+     * @return string
+     */
+    public static function format_cron_plain_result($result) {
+        return sprintf(
+            "OC_%s at=%s tz=%s tomorrow=%s duties=%d sent=%d failed=%d\n",
+            strtoupper((string) ($result['status'] ?? 'ok')),
+            self::now_in_wp(),
+            self::get_timezone_label(),
+            $result['tomorrow'] ?? '',
+            isset($result['duties']) ? (int) $result['duties'] : 0,
+            isset($result['sent']) ? (int) $result['sent'] : 0,
+            isset($result['failed']) ? (int) $result['failed'] : 0
+        );
+    }
+
+    /**
+     * Odpala skrypt z hostingu (?oc_cron=token), bez czekania na odwiedziny strony.
+     */
+    public static function maybe_handle_cron_request() {
+        if (!isset($_GET['oc_cron'])) {
+            return;
+        }
+
+        $provided = sanitize_text_field(wp_unslash($_GET['oc_cron']));
+        $expected = self::get_cron_token();
+        if ($provided === '' || !hash_equals($expected, $provided)) {
+            status_header(403);
+            nocache_headers();
+            header('Content-Type: text/plain; charset=UTF-8');
+            echo 'OC_FORBIDDEN';
+            exit;
+        }
+
+        $result = self::check_and_send_reminders('hosting');
+        status_header(200);
+        nocache_headers();
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo self::format_cron_plain_result($result);
+        exit;
+    }
     
     /**
-     * Sprawdź i wyślij emaile dla jutrzejszych dyżurów
+     * Sprawdź i wyślij emaile dla jutrzejszych dyżurów.
+     *
+     * @param string $source wp-cron|hosting|manual
+     * @return array<string,mixed>
      */
-    public static function check_and_send_reminders() {
+    public static function check_and_send_reminders($source = 'wp-cron') {
         global $wpdb;
-        
-        // Jutrzejsza data
-        $tomorrow = date('Y-m-d', strtotime('+1 day'));
+
+        if (!is_string($source) || $source === '') {
+            $source = 'wp-cron';
+        }
+
+        $tomorrow = self::get_tomorrow_date();
+        $result = array(
+            'status' => 'ok',
+            'tomorrow' => $tomorrow,
+            'duties' => 0,
+            'sent' => 0,
+            'failed' => 0,
+            'timezone' => self::get_timezone_label(),
+        );
+
+        if ($source === 'hosting' && !self::is_at_or_after_reminder_hour()) {
+            $result['status'] = 'too_early';
+            self::store_last_run($source, $result);
+            self::log_email(sprintf(
+                '[%s] Cron (hosting): za wcześnie (przed %02d:00, strefa %s) — jutro=%s',
+                self::now_in_wp(),
+                self::get_reminder_hour(),
+                self::get_timezone_label(),
+                $tomorrow
+            ));
+            return $result;
+        }
         
         $table_kalendarz = OC_Database::get_table_name('kalendarz');
         $table_szafarze = OC_Database::get_table_name('szafarze');
         
-        // Pobierz dyżury na jutro
         $duties = $wpdb->get_results($wpdb->prepare(
             "SELECT k.*, 
                     og.imie as osoba_glowna_imie,
@@ -158,34 +353,51 @@ class OC_Email_Notifications {
              AND (k.osoba_glowna_id IS NOT NULL OR k.pomocnik_id IS NOT NULL)",
             $tomorrow
         ), ARRAY_A);
-        
+
+        $result['duties'] = is_array($duties) ? count($duties) : 0;
+
         if (empty($duties)) {
-            return;
+            $result['status'] = 'no_duties';
+            self::store_last_run($source, $result);
+            self::log_email(sprintf(
+                '[%s] Cron (%s): brak dyżurów na jutro %s (%s)',
+                self::now_in_wp(),
+                $source,
+                $tomorrow,
+                self::get_timezone_label()
+            ));
+            return $result;
         }
         
-        // Pobierz chorych zaplanowanych na jutrzejszy dyżur.
         $chorzy = self::get_chorzy_for_duty_date($tomorrow);
         
         foreach ($duties as $duty) {
-            // Wyślij email do głównego szafarza
             if (!empty($duty['osoba_glowna_email']) && is_email($duty['osoba_glowna_email'])) {
                 $email_sent_key = 'oc_email_sent_' . $tomorrow . '_' . $duty['osoba_glowna_id'];
                 $email_sent = get_option($email_sent_key, false);
                 
                 if (!$email_sent) {
-                    self::send_duty_reminder(
+                    $sent = self::send_duty_reminder(
                         $duty['osoba_glowna_email'],
                         $duty['osoba_glowna_imie'],
                         $tomorrow,
                         $chorzy,
                         'glowny'
                     );
-                    // Oznacz jako wysłane
-                    update_option($email_sent_key, true);
+                    if ($sent) {
+                        update_option($email_sent_key, true);
+                        $result['sent']++;
+                    } else {
+                        $result['failed']++;
+                        self::log_email(sprintf(
+                            "[%s] Mail do %s nieoznaczony jako wysłany — ponowienie przy następnym cronie",
+                            self::now_in_wp(),
+                            $duty['osoba_glowna_email']
+                        ));
+                    }
                 }
             }
             
-            // Wyślij email do pomocnika (jeśli ma inny email niż główny)
             if (!empty($duty['pomocnik_email']) && 
                 is_email($duty['pomocnik_email']) && 
                 $duty['pomocnik_email'] !== $duty['osoba_glowna_email']) {
@@ -194,18 +406,41 @@ class OC_Email_Notifications {
                 $email_sent = get_option($email_sent_key, false);
                 
                 if (!$email_sent) {
-                    self::send_duty_reminder(
+                    $sent = self::send_duty_reminder(
                         $duty['pomocnik_email'],
                         $duty['pomocnik_imie'],
                         $tomorrow,
                         $chorzy,
                         'pomocnik'
                     );
-                    // Oznacz jako wysłane
-                    update_option($email_sent_key, true);
+                    if ($sent) {
+                        update_option($email_sent_key, true);
+                        $result['sent']++;
+                    } else {
+                        $result['failed']++;
+                        self::log_email(sprintf(
+                            "[%s] Mail do %s nieoznaczony jako wysłany — ponowienie przy następnym cronie",
+                            self::now_in_wp(),
+                            $duty['pomocnik_email']
+                        ));
+                    }
                 }
             }
         }
+
+        self::store_last_run($source, $result);
+        self::log_email(sprintf(
+            '[%s] Cron (%s): jutro=%s tz=%s dyżury=%d wysłane=%d błędy=%d',
+            self::now_in_wp(),
+            $source,
+            $tomorrow,
+            self::get_timezone_label(),
+            $result['duties'],
+            $result['sent'],
+            $result['failed']
+        ));
+
+        return $result;
     }
     
     /**
@@ -234,7 +469,7 @@ class OC_Email_Notifications {
         // Log przed wysyłką
         $log_message = sprintf(
             "[%s] Próba wysłania emaila do: %s (%s) dla daty: %s (rola: %s)",
-            date('Y-m-d H:i:s'),
+            self::now_in_wp(),
             $email,
             $szafarz_name,
             $date_formatted,
@@ -249,14 +484,14 @@ class OC_Email_Notifications {
         if ($result) {
             $log_message = sprintf(
                 "[%s] ✓ Email WYSLANY pomyślnie do: %s (%s)",
-                date('Y-m-d H:i:s'),
+                self::now_in_wp(),
                 $email,
                 $szafarz_name
             );
         } else {
             $log_message = sprintf(
                 "[%s] ✗ BŁĄD wysyłki emaila do: %s (%s) - wp_mail() zwróciło false",
-                date('Y-m-d H:i:s'),
+                self::now_in_wp(),
                 $email,
                 $szafarz_name
             );
@@ -269,7 +504,7 @@ class OC_Email_Notifications {
             if ($error && $error['message']) {
                 $log_message = sprintf(
                     "[%s] Szczegóły błędu: %s",
-                    date('Y-m-d H:i:s'),
+                    self::now_in_wp(),
                     $error['message']
                 );
                 self::log_email($log_message);
@@ -502,12 +737,30 @@ class OC_Email_Notifications {
      * @return int
      */
     public static function get_reminder_hour() {
-        $hour = defined('OC_EMAIL_REMINDER_HOUR') ? (int) OC_EMAIL_REMINDER_HOUR : 12;
+        $default = defined('OC_EMAIL_REMINDER_HOUR') ? (int) OC_EMAIL_REMINDER_HOUR : 12;
+        if ($default < 0 || $default > 23) {
+            $default = 12;
+        }
+        $hour = (int) get_option('oc_email_reminder_hour', $default);
         if ($hour < 0 || $hour > 23) {
-            $hour = 12;
+            $hour = $default;
         }
 
         return (int) apply_filters('oc_email_reminder_hour', $hour);
+    }
+
+    /**
+     * @param int $hour 0–23
+     * @return int|WP_Error
+     */
+    public static function set_reminder_hour($hour) {
+        $hour = (int) $hour;
+        if ($hour < 0 || $hour > 23) {
+            return new WP_Error('invalid_hour', 'Godzina musi być w zakresie 0–23.');
+        }
+        update_option('oc_email_reminder_hour', $hour, false);
+        self::maybe_reschedule_cron();
+        return $hour;
     }
 
     /**

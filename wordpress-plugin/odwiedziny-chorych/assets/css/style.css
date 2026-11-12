@@ -46,7 +46,13 @@ body header[role="banner"]:not(.oc-header),
 body .site-header-wrapper,
 body #masthead:not(.oc-header),
 body #header:not(.oc-header),
-body .header:not(.oc-header) {
+body .header:not(.oc-header),
+body.oc-app-page footer,
+body.oc-app-page .site-footer,
+body.oc-app-page .wp-site-blocks > footer,
+body.oc-app-page .wp-block-template-part[data-area="footer"],
+body.oc-app-page .site-info,
+body.oc-app-page .oc-container ~ * {
     display: none !important;
     visibility: hidden !important;
     height: 0 !important;
@@ -413,6 +419,20 @@ body:has(.oc-container) .site-header:first-of-type {
     border-color: #bfa76a;
 }
 
+#oc-kalendarz-buttons .oc-btn.oc-btn-pressed,
+#oc-kalendarz-buttons .oc-btn[aria-pressed="true"] {
+    background: #6d5c3d;
+    color: #fff9f0;
+    border-color: #6d5c3d;
+}
+
+#oc-kalendarz-buttons .oc-btn.oc-btn-pressed:hover,
+#oc-kalendarz-buttons .oc-btn[aria-pressed="true"]:hover {
+    background: #5a4a2d;
+    color: #fff9f0;
+    border-color: #5a4a2d;
+}
+
 /* Przycisk wylogowania - style już zdefiniowane wyżej, tylko hover */
 
 .oc-tabs .oc-logout-btn:hover {
@@ -428,8 +448,19 @@ body:has(.oc-container) .site-header:first-of-type {
 .oc-raport-select {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 15px;
+}
+
+.oc-raport-select-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.oc-raport-select-group[hidden] {
+    display: none !important;
 }
 
 .oc-year-select select,
@@ -490,15 +521,31 @@ body:has(.oc-container) .site-header:first-of-type {
     z-index: 1;
 }
 
-/* Dodatkowe style dla mobile - ramka na wszystkich komórkach */
+/* Na telefonie ramka najbliższego dyżuru zostaje na komórkach tabel (nie kart kalendarza) */
 @media (max-width: 768px) {
-    .oc-table tbody tr.next-duty-row td {
+    .oc-table:not(#oc-tabelaKalendarz) tbody tr.next-duty-row td {
         border: 3px solid #ffc107 !important;
     }
 }
 
+.oc-table tbody tr.oc-my-duty-row {
+    background: #efe6d4;
+}
+
+.oc-table tbody tr.oc-my-duty-row.next-duty-row {
+    background: #fff9c4 !important;
+}
+
+.oc-table tbody tr.oc-duty-filtered-out {
+    display: none !important;
+}
+
 .oc-table tbody tr.swieto-row {
     background: #e3f2fd;
+}
+
+.oc-table tbody tr.swieto-row.oc-my-duty-row {
+    background: #e8dcc4;
 }
 
 /* Selecty w tabelach */
@@ -511,7 +558,6 @@ body:has(.oc-container) .site-header:first-of-type {
     background: #fff;
 }
 
-/* Pola edytowalne */
 .oc-table td[contenteditable="true"] {
     min-width: 100px;
     cursor: text;
@@ -520,6 +566,41 @@ body:has(.oc-container) .site-header:first-of-type {
 .oc-table td[contenteditable="true"]:focus {
     outline: 2px solid #bfa16b;
     outline-offset: -2px;
+}
+
+.oc-cell-input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid #d4c4a8;
+    border-radius: 4px;
+    font: inherit;
+    font-size: 0.9rem;
+    color: inherit;
+    background: #fff;
+}
+
+.oc-cell-input:focus {
+    outline: 2px solid #bfa16b;
+    outline-offset: 0;
+}
+
+.oc-cell-textarea {
+    min-height: 2.4em;
+    resize: vertical;
+}
+
+.oc-save-status {
+    margin: 0;
+    min-width: 0;
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+.oc-save-status.oc-save-status-error {
+    color: #c62828;
 }
 
 /* Modal */
@@ -857,6 +938,35 @@ body:has(.oc-container) .site-header:first-of-type {
     border-bottom: 1px solid #eee;
 }
 
+.oc-raport-kalendarz,
+.oc-raport-miesiace {
+    margin-top: 24px;
+}
+
+.oc-raport-table th,
+.oc-raport-table td {
+    text-align: left;
+    vertical-align: top;
+}
+
+.oc-raport-table tfoot th,
+.oc-raport-table tfoot td {
+    font-weight: 700;
+    color: #3d3220;
+    background: #f5f0e8;
+    border-top: 2px solid #8b7355;
+}
+
+.oc-raport-empty-note,
+.oc-raport-error {
+    margin: 0;
+    padding: 12px 0;
+}
+
+.oc-raport-error {
+    color: #c62828;
+}
+
 /* Status select */
 .oc-status-select {
     padding: 6px 10px;
@@ -932,16 +1042,266 @@ body:has(.oc-container) .site-header:first-of-type {
         padding: 15px;
     }
     
-    /* Tabela kalendarza na mobile - kompaktowy widok */
+    /* Tabele poza kalendarzem nadal mogą być szersze niż ekran */
     .oc-table {
         font-size: 0.75rem;
-        min-width: 600px; /* Minimalna szerokość dla lepszej czytelności */
+    }
+
+    #oc-tabelaChorzy,
+    #oc-tabelaSzafarze {
+        min-width: 600px;
     }
     
     .oc-table th,
     .oc-table td {
         padding: 6px 4px;
-        white-space: nowrap; /* Zapobiega zawijaniu tekstu */
+        white-space: nowrap;
+    }
+
+    #oc-kalendarz .oc-table-container,
+    #oc-adwent .oc-table-container,
+    #oc-raporty .oc-table-container {
+        overflow-x: hidden;
+        overflow-y: visible;
+    }
+
+    #oc-tabelaKalendarz,
+    #oc-tabelaAdwent {
+        display: block;
+        min-width: 0;
+        width: 100%;
+        border: none;
+        font-size: 0.95rem;
+    }
+
+    #oc-tabelaKalendarz thead,
+    #oc-tabelaAdwent thead {
+        display: none;
+    }
+
+    #oc-tabelaKalendarz tbody,
+    #oc-tabelaAdwent tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    #oc-tabelaKalendarz tbody tr,
+    #oc-tabelaAdwent tbody tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 14px;
+        margin: 0;
+        border: 1px solid #d4c4a8;
+        border-radius: 10px;
+        background: #fffdf8;
+        box-shadow: 0 1px 4px rgba(109, 92, 61, 0.08);
+    }
+
+    #oc-tabelaKalendarz tbody td,
+    #oc-tabelaAdwent tbody td {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 0 !important;
+        padding: 0;
+        border: none !important;
+        white-space: normal;
+        text-align: left;
+        vertical-align: top;
+        background: transparent !important;
+        box-shadow: none !important;
+        position: static !important;
+    }
+
+    #oc-tabelaKalendarz tbody td::before,
+    #oc-tabelaAdwent tbody td::before {
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #7a6b50;
+        margin-bottom: 4px;
+        letter-spacing: 0.02em;
+    }
+
+    #oc-tabelaKalendarz tbody td.oc-cal-date,
+    #oc-tabelaKalendarz tbody td.oc-cal-name,
+    #oc-tabelaAdwent tbody td.oc-cal-date,
+    #oc-tabelaAdwent tbody td.oc-cal-name {
+        justify-content: center;
+    }
+
+    #oc-tabelaKalendarz tbody td.oc-cal-date::before,
+    #oc-tabelaKalendarz tbody td.oc-cal-name::before,
+    #oc-tabelaAdwent tbody td.oc-cal-date::before,
+    #oc-tabelaAdwent tbody td.oc-cal-name::before {
+        display: none;
+    }
+
+    #oc-tabelaKalendarz tbody td.oc-cal-date,
+    #oc-tabelaAdwent tbody td.oc-cal-date {
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #4a3f29;
+    }
+
+    #oc-tabelaKalendarz tbody td.oc-cal-name,
+    #oc-tabelaAdwent tbody td.oc-cal-name {
+        color: #6d5c3d;
+        font-weight: 600;
+        text-align: right;
+        align-items: flex-end;
+    }
+
+    #oc-tabelaKalendarz tbody td.oc-cal-osoba,
+    #oc-tabelaKalendarz tbody td.oc-cal-pomocnik,
+    #oc-tabelaKalendarz tbody td.oc-cal-uwagi,
+    #oc-tabelaKalendarz tbody td.oc-cal-raport,
+    #oc-tabelaAdwent tbody td.oc-adv-week,
+    #oc-tabelaAdwent tbody td.oc-cal-osoba,
+    #oc-tabelaAdwent tbody td.oc-cal-pomocnik {
+        grid-column: 1 / -1;
+    }
+
+    #oc-tabelaKalendarz tbody td.oc-cal-osoba,
+    #oc-tabelaKalendarz tbody td.oc-cal-pomocnik,
+    #oc-tabelaAdwent tbody td.oc-cal-osoba,
+    #oc-tabelaAdwent tbody td.oc-cal-pomocnik {
+        grid-column: span 1;
+    }
+
+    #oc-tabelaKalendarz tbody select,
+    #oc-tabelaKalendarz tbody td.oc-cal-raport button,
+    #oc-tabelaAdwent tbody select {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        font-size: 1rem;
+    }
+
+    #oc-tabelaKalendarz tbody td.oc-cal-uwagi {
+        min-height: 2.4em;
+        padding: 8px;
+        border: 1px solid #e6dcc8 !important;
+        border-radius: 6px;
+        background: #fff !important;
+    }
+
+    #oc-tabelaKalendarz tbody tr.swieto-row {
+        background: #eef5fb;
+    }
+
+    #oc-tabelaKalendarz tbody tr.oc-my-duty-row {
+        background: #efe6d4;
+    }
+
+    #oc-tabelaKalendarz tbody tr.next-duty-row {
+        background: #fff9c4 !important;
+        outline: 3px solid #ffc107 !important;
+        outline-offset: 0 !important;
+    }
+
+    #oc-tabelaKalendarz tbody tr.next-duty-row td {
+        border: none !important;
+    }
+
+    .oc-raport-table {
+        display: block;
+        min-width: 0 !important;
+        width: 100%;
+        border: none;
+        font-size: 0.95rem;
+    }
+
+    .oc-raport-table thead {
+        display: none;
+    }
+
+    .oc-raport-table tbody,
+    .oc-raport-table tfoot {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .oc-raport-table tfoot {
+        margin-top: 4px;
+    }
+
+    .oc-raport-table tbody tr,
+    .oc-raport-table tfoot tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 14px;
+        margin: 0;
+        border: 1px solid #d4c4a8;
+        border-radius: 10px;
+        background: #fffdf8;
+        box-shadow: 0 1px 4px rgba(109, 92, 61, 0.08);
+    }
+
+    .oc-raport-table tfoot tr {
+        background: #f5f0e8;
+        font-weight: 700;
+    }
+
+    .oc-raport-table tbody td,
+    .oc-raport-table tfoot th,
+    .oc-raport-table tfoot td {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 0 !important;
+        padding: 0;
+        border: none !important;
+        white-space: normal;
+        word-break: break-word;
+        text-align: left;
+        vertical-align: top;
+        background: transparent !important;
+        box-shadow: none !important;
+        position: static !important;
+    }
+
+    .oc-raport-table tbody td::before,
+    .oc-raport-table tfoot td::before,
+    .oc-raport-table tfoot th::before {
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #7a6b50;
+        margin-bottom: 4px;
+        letter-spacing: 0.02em;
+    }
+
+    .oc-raport-table tbody td.oc-cal-date,
+    .oc-raport-table tfoot th.oc-cal-date {
+        grid-column: 1 / -1;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #4a3f29;
+    }
+
+    .oc-raport-table tbody td.oc-cal-date::before,
+    .oc-raport-table tfoot th.oc-cal-date::before {
+        display: none;
+    }
+
+    .oc-raport-table tbody td.oc-cal-uwagi,
+    .oc-raport-table tbody td.oc-rap-chorzy,
+    .oc-raport-table tbody td.oc-raport-empty-cell {
+        grid-column: 1 / -1;
+    }
+
+    .oc-raport-table tbody td.oc-raport-empty-cell::before {
+        display: none;
     }
 
     /* Dane chorych: „NIEAKTYWNY” / select statusu musi mieć minimalną szerokość */
@@ -958,159 +1318,6 @@ body:has(.oc-container) .site-header:first-of-type {
         box-sizing: border-box;
     }
 
-    /* Kalendarz: „Osoba Główna” i „Pomocnik” — nagłówki w jednej linii, selecty bez ucinania tekstu */
-    #oc-tabelaKalendarz th:nth-child(3),
-    #oc-tabelaKalendarz th:nth-child(4) {
-        min-width: 10.5rem;
-        white-space: nowrap;
-    }
-
-    #oc-tabelaKalendarz td:nth-child(3),
-    #oc-tabelaKalendarz td:nth-child(4) {
-        min-width: 9.5rem;
-        white-space: normal;
-    }
-
-    #oc-tabelaKalendarz td:nth-child(3) select,
-    #oc-tabelaKalendarz td:nth-child(4) select {
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        min-width: 8.5rem;
-        box-sizing: border-box;
-    }
-
-    /* Adwent: te same nagłówki w innych kolumnach (4 = Osoba Główna, 5 = Pomocnik) */
-    #oc-tabelaAdwent th:nth-child(4),
-    #oc-tabelaAdwent th:nth-child(5) {
-        min-width: 10.5rem;
-        white-space: nowrap;
-    }
-
-    #oc-tabelaAdwent td:nth-child(4),
-    #oc-tabelaAdwent td:nth-child(5) {
-        min-width: 9.5rem;
-        white-space: normal;
-    }
-
-    #oc-tabelaAdwent td:nth-child(4) select,
-    #oc-tabelaAdwent td:nth-child(5) select {
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        min-width: 8.5rem;
-        box-sizing: border-box;
-    }
-    
-    /* Sticky kolumna Data - zawsze widoczna przy scrollowaniu */
-    #oc-tabelaKalendarz th:first-child {
-        position: sticky;
-        left: 0;
-        background: linear-gradient(135deg, #6d5c3d 0%, #8b7355 100%);
-        z-index: 10;
-        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    #oc-tabelaKalendarz td:first-child {
-        position: sticky;
-        left: 0;
-        z-index: 9;
-        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-        /* Domyślne tło - zostanie nadpisane przez bardziej specyficzne selektory */
-        background: #faf7f2;
-    }
-    
-    /* Tło sticky kolumny dla parzystych wierszy */
-    #oc-tabelaKalendarz tbody tr:nth-child(even) td:first-child {
-        background: #faf7f2;
-    }
-    
-    /* Tło sticky kolumny dla nieparzystych wierszy */
-    #oc-tabelaKalendarz tbody tr:nth-child(odd) td:first-child {
-        background: #fff;
-    }
-    
-    /* Tło sticky kolumny dla wierszy ze świętami */
-    #oc-tabelaKalendarz tbody tr.swieto-row td:first-child {
-        background: #e3f2fd !important;
-    }
-    
-    /* Tło sticky kolumny dla odwiedzonych */
-    #oc-tabelaKalendarz tbody tr.status-tak td:first-child {
-        background: #e8f5e9 !important;
-    }
-    
-    /* Tło sticky kolumny dla nieodwiedzonych */
-    #oc-tabelaKalendarz tbody tr.status-nie td:first-child {
-        background: #ffebee !important;
-    }
-    
-    /* Tło sticky kolumny dla najbliższego dyżuru */
-    #oc-tabelaKalendarz tbody tr.next-duty-row td:first-child {
-        background: #fff9c4 !important;
-        /* RAMKA na sticky kolumnie - musi być widoczna! */
-        border: 3px solid #ffc107 !important;
-        border-left: 3px solid #ffc107 !important;
-        border-top: 3px solid #ffc107 !important;
-        border-bottom: 3px solid #ffc107 !important;
-        border-right: 3px solid #ffc107 !important;
-        z-index: 11 !important;
-    }
-    
-    /* Naprawa ramki dla najbliższego dyżuru na mobile - ramka obejmuje cały wiersz */
-    #oc-tabelaKalendarz tbody tr.next-duty-row {
-        outline: none !important; /* Wyłącz outline na mobile - nie działa z sticky */
-    }
-    
-    /* WSZYSTKIE komórki w wierszu mają żółtą ramkę - obejmuje cały wiersz */
-    /* Bardzo specyficzny selektor z !important, żeby nadpisać domyślne style tabeli */
-    /* Musimy nadpisać .oc-table td { border: 1px solid #d4c4a8; } */
-    #oc-tabelaKalendarz.oc-table tbody tr.next-duty-row td,
-    table#oc-tabelaKalendarz tbody tr.next-duty-row td,
-    .oc-table tbody tr.next-duty-row td {
-        border: 3px solid #ffc107 !important; /* Nadpisuje domyślny border: 1px solid #d4c4a8 */
-        border-top: 3px solid #ffc107 !important;
-        border-bottom: 3px solid #ffc107 !important;
-        border-left: 3px solid #ffc107 !important;
-        border-right: 3px solid #ffc107 !important;
-    }
-    
-    /* Upewnij się, że sticky kolumna ma odpowiedni z-index i widoczną ramkę */
-    #oc-tabelaKalendarz.oc-table tbody tr.next-duty-row td:first-child,
-    table#oc-tabelaKalendarz tbody tr.next-duty-row td:first-child,
-    .oc-table tbody tr.next-duty-row td:first-child {
-        z-index: 11 !important;
-        border: 3px solid #ffc107 !important; /* Nadpisuje domyślny border */
-        border-top: 3px solid #ffc107 !important;
-        border-bottom: 3px solid #ffc107 !important;
-        border-left: 3px solid #ffc107 !important;
-        border-right: 3px solid #ffc107 !important;
-        /* Dodatkowy box-shadow dla sticky kolumny, żeby ramka była widoczna */
-        box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    /* Tło sticky kolumny przy hover */
-    #oc-tabelaKalendarz tbody tr:hover td:first-child {
-        background: #f5e9d4 !important;
-    }
-    
-    /* Wyjątki dla hover - jeśli wiersz ma specjalne tło, zachowaj je */
-    #oc-tabelaKalendarz tbody tr.swieto-row:hover td:first-child {
-        background: #bbdefb !important;
-    }
-    
-    #oc-tabelaKalendarz tbody tr.status-tak:hover td:first-child {
-        background: #c8e6c9 !important;
-    }
-    
-    #oc-tabelaKalendarz tbody tr.status-nie:hover td:first-child {
-        background: #ffcdd2 !important;
-    }
-    
-    #oc-tabelaKalendarz tbody tr.next-duty-row:hover td:first-child {
-        background: #fff59d !important;
-    }
-    
     .oc-modal-content {
         width: 95%;
         max-width: none;
@@ -1157,6 +1364,17 @@ body:has(.oc-container) .site-header:first-of-type {
     .oc-buttons {
         flex-direction: column;
     }
+
+    #oc-tabelaKalendarz tbody td.oc-cal-osoba,
+    #oc-tabelaKalendarz tbody td.oc-cal-pomocnik,
+    #oc-tabelaAdwent tbody td.oc-cal-osoba,
+    #oc-tabelaAdwent tbody td.oc-cal-pomocnik,
+    .oc-raport-table tbody td.oc-cal-osoba,
+    .oc-raport-table tbody td.oc-cal-pomocnik,
+    .oc-raport-table tbody td.oc-rap-stat,
+    .oc-raport-table tfoot td.oc-rap-stat {
+        grid-column: 1 / -1;
+    }
     
     /* Na mobile przycisk Wyloguj już jest w .oc-tabs, więc będzie pod Raporty */
 }
@@ -1176,25 +1394,24 @@ body:has(.oc-container) .site-header:first-of-type {
         font-size: 0.85rem;
     }
     
-    /* Tabela kalendarza na bardzo małych ekranach - jeszcze bardziej kompaktowa */
-    .oc-table {
+    #oc-tabelaChorzy,
+    #oc-tabelaSzafarze {
         font-size: 0.7rem;
         min-width: 550px;
     }
     
-    .oc-table th,
-    .oc-table td {
+    #oc-tabelaChorzy th,
+    #oc-tabelaChorzy td,
+    #oc-tabelaSzafarze th,
+    #oc-tabelaSzafarze td,
+    .oc-raport-table th,
+    .oc-raport-table td {
         padding: 5px 3px;
     }
-    
-    /* Ukryj kolumnę Uwagi na bardzo małych ekranach (można dodać ikonę info później) */
-    #oc-tabelaKalendarz th:nth-child(5),
-    #oc-tabelaKalendarz td:nth-child(5) {
-        display: none;
-    }
-    
-    /* Wybierz w selectach - mniejszy font */
-    .oc-table select {
+
+    #oc-tabelaChorzy select,
+    #oc-tabelaSzafarze select,
+    .oc-raport-table select {
         font-size: 0.7rem;
         padding: 4px 6px;
     }
@@ -1207,20 +1424,171 @@ body:has(.oc-container) .site-header:first-of-type {
         margin: 0;
     }
     
-    .oc-year-select,
-    .oc-raport-select {
+    .oc-year-select {
         flex-direction: column;
         align-items: stretch;
     }
-    
-    .oc-year-select select,
-    .oc-raport-select select {
+
+    .oc-year-select select {
         width: 100%;
+    }
+
+    .oc-raport-select {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .oc-raport-select-group {
+        flex-direction: row;
+        align-items: center;
+        width: auto;
+    }
+
+    .oc-raport-select select {
+        width: auto;
     }
 }
 
 /* Drukowanie */
 @media print {
+    #oc-kalendarz .oc-table-container,
+    #oc-adwent .oc-table-container,
+    #oc-raporty .oc-table-container {
+        overflow: visible !important;
+    }
+
+    #oc-tabelaKalendarz,
+    #oc-tabelaAdwent {
+        display: table !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        border: none;
+        font-size: inherit;
+    }
+
+    #oc-tabelaKalendarz thead,
+    #oc-tabelaAdwent thead {
+        display: table-header-group !important;
+    }
+
+    #oc-tabelaKalendarz tbody,
+    #oc-tabelaAdwent tbody {
+        display: table-row-group !important;
+    }
+
+    #oc-tabelaKalendarz tbody tr,
+    #oc-tabelaAdwent tbody tr {
+        display: table-row !important;
+        grid-template-columns: none;
+        gap: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        outline: none;
+        background: transparent;
+    }
+
+    #oc-tabelaKalendarz tbody td,
+    #oc-tabelaKalendarz tbody td.oc-cal-date,
+    #oc-tabelaKalendarz tbody td.oc-cal-name,
+    #oc-tabelaKalendarz tbody td.oc-cal-osoba,
+    #oc-tabelaKalendarz tbody td.oc-cal-pomocnik,
+    #oc-tabelaKalendarz tbody td.oc-cal-uwagi,
+    #oc-tabelaKalendarz tbody td.oc-cal-raport,
+    #oc-tabelaAdwent tbody td,
+    #oc-tabelaAdwent tbody td.oc-cal-date,
+    #oc-tabelaAdwent tbody td.oc-cal-name,
+    #oc-tabelaAdwent tbody td.oc-adv-week,
+    #oc-tabelaAdwent tbody td.oc-cal-osoba,
+    #oc-tabelaAdwent tbody td.oc-cal-pomocnik {
+        display: table-cell !important;
+        grid-column: auto;
+        padding: 6px 4px !important;
+        border: 0.5px solid #000 !important;
+        white-space: normal;
+        background: transparent !important;
+        box-shadow: none !important;
+        position: static !important;
+        min-height: 0;
+    }
+
+    #oc-tabelaKalendarz tbody td::before,
+    #oc-tabelaAdwent tbody td::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    .oc-raport-table {
+        display: table !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        border: none;
+        font-size: inherit;
+    }
+
+    .oc-raport-table thead {
+        display: table-header-group !important;
+    }
+
+    .oc-raport-table tbody {
+        display: table-row-group !important;
+    }
+
+    .oc-raport-table tfoot {
+        display: table-footer-group !important;
+        margin-top: 0;
+    }
+
+    .oc-raport-table tbody tr,
+    .oc-raport-table tfoot tr {
+        display: table-row !important;
+        grid-template-columns: none;
+        gap: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        outline: none;
+        background: transparent;
+        font-weight: inherit;
+    }
+
+    .oc-raport-table tbody td,
+    .oc-raport-table tfoot th,
+    .oc-raport-table tfoot td,
+    .oc-raport-table tbody td.oc-cal-date,
+    .oc-raport-table tbody td.oc-cal-osoba,
+    .oc-raport-table tbody td.oc-cal-pomocnik,
+    .oc-raport-table tbody td.oc-cal-uwagi,
+    .oc-raport-table tbody td.oc-rap-chorzy,
+    .oc-raport-table tbody td.oc-rap-stat,
+    .oc-raport-table tfoot th.oc-cal-date,
+    .oc-raport-table tfoot td.oc-rap-stat {
+        display: table-cell !important;
+        grid-column: auto;
+        padding: 6px 4px !important;
+        border: 0.5px solid #000 !important;
+        white-space: normal;
+        background: transparent !important;
+        box-shadow: none !important;
+        position: static !important;
+        min-height: 0;
+        font-size: inherit;
+        font-weight: inherit;
+        color: inherit;
+    }
+
+    .oc-raport-table tbody td::before,
+    .oc-raport-table tfoot td::before,
+    .oc-raport-table tfoot th::before {
+        content: none !important;
+        display: none !important;
+    }
+
     .oc-header,
     .oc-tabs,
     .oc-buttons,
@@ -1271,6 +1639,14 @@ body:has(.oc-container) .site-header:first-of-type {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
+
+    .oc-cell-input {
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        color: #000 !important;
+    }
     
     .oc-table th {
         background: #333 !important;
@@ -1278,6 +1654,15 @@ body:has(.oc-container) .site-header:first-of-type {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
         border: 0.5px solid #000 !important;
+    }
+
+    .oc-raport-table tfoot th,
+    .oc-raport-table tfoot td {
+        background: #eee !important;
+        color: #000 !important;
+        font-weight: 700;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
     
     /* Upewnij się, że ramki są widoczne również dla pierwszej kolumny (Data) - wszystkie strony */

@@ -2,6 +2,24 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.23] – 2026-11-08
+
+**Wtyczka WordPress**
+
+- Kopia zapasowa JSON (chorzy, szafarze, kalendarz, Adwent, historia): administrator pobiera plik z panelu WordPress albo z zakładki Raporty i zapisuje go lokalnie (np. na pendrive). Wgranie kopii nadpisuje dane. Aplikacja nie wysyła pliku do chmury.
+- Adres i telefon chorych są szyfrowane w bazie; w aplikacji i w kopii JSON pozostają czytelne po zalogowaniu.
+- Przy pierwszym logowaniu administrator musi zmienić hasło.
+- Na telefonie kalendarz, Adwent i raporty (miesięczny oraz roczny) układają się w karty, bez poziomego przesuwania.
+- Adwent: osobne otwieranie i zamykanie roku.
+- Filtr **Moje dyżury** w kalendarzu.
+- Raporty roczne z eksportem CSV.
+- W statystykach raportu każda wizyta u chorego liczy się osobno (ta sama osoba w 4 niedziele = 4, nie 1).
+- Lista szafarzy w raporcie jest w kolejności dyżurów (bez powtórzeń), a nie alfabetycznie.
+- Przypomnienia e-mail: adres crona do hostingu oraz „jutro” według strefy czasowej WordPressa.
+- Listy chorych i szafarzy zapisują się tylko przyciskiem **Zapisz** (komunikat „Zapisano”); zapis listy chorych nie kasuje osób, których nie ma w wysłanej paczce.
+- Nowy rok kalendarza startuje rotacją od ostatniego szafarza głównego poprzedniego roku.
+- Jeden panel ustawień wtyczki w WordPressie (cron, kopia, import).
+
 ## [1.2.22] – 2026-10-22
 
 Jedna paczka od **1.2.20** (zmiany z 1.2.21 nie miały osobnego tagu).
