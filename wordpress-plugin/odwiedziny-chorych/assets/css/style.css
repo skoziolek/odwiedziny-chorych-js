@@ -238,12 +238,38 @@ body:has(.oc-container) .site-header:first-of-type {
 }
 
 .oc-szafarz-haslo-input {
+    display: block;
     width: 100%;
-    max-width: 220px;
+    max-width: none;
     box-sizing: border-box;
+    margin: 0;
     padding: 6px 8px;
-    border-radius: 6px;
-    border: 1px solid #bfa76a;
+    border: 1px solid #d4c4a8;
+    border-radius: 4px;
+    font: inherit;
+    font-size: 0.9rem;
+    color: inherit;
+    background: #fff;
+    line-height: normal;
+}
+
+/* Dopisek o haśle nie może podnosić pola ponad pozostałe komórki wiersza */
+#oc-tabelaSzafarze tbody td {
+    padding-bottom: 28px;
+}
+
+#oc-tabelaSzafarze .oc-szafarz-haslo-cell {
+    position: relative;
+}
+
+#oc-tabelaSzafarze .oc-szafarz-haslo-status {
+    position: absolute;
+    left: 15px;
+    right: 15px;
+    bottom: 6px;
+    margin: 0;
+    text-align: center;
+    line-height: 1.2;
 }
 
 .oc-muted {
@@ -1042,18 +1068,13 @@ body:has(.oc-container) .site-header:first-of-type {
         padding: 15px;
     }
     
-    /* Tabele poza kalendarzem nadal mogą być szersze niż ekran */
-    .oc-table {
+    /* Pozostałe tabele mogą być ciaśniejsze; chorzy i szafarze są kartami */
+    .oc-table:not(#oc-tabelaChorzy):not(#oc-tabelaSzafarze) {
         font-size: 0.75rem;
     }
 
-    #oc-tabelaChorzy,
-    #oc-tabelaSzafarze {
-        min-width: 600px;
-    }
-    
-    .oc-table th,
-    .oc-table td {
+    .oc-table:not(#oc-tabelaChorzy):not(#oc-tabelaSzafarze) th,
+    .oc-table:not(#oc-tabelaChorzy):not(#oc-tabelaSzafarze) td {
         padding: 6px 4px;
         white-space: nowrap;
     }
@@ -1304,18 +1325,166 @@ body:has(.oc-container) .site-header:first-of-type {
         display: none;
     }
 
-    /* Dane chorych: „NIEAKTYWNY” / select statusu musi mieć minimalną szerokość */
-    #oc-tabelaChorzy th:nth-child(6),
-    #oc-tabelaChorzy td:nth-child(6) {
-        min-width: 10rem;
-        white-space: normal;
+    /* Dane chorych i szafarzy: karty jak w kalendarzu i statystykach */
+    #oc-chorzy .oc-table-container,
+    #oc-szafarze .oc-table-container {
+        overflow-x: hidden;
+        overflow-y: visible;
     }
 
-    #oc-tabelaChorzy .oc-status-select {
+    #oc-tabelaChorzy,
+    #oc-tabelaSzafarze {
         display: block;
+        min-width: 0;
         width: 100%;
-        min-width: 9rem;
+        border: none;
+        font-size: 0.95rem;
+    }
+
+    #oc-tabelaChorzy thead,
+    #oc-tabelaSzafarze thead {
+        display: none;
+    }
+
+    #oc-tabelaChorzy tbody,
+    #oc-tabelaSzafarze tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    #oc-tabelaChorzy tbody tr,
+    #oc-tabelaSzafarze tbody tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+        width: 100%;
         box-sizing: border-box;
+        padding: 14px;
+        margin: 0;
+        border: 1px solid #d4c4a8;
+        border-radius: 10px;
+        background: #fffdf8;
+        box-shadow: 0 1px 4px rgba(109, 92, 61, 0.08);
+    }
+
+    #oc-tabelaChorzy tbody tr {
+        grid-template-areas:
+            "lp lp"
+            "name name"
+            "adres adres"
+            "telefon wizyta"
+            "uwagi uwagi"
+            "status akcje";
+    }
+
+    #oc-tabelaSzafarze tbody tr {
+        grid-template-areas:
+            "imie nazwisko"
+            "adres adres"
+            "email telefon"
+            "haslo haslo"
+            "akcje akcje";
+    }
+
+    #oc-tabelaChorzy tbody tr.status-tak {
+        background: #e8f5e9;
+    }
+
+    #oc-tabelaChorzy tbody tr.status-nie {
+        background: #ffebee;
+    }
+
+    #oc-tabelaChorzy tbody td,
+    #oc-tabelaSzafarze tbody td {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 0 !important;
+        padding: 0;
+        border: none !important;
+        white-space: normal;
+        word-break: break-word;
+        text-align: left;
+        vertical-align: top;
+        background: transparent !important;
+        box-shadow: none !important;
+        position: static !important;
+    }
+
+    #oc-tabelaChorzy tbody td::before,
+    #oc-tabelaSzafarze tbody td::before {
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #7a6b50;
+        margin-bottom: 4px;
+        letter-spacing: 0.02em;
+    }
+
+    #oc-tabelaChorzy tbody td.oc-lp-cell { grid-area: lp; }
+    #oc-tabelaChorzy tbody td.oc-person-name { grid-area: name; }
+    #oc-tabelaChorzy tbody td.oc-person-adres { grid-area: adres; }
+    #oc-tabelaChorzy tbody td.oc-person-telefon { grid-area: telefon; }
+    #oc-tabelaChorzy tbody td.oc-chorzy-uwagi { grid-area: uwagi; }
+    #oc-tabelaChorzy tbody td.oc-nastepna-wizyta { grid-area: wizyta; }
+    #oc-tabelaChorzy tbody td.oc-person-status { grid-area: status; }
+    #oc-tabelaChorzy tbody td.oc-row-actions { grid-area: akcje; }
+
+    #oc-tabelaSzafarze tbody td.oc-person-imie { grid-area: imie; }
+    #oc-tabelaSzafarze tbody td.oc-person-nazwisko { grid-area: nazwisko; }
+    #oc-tabelaSzafarze tbody td.oc-person-adres { grid-area: adres; }
+    #oc-tabelaSzafarze tbody td.oc-person-email { grid-area: email; }
+    #oc-tabelaSzafarze tbody td.oc-person-telefon { grid-area: telefon; }
+    #oc-tabelaSzafarze tbody td.oc-szafarz-haslo-cell { grid-area: haslo; }
+    #oc-tabelaSzafarze tbody td.oc-row-actions { grid-area: akcje; }
+
+    #oc-tabelaChorzy tbody td.oc-lp-cell {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 6px;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #4a3f29;
+    }
+
+    #oc-tabelaChorzy tbody td.oc-lp-cell::before {
+        margin-bottom: 0;
+    }
+
+    #oc-tabelaChorzy tbody td.oc-row-actions::before,
+    #oc-tabelaSzafarze tbody td.oc-row-actions::before {
+        display: none;
+    }
+
+    #oc-tabelaChorzy tbody .oc-cell-input,
+    #oc-tabelaChorzy tbody .oc-status-select,
+    #oc-tabelaChorzy tbody .oc-btn,
+    #oc-tabelaSzafarze tbody .oc-cell-input,
+    #oc-tabelaSzafarze tbody .oc-szafarz-haslo-input,
+    #oc-tabelaSzafarze tbody .oc-btn {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        font-size: 1rem;
+    }
+
+    #oc-tabelaChorzy tbody .oc-cell-textarea {
+        min-height: 4.5em;
+    }
+
+    #oc-tabelaSzafarze tbody td {
+        padding-bottom: 0;
+    }
+
+    #oc-tabelaSzafarze .oc-szafarz-haslo-status {
+        position: static;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        margin-top: 4px;
+        text-align: left;
     }
 
     .oc-modal-content {
@@ -1375,6 +1544,31 @@ body:has(.oc-container) .site-header:first-of-type {
     .oc-raport-table tfoot td.oc-rap-stat {
         grid-column: 1 / -1;
     }
+
+    #oc-tabelaChorzy tbody tr {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "lp"
+            "name"
+            "adres"
+            "telefon"
+            "uwagi"
+            "wizyta"
+            "status"
+            "akcje";
+    }
+
+    #oc-tabelaSzafarze tbody tr {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "imie"
+            "nazwisko"
+            "adres"
+            "email"
+            "telefon"
+            "haslo"
+            "akcje";
+    }
     
     /* Na mobile przycisk Wyloguj już jest w .oc-tabs, więc będzie pod Raporty */
 }
@@ -1394,23 +1588,11 @@ body:has(.oc-container) .site-header:first-of-type {
         font-size: 0.85rem;
     }
     
-    #oc-tabelaChorzy,
-    #oc-tabelaSzafarze {
-        font-size: 0.7rem;
-        min-width: 550px;
-    }
-    
-    #oc-tabelaChorzy th,
-    #oc-tabelaChorzy td,
-    #oc-tabelaSzafarze th,
-    #oc-tabelaSzafarze td,
     .oc-raport-table th,
     .oc-raport-table td {
         padding: 5px 3px;
     }
 
-    #oc-tabelaChorzy select,
-    #oc-tabelaSzafarze select,
     .oc-raport-table select {
         font-size: 0.7rem;
         padding: 4px 6px;
@@ -1454,6 +1636,8 @@ body:has(.oc-container) .site-header:first-of-type {
 @media print {
     #oc-kalendarz .oc-table-container,
     #oc-adwent .oc-table-container,
+    #oc-chorzy .oc-table-container,
+    #oc-szafarze .oc-table-container,
     #oc-raporty .oc-table-container {
         overflow: visible !important;
     }
@@ -1587,6 +1771,71 @@ body:has(.oc-container) .site-header:first-of-type {
     .oc-raport-table tfoot th::before {
         content: none !important;
         display: none !important;
+    }
+
+    #oc-tabelaChorzy,
+    #oc-tabelaSzafarze {
+        display: table !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        border: none;
+        font-size: inherit;
+    }
+
+    #oc-tabelaChorzy thead,
+    #oc-tabelaSzafarze thead {
+        display: table-header-group !important;
+    }
+
+    #oc-tabelaChorzy tbody,
+    #oc-tabelaSzafarze tbody {
+        display: table-row-group !important;
+    }
+
+    #oc-tabelaChorzy tbody tr,
+    #oc-tabelaSzafarze tbody tr {
+        display: table-row !important;
+        grid-template-columns: none;
+        gap: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        outline: none;
+        background: transparent;
+    }
+
+    #oc-tabelaChorzy tbody td,
+    #oc-tabelaSzafarze tbody td {
+        display: table-cell !important;
+        grid-column: auto;
+        flex-direction: unset;
+        padding: 6px 4px !important;
+        border: 0.5px solid #000 !important;
+        white-space: normal;
+        background: transparent !important;
+        box-shadow: none !important;
+        position: static !important;
+        min-height: 0;
+        font-size: inherit;
+        font-weight: inherit;
+        color: inherit;
+        text-align: center;
+    }
+
+    #oc-tabelaChorzy tbody td::before,
+    #oc-tabelaSzafarze tbody td::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    #oc-tabelaSzafarze .oc-szafarz-haslo-status {
+        position: static !important;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        margin-top: 4px;
     }
 
     .oc-header,
