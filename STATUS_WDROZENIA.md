@@ -1,6 +1,6 @@
 # Status wdrożenia — WordPress (parafia)
 
-**Ostatnia weryfikacja:** 2026-11-14  
+**Ostatnia weryfikacja:** 2026-11-15  
 **Wersja do wdrożenia:** **1.2.24** (tag Git: **`v1.2.24`**)  
 **Gałąź źródłowa:** `main`
 
@@ -10,6 +10,8 @@
 
 - **Telefon** — **Dane chorych** i **Dane szafarzy** w kartach, tak jak kalendarz i statystyki. Bez poziomego przesuwania tabeli.
 - **Hasło szafarza** — na komputerze pole hasła jest na wysokości pozostałych pól w wierszu. Dopisek „(hasło ustawione)” zostaje pod spodem.
+- **Szafarz** nie widzi **Utwórz nowy rok**, **Auto-przypisz szafarzy** ani przycisku **Adwent**. Otwieranie i zamykanie Adwentu jest tylko dla administratora.
+- **Przyciski** listy chorych i raportu odwiedzin trzymają beżowy styl aplikacji. **Usuń** w raporcie jest przyciskiem z obwódką, w kolorze **Dodaj**.
 
 Zapisane wizyty, kalendarz i listy zostają. Ta wersja nie zmienia struktury bazy. Po wgraniu twarde odświeżenie aplikacji (**Ctrl+F5**).
 

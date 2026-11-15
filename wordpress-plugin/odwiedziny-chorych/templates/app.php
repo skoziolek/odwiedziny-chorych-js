@@ -148,8 +148,8 @@ if (!defined('ABSPATH')) {
         <div id="oc-chorzy" class="oc-tab-content">
             <div class="oc-buttons" id="oc-chorzy-buttons">
                 <button class="oc-btn" id="oc-drukujChorzyBtn" aria-label="Drukuj listę chorych">Drukuj</button>
-                <button class="oc-btn oc-btn-success" id="oc-dodajChoregoBtn" aria-label="Dodaj nowego chorego do listy">+ Dodaj chorego</button>
-                <button type="button" class="oc-btn oc-btn-success" id="oc-zapiszChorzyBtn" aria-label="Zapisz listę chorych">Zapisz</button>
+                <button class="oc-btn" id="oc-dodajChoregoBtn" aria-label="Dodaj nowego chorego do listy">+ Dodaj chorego</button>
+                <button type="button" class="oc-btn" id="oc-zapiszChorzyBtn" aria-label="Zapisz listę chorych">Zapisz</button>
                 <p id="oc-chorzySaveStatus" class="oc-save-status" aria-live="polite"></p>
             </div>
             <div class="oc-table-container">

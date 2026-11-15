@@ -2,12 +2,15 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
-## [1.2.24] – 2026-11-14
+## [1.2.24] – 2026-11-15
 
 **Wtyczka WordPress**
 
 - Na telefonie listy **Dane chorych** i **Dane szafarzy** układają się w karty, tak jak kalendarz i statystyki. Każde pole ma etykietę, a adres, telefon i uwagi da się przeczytać bez poziomego przesuwania tabeli.
 - W tabeli szafarzy na komputerze pole **Hasło logowania** jest na tej samej wysokości co pozostałe pola w wierszu. Dopisek „(hasło ustawione)” zostaje pod polem.
+- Szafarz nie widzi przycisków **Utwórz nowy rok**, **Auto-przypisz szafarzy** i **Adwent**. Otwieranie i zamykanie Adwentu może wykonać tylko administrator.
+- W **Dane chorych** przyciski **Drukuj**, **Dodaj chorego** i **Zapisz** mają ten sam beżowy styl.
+- W raporcie odwiedzin **Przywróć jako zaplanowane** zostaje beżowe, a **Usuń** jest beżowym przyciskiem z obwódką, jak **Dodaj**. Motyw WordPressa nie przemalowuje ich na różowo.
 
 ## [1.2.23] – 2026-11-08
 

@@ -48,7 +48,17 @@ class OC_API_Adwent {
      * Sprawdź uprawnienia
      */
     public function check_permission($request) {
-        return OC_Auth::rest_permission($request);
+        $admin_write = false;
+        if ($request->get_method() !== 'GET') {
+            $params = $request->get_json_params();
+            if (!is_array($params)) {
+                $decoded = json_decode($request->get_body(), true);
+                $params = is_array($decoded) ? $decoded : array();
+            }
+            $action = $params['action'] ?? '';
+            $admin_write = in_array($action, array('otworz_adwent', 'zamknij_adwent'), true);
+        }
+        return OC_Auth::rest_permission($request, $admin_write);
     }
     
     /**

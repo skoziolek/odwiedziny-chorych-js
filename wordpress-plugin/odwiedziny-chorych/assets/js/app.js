@@ -403,10 +403,24 @@
         }
     }
 
+    function isSzafarzSession() {
+        return !!(currentUser && currentUser.role === 'szafarz');
+    }
+
     function applyRoleUI() {
-        const isSzafarz = currentUser && currentUser.role === 'szafarz';
+        const isSzafarz = isSzafarzSession();
+        const app = document.getElementById('oc-app');
+        if (app) {
+            app.dataset.role = isSzafarz ? 'szafarz' : 'admin';
+        }
         document.querySelectorAll('.oc-tab-button[data-tab="szafarze"], .oc-tab-button[data-tab="raporty"]').forEach(btn => {
             btn.style.display = isSzafarz ? 'none' : '';
+        });
+        ['oc-create-year-btn', 'oc-auto-assign-btn', 'oc-adwent-btn'].forEach(id => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.hidden = isSzafarz;
+            }
         });
         const info = document.getElementById('oc-sessionInfo');
         if (info) {
@@ -975,6 +989,7 @@
     }
 
     async function createNewYear() {
+        if (isSzafarzSession()) return;
         const nextYear = (parseInt(currentYear, 10) + 1).toString();
         const rokSelect = document.getElementById('oc-wybierzRok');
 
@@ -1065,6 +1080,7 @@
     }
 
     async function autoAssignSzafarze() {
+        if (isSzafarzSession()) return;
         if (!await confirm('Czy na pewno chcesz automatycznie przypisać szafarzy według kolejności z tabeli? To nadpisze obecne przypisania.')) {
             return;
         }
@@ -1888,6 +1904,7 @@
      * drugie zamyka rok i kasuje wpisy adwentowe.
      */
     async function onToolbarAdwentClick() {
+        if (isSzafarzSession()) return;
         if (adwentOpen) {
             const ok = await confirm(
                 `Zamknąć Adwent na rok ${currentYear}? Tabela zniknie, a wszystkie wpisy adwentowe tego roku zostaną usunięte. Adwent na ten rok będzie można otworzyć ponownie od nowa.`
