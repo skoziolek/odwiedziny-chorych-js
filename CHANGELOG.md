@@ -2,6 +2,13 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.24] – 2026-11-14
+
+**Wtyczka WordPress**
+
+- Na telefonie listy **Dane chorych** i **Dane szafarzy** układają się w karty, tak jak kalendarz i statystyki. Każde pole ma etykietę, a adres, telefon i uwagi da się przeczytać bez poziomego przesuwania tabeli.
+- W tabeli szafarzy na komputerze pole **Hasło logowania** jest na tej samej wysokości co pozostałe pola w wierszu. Dopisek „(hasło ustawione)” zostaje pod polem.
+
 ## [1.2.23] – 2026-11-08
 
 **Wtyczka WordPress**

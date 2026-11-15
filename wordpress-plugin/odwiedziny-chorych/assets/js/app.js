@@ -523,16 +523,16 @@
             row.dataset.ocId = szafarz.id != null ? String(szafarz.id) : '';
             const hasloHint = szafarz.maHaslo ? '(hasło ustawione)' : '(brak hasła)';
             row.innerHTML = `
-                <td>${cellInputHtml('imie', szafarz.imie, 'Imię')}</td>
-                <td>${cellInputHtml('nazwisko', szafarz.nazwisko, 'Nazwisko')}</td>
-                <td>${cellInputHtml('adres', szafarz.adres, 'Adres zamieszkania')}</td>
-                <td>${cellInputHtml('email', szafarz.email, 'Adres email')}</td>
-                <td>${cellInputHtml('telefon', szafarz.telefon, 'Numer telefonu')}</td>
-                <td class="oc-szafarz-haslo-cell">
+                <td class="oc-person-imie" data-label="Imię">${cellInputHtml('imie', szafarz.imie, 'Imię')}</td>
+                <td class="oc-person-nazwisko" data-label="Nazwisko">${cellInputHtml('nazwisko', szafarz.nazwisko, 'Nazwisko')}</td>
+                <td class="oc-person-adres" data-label="Adres zamieszkania">${cellInputHtml('adres', szafarz.adres, 'Adres zamieszkania')}</td>
+                <td class="oc-person-email" data-label="Adres email">${cellInputHtml('email', szafarz.email, 'Adres email')}</td>
+                <td class="oc-person-telefon" data-label="Numer telefonu">${cellInputHtml('telefon', szafarz.telefon, 'Numer telefonu')}</td>
+                <td class="oc-szafarz-haslo-cell" data-label="Hasło logowania">
                     <input type="password" class="oc-szafarz-haslo-input" autocomplete="new-password" placeholder="Nowe hasło" aria-label="Nowe hasło logowania szafarza">
                     <span class="oc-szafarz-haslo-status oc-muted">${hasloHint}</span>
                 </td>
-                <td>
+                <td class="oc-row-actions" data-label="Akcje">
                     <button class="oc-btn oc-btn-danger oc-btn-small" onclick="ocApp.deleteSzafarz(${index})">Usuń</button>
                 </td>
             `;
@@ -644,19 +644,19 @@
 
             const idJs = chory.id != null ? String(chory.id) : 'null';
             row.innerHTML = `
-                <td class="oc-lp-cell">${index + 1}</td>
-                <td>${cellInputHtml('imieNazwisko', chory.imieNazwisko, 'Imię i nazwisko')}</td>
-                <td>${cellInputHtml('adres', chory.adres, 'Adres')}</td>
-                <td>${cellInputHtml('telefon', chory.telefon, 'Telefon')}</td>
-                <td class="oc-chorzy-uwagi">${cellTextareaHtml('uwagi', chory.uwagi, 'Uwagi')}</td>
-                <td class="oc-nastepna-wizyta">${escapeHtml(nastepnaWizytaText)}</td>
-                <td>
+                <td class="oc-lp-cell" data-label="Lp.">${index + 1}</td>
+                <td class="oc-person-name" data-label="Imię i nazwisko">${cellInputHtml('imieNazwisko', chory.imieNazwisko, 'Imię i nazwisko')}</td>
+                <td class="oc-person-adres" data-label="Adres">${cellInputHtml('adres', chory.adres, 'Adres')}</td>
+                <td class="oc-person-telefon" data-label="Telefon">${cellInputHtml('telefon', chory.telefon, 'Telefon')}</td>
+                <td class="oc-chorzy-uwagi" data-label="Uwagi">${cellTextareaHtml('uwagi', chory.uwagi, 'Uwagi')}</td>
+                <td class="oc-nastepna-wizyta" data-label="Następna wizyta">${escapeHtml(nastepnaWizytaText)}</td>
+                <td class="oc-person-status" data-label="Status">
                     <select class="oc-status-select ${chory.status === 'TAK' ? 'status-tak' : 'status-nie'}" aria-label="Status chorego: aktywny lub nieaktywny">
                         <option value="TAK" ${chory.status === 'TAK' ? 'selected' : ''}>AKTYWNY</option>
                         <option value="NIE" ${chory.status === 'NIE' ? 'selected' : ''}>NIEAKTYWNY</option>
                     </select>
                 </td>
-                <td>
+                <td class="oc-row-actions" data-label="Akcje">
                     <button class="oc-btn oc-btn-danger oc-btn-small" onclick="ocApp.deleteChory(${idJs}, ${index})">Usuń</button>
                 </td>
             `;
