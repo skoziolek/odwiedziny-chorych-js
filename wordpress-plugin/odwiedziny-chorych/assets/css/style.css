@@ -660,6 +660,70 @@ body:has(.oc-container) .site-header:first-of-type {
     resize: vertical;
 }
 
+/* Dane chorych na laptopie: nazwisko, adres i uwagi dostają miejsce, reszta kolumn jest węższa.
+   Na telefonie te szerokości nie obowiązują — tam lista jest kartami. */
+@media (min-width: 769px) {
+    #oc-chorzy .oc-table-container {
+        overflow-x: auto;
+    }
+
+    #oc-tabelaChorzy {
+        table-layout: fixed;
+        width: 100%;
+        min-width: 1140px;
+    }
+
+    #oc-tabelaChorzy th,
+    #oc-tabelaChorzy td {
+        padding: 8px 6px;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    #oc-tabelaChorzy th:nth-child(1),
+    #oc-tabelaChorzy td.oc-lp-cell { width: 4%; }
+
+    #oc-tabelaChorzy th:nth-child(2),
+    #oc-tabelaChorzy td.oc-person-name { width: 17%; }
+
+    #oc-tabelaChorzy th:nth-child(3),
+    #oc-tabelaChorzy td.oc-person-adres { width: 18%; }
+
+    #oc-tabelaChorzy th:nth-child(4),
+    #oc-tabelaChorzy td.oc-person-telefon { width: 11%; }
+
+    #oc-tabelaChorzy th:nth-child(5),
+    #oc-tabelaChorzy td.oc-chorzy-uwagi { width: 20%; }
+
+    #oc-tabelaChorzy th:nth-child(6),
+    #oc-tabelaChorzy td.oc-nastepna-wizyta { width: 10%; }
+
+    #oc-tabelaChorzy th:nth-child(7),
+    #oc-tabelaChorzy td.oc-person-status { width: 12%; }
+
+    #oc-tabelaChorzy th:nth-child(8),
+    #oc-tabelaChorzy td.oc-row-actions { width: 8%; }
+
+    #oc-tabelaChorzy .oc-cell-textarea {
+        min-height: 6.2em;
+    }
+
+    #oc-tabelaChorzy .oc-status-select {
+        padding: 6px 4px;
+        font-size: 0.78rem;
+    }
+
+    #oc-tabelaChorzy .oc-row-actions .oc-btn {
+        padding: 8px 6px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+}
+
+.oc-container {
+    padding-bottom: 64px;
+}
+
 .oc-save-status {
     margin: 0;
     min-width: 0;
@@ -1396,8 +1460,14 @@ body:has(.oc-container) .site-header:first-of-type {
         display: block;
         min-width: 0;
         width: 100%;
+        table-layout: auto;
         border: none;
         font-size: 0.95rem;
+    }
+
+    #oc-tabelaChorzy th,
+    #oc-tabelaChorzy td {
+        width: auto;
     }
 
     #oc-tabelaChorzy thead,
@@ -1837,6 +1907,7 @@ body:has(.oc-container) .site-header:first-of-type {
         display: table !important;
         width: 100% !important;
         min-width: 0 !important;
+        table-layout: auto !important;
         border: none;
         font-size: inherit;
     }
