@@ -2,6 +2,15 @@
 
 Numeracja: **MAJOR.MINOR.PATCH** (np. 1.2.0 → 1.3.0 dla nowych funkcji, 1.2.1 dla poprawek).
 
+## [1.2.25] – 2026-11-17
+
+**Wtyczka WordPress**
+
+- Paczka zawiera też poprawki dopisane po pierwszym wydaniu 1.2.24: szafarz nie widzi **Utwórz nowy rok**, **Auto-przypisz szafarzy** ani **Adwent**, a przyciski listy chorych i raportu trzymają beżowy styl aplikacji.
+- Na laptopie w **Dane chorych** nazwisko, adres i uwagi mają więcej miejsca. Przy węższym oknie tabela przesuwa się w bok, zamiast ucinać tekst.
+- Na telefonie listy chorych i szafarzy zostają kartami na całą szerokość.
+- Z okna raportu odwiedzin zniknął przycisk **Anuluj**. Okno zamyka krzyżyk.
+
 ## [1.2.24] – 2026-11-15
 
 **Wtyczka WordPress**

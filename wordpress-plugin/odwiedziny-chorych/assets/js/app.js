@@ -3234,12 +3234,10 @@
 
         // Modal raportu odwiedzin
         const modalClose = document.querySelector('.oc-raport-close');
-        const modalCancel = document.querySelector('.oc-raport-cancel');
         const modalSave = document.getElementById('oc-raportZapiszBtn');
         const modalRevert = document.getElementById('oc-raportPrzywrocBtn');
 
         if (modalClose) modalClose.addEventListener('click', closeVisitModal);
-        if (modalCancel) modalCancel.addEventListener('click', closeVisitModal);
         if (modalSave) modalSave.addEventListener('click', saveVisit);
         if (modalRevert) modalRevert.addEventListener('click', revertVisitToPlanned);
 
