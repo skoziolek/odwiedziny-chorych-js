@@ -428,6 +428,48 @@ body:has(.oc-container) .site-header:first-of-type {
     flex: 0 0 auto;
 }
 
+/* Dane chorych: wszystkie przyciski jak „Drukuj”. Motyw WP nadpisuje button[type=button]. */
+#oc-chorzy-buttons .oc-btn {
+    background: #f5e9d4;
+    color: #6b4c1b;
+    border: 1px solid #bfa76a;
+    border-radius: 6px;
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+#oc-chorzy-buttons .oc-btn:hover,
+#oc-chorzy-buttons .oc-btn:focus {
+    background: #e6d3b3;
+    color: #4d3200;
+    border-color: #bfa76a;
+}
+
+/* Motyw WordPressa styluje button[type=button]. Zapisz szafarzy zostaje zielony jak Dodaj. */
+#oc-app .oc-buttons button[type="button"].oc-btn.oc-btn-success {
+    background: #4caf50;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+#oc-app .oc-buttons button[type="button"].oc-btn.oc-btn-success:hover,
+#oc-app .oc-buttons button[type="button"].oc-btn.oc-btn-success:focus {
+    background: #43a047;
+    color: #fff;
+    border: none;
+}
+
+#oc-app[data-role="szafarz"] #oc-create-year-btn,
+#oc-app[data-role="szafarz"] #oc-auto-assign-btn,
+#oc-app[data-role="szafarz"] #oc-adwent-btn {
+    display: none !important;
+}
+
 /* Pasek przycisków Kalendarza: jeden styl (motywy WP często nadpisują button[type=button]) */
 #oc-kalendarz-buttons .oc-btn {
     background: #f5e9d4;
@@ -618,6 +660,70 @@ body:has(.oc-container) .site-header:first-of-type {
     resize: vertical;
 }
 
+/* Dane chorych na laptopie: nazwisko, adres i uwagi dostają miejsce, reszta kolumn jest węższa.
+   Na telefonie te szerokości nie obowiązują — tam lista jest kartami. */
+@media (min-width: 769px) {
+    #oc-chorzy .oc-table-container {
+        overflow-x: auto;
+    }
+
+    #oc-tabelaChorzy {
+        table-layout: fixed;
+        width: 100%;
+        min-width: 1140px;
+    }
+
+    #oc-tabelaChorzy th,
+    #oc-tabelaChorzy td {
+        padding: 8px 6px;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    #oc-tabelaChorzy th:nth-child(1),
+    #oc-tabelaChorzy td.oc-lp-cell { width: 4%; }
+
+    #oc-tabelaChorzy th:nth-child(2),
+    #oc-tabelaChorzy td.oc-person-name { width: 17%; }
+
+    #oc-tabelaChorzy th:nth-child(3),
+    #oc-tabelaChorzy td.oc-person-adres { width: 18%; }
+
+    #oc-tabelaChorzy th:nth-child(4),
+    #oc-tabelaChorzy td.oc-person-telefon { width: 11%; }
+
+    #oc-tabelaChorzy th:nth-child(5),
+    #oc-tabelaChorzy td.oc-chorzy-uwagi { width: 20%; }
+
+    #oc-tabelaChorzy th:nth-child(6),
+    #oc-tabelaChorzy td.oc-nastepna-wizyta { width: 10%; }
+
+    #oc-tabelaChorzy th:nth-child(7),
+    #oc-tabelaChorzy td.oc-person-status { width: 12%; }
+
+    #oc-tabelaChorzy th:nth-child(8),
+    #oc-tabelaChorzy td.oc-row-actions { width: 8%; }
+
+    #oc-tabelaChorzy .oc-cell-textarea {
+        min-height: 6.2em;
+    }
+
+    #oc-tabelaChorzy .oc-status-select {
+        padding: 6px 4px;
+        font-size: 0.78rem;
+    }
+
+    #oc-tabelaChorzy .oc-row-actions .oc-btn {
+        padding: 8px 6px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+}
+
+.oc-container {
+    padding-bottom: 64px;
+}
+
 .oc-save-status {
     margin: 0;
     min-width: 0;
@@ -754,21 +860,50 @@ body:has(.oc-container) .site-header:first-of-type {
     flex-shrink: 0;
 }
 
-.oc-raport-remove {
-    background: none;
-    border: none;
-    padding: 2px 4px;
-    color: #8a6a5a;
+/* „Usuń” w raporcie ma ten sam beż co przycisk „Dodaj” powyżej. */
+#oc-app button.oc-raport-remove {
+    background: #f5e9d4 !important;
+    border: 1px solid #bfa76a !important;
+    border-radius: 6px;
+    box-shadow: none !important;
+    padding: 4px 10px;
+    color: #6b4c1b !important;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    text-decoration: underline;
+    text-decoration: none;
     white-space: nowrap;
+    line-height: 1.2;
+    min-height: 0;
+    -webkit-appearance: none;
+    appearance: none;
 }
 
-.oc-raport-remove:hover,
-.oc-raport-remove:focus {
-    color: #c62828;
+#oc-app button.oc-raport-remove:hover,
+#oc-app button.oc-raport-remove:focus {
+    background: #e6d3b3 !important;
+    border: 1px solid #bfa76a !important;
+    box-shadow: none !important;
+    color: #4d3200 !important;
+}
+
+/* „Przywróć jako zaplanowane” ma zostać beżowe, jak na localu. */
+#oc-app .oc-modal-footer button.oc-btn.oc-raport-revert {
+    background: #f5e9d4 !important;
+    color: #6b4c1b !important;
+    border: 1px solid #bfa76a !important;
+    border-radius: 6px;
+    box-shadow: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+#oc-app .oc-modal-footer button.oc-btn.oc-raport-revert:hover,
+#oc-app .oc-modal-footer button.oc-btn.oc-raport-revert:focus {
+    background: #e6d3b3 !important;
+    color: #4d3200 !important;
+    border-color: #bfa76a !important;
+    box-shadow: none !important;
 }
 
 .oc-raport-name {
@@ -889,21 +1024,9 @@ body:has(.oc-container) .site-header:first-of-type {
         flex-wrap: wrap;
     }
 
-    .oc-raport-remove {
-        background: #f5e9d4;
-        border: 1px solid #bfa76a;
-        border-radius: 6px;
+    #oc-app button.oc-raport-remove {
         padding: 8px 14px;
-        color: #6b4c1b;
-        text-decoration: none;
         font-size: 0.9rem;
-        line-height: 1.2;
-    }
-
-    .oc-raport-remove:hover,
-    .oc-raport-remove:focus {
-        background: #e6d3b3;
-        color: #4d3200;
     }
 
     .oc-raport-add-occasional-controls {
@@ -1337,8 +1460,14 @@ body:has(.oc-container) .site-header:first-of-type {
         display: block;
         min-width: 0;
         width: 100%;
+        table-layout: auto;
         border: none;
         font-size: 0.95rem;
+    }
+
+    #oc-tabelaChorzy th,
+    #oc-tabelaChorzy td {
+        width: auto;
     }
 
     #oc-tabelaChorzy thead,
@@ -1778,6 +1907,7 @@ body:has(.oc-container) .site-header:first-of-type {
         display: table !important;
         width: 100% !important;
         min-width: 0 !important;
+        table-layout: auto !important;
         border: none;
         font-size: inherit;
     }
